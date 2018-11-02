@@ -1,0 +1,202 @@
+# -----------------------------------------------------------------------------
+# Amazon AWS CloudFormation template
+#
+# This defines a "stack" of AWS resources needed to run Tacocat Gallery on AWS,  
+# such as S3 buckets, Lambda functions, DynamoDB tables and IAM roles.
+#
+# CloudFormation reads this template and takes care of deploying the stack of 
+# resources defined in this template.
+# -----------------------------------------------------------------------------
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Back end for Tacocat Gallery -- S3 image repo, Lambda processing of images, DynamoDB tables of albums, etc
+
+# -----------------------------------------------------------------------------
+# Allows this template to be written in the AWS Serverless Application Model 
+# (AWS SAM) syntax and when uploaded to CloudFormation, transforms and expands
+# it into an AWS CloudFormation template. The main purpose is that AWS SAM 
+# syntax simplifies the declaration of a Lambda function and its execution 
+# role.
+# -----------------------------------------------------------------------------
+Transform: 'AWS::Serverless-2016-10-31'
+
+# -----------------------------------------------------------------------------
+# Custom parameters that CloudFormation will ask you to type in values for 
+# before it creates the stack of resources.
+# -----------------------------------------------------------------------------
+Parameters:
+    GalleryInfrastructureBucketName:
+        Type: String
+        Description: Name of the S3 Bucket where the Tacocat Gallery Lambda functions are hosted
+        Default: cloudformationdeploysource
+
+# -----------------------------------------------------------------------------
+# Shared configuration inherited by all Lambda functions
+# -----------------------------------------------------------------------------
+Globals:
+  Function:
+    Runtime: nodejs4.3
+    Timeout: 60
+    MemorySize: 256
+    Handler: index.handler
+
+# -----------------------------------------------------------------------------
+# Resources are the actual AWS systems that will be provisioned
+# -----------------------------------------------------------------------------
+Resources:
+
+  #
+  # S3 bucket containing images
+  #
+  PhotoRepoS3Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      CorsConfiguration:
+        CorsRules:
+          -
+            AllowedHeaders:
+              - "*"
+            AllowedMethods:
+              - PUT
+              - GET
+              - POST
+              - HEAD
+            AllowedOrigins:
+              - "*"
+            ExposedHeaders:
+              - ETag
+
+  # ---------------------------------------------------------------------------
+  # IAM role used by Lambda functions that executes the image processing 
+  # workflow, so it has the union of the required permissions for these Lambda
+  # functions. You might instead create individual IAM roles for each Lambda 
+  # function to follow the Least privilege principle. This template consolidates
+  # them simply to reduce the number of IAM roles it takes up in your account.
+  # ---------------------------------------------------------------------------
+  BackendProcessingLambdaRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          -
+            Effect: "Allow"
+            Principal:
+              Service:
+                - "lambda.amazonaws.com"
+            Action:
+              - "sts:AssumeRole"
+      Path: "/MediaSharingRefarch/"
+      Policies:
+        -
+          PolicyName: "LambdaWriteCWLogs"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              -
+                Sid: "AllowLogging"
+                Effect: "Allow"
+                Action:
+                  - "logs:CreateLogGroup"
+                  - "logs:CreateLogStream"
+                  - "logs:PutLogEvents"
+                Resource: "*"
+        -
+          PolicyName: "ReadFromPhotoRepoS3Bucket"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              -
+                Sid: "ReadFromPhotoRepoS3Bucket"
+                Effect: "Allow"
+                Action:
+                  - "s3:Get*"
+                Resource:
+                  !Sub "arn:aws:s3:::${PhotoRepoS3Bucket}/*"
+        -
+          PolicyName: "WriteToPhotoRepoS3Bucket"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              -
+                Sid: "WriteToPhotoRepoS3Bucket"
+                Effect: "Allow"
+                Action:
+                  - "s3:PutObject"
+                Resource:
+                  !Sub "arn:aws:s3:::${PhotoRepoS3Bucket}/*"
+        -
+          PolicyName: "StepFunctionStartExecution"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              -
+                Sid: "StepFunctionStartExecution"
+                Effect: "Allow"
+                Action:
+                  - "states:StartExecution"
+                Resource: "*"
+
+# -----------------------------------------------------------------------------
+# This Lambda function triggers the start of the Step Functions state machine.
+# This state machine executes the image processing workflow.
+# -----------------------------------------------------------------------------
+
+  ImageProcStartExecutionFunction:
+    DependsOn: PhotoRepoS3Bucket
+    Properties:
+      CodeUri: s3://s3-us-west-2.amazonaws.com/cloudformationdeploysource/lambda-functions/start-execution
+      Description: "Triggered by S3 image upload to the repo bucket and start the image processing step function workflow"
+      Role:
+        !GetAtt BackendProcessingLambdaRole.Arn
+    Type: AWS::Serverless::Function
+
+  # ---------------------------------------------------------------------------
+  # Custom resources created with Lambda functions:
+  # S3 event trigger to Lambda function
+  # ---------------------------------------------------------------------------
+  CustomResourceHelperRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          -
+            Effect: "Allow"
+            Principal:
+              Service:
+                - "lambda.amazonaws.com"
+            Action:
+              - "sts:AssumeRole"
+      Path: "/MediaSharingRefarch/"
+      Policies:
+        -
+          PolicyName: "LambdaWriteCWLogs"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              -
+                Sid: "AllowLogging"
+                Effect: "Allow"
+                Action:
+                  - "logs:CreateLogGroup"
+                  - "logs:CreateLogStream"
+                  - "logs:PutLogEvents"
+                Resource: "*"
+        -
+          PolicyName: "AddS3EventTrigger"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              -
+                Sid: "PutS3EventNofication"
+                Effect: "Allow"
+                Action:
+                  - "s3:PutBucketNotification"
+                Resource:
+                  !Sub "arn:aws:s3:::${PhotoRepoS3Bucket}"
+              -
+                Sid: "AddPermissionToLambda"
+                Effect: "Allow"
+                Action:
+                  - "lambda:AddPermission"
+                Resource: "*"
