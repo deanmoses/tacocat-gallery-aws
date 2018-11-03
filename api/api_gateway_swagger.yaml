@@ -3,8 +3,8 @@ swagger: "2.0"
 info:
   version: "2018-11-02T04:06:20Z"
   title: "Tacocat Gallery API"
-host: "a9wgnoluy2.execute-api.us-east-1.amazonaws.com"
-basePath: "/dev"
+host: "nv6jps3f66.execute-api.us-west-2.amazonaws.com"
+basePath: "/prod"
 schemes:
 - "https"
 paths:
@@ -54,6 +54,8 @@ paths:
         type: "mock"
   /album:
     get:
+      consumes:
+      - "application/json"
       produces:
       - "application/json"
       parameters:
@@ -74,18 +76,20 @@ paths:
             Access-Control-Allow-Origin:
               type: "string"
       x-amazon-apigateway-integration:
-        uri: "http://petstore-demo-endpoint.execute-api.com/petstore/pets"
+        credentials: "arn:aws:iam::010410881828:role/TacocatGallery-TestClientIAMRole-1UN3GJHFFSDK5"
+        uri: "arn:aws:apigateway:us-west-2:dynamodb:action/Query"
         responses:
           default:
             statusCode: "200"
-            responseParameters:
-              method.response.header.Access-Control-Allow-Origin: "'*'"
-        requestParameters:
-          integration.request.querystring.page: "method.request.querystring.page"
-          integration.request.querystring.type: "method.request.querystring.type"
+        requestTemplates:
+          application/json: "{\n\t\"TableName\":\"TacocatGallery-AlbumMetadataDDBTable-NOZGIWFCNOA7\"\
+            ,\n\t\"IndexName\":\"userID-creationTime-index\",\n\t\"KeyConditionExpression\"\
+            :\"userID = :userID\",\n\t\"ExpressionAttributeValues\": \n\t\t{\n\t\t\
+            \t\":userID\":\n\t\t\t\t{\"S\":\"moses\"}\n\t\t},\n\t\"ScanIndexForward\"\
+            :false\n}"
         passthroughBehavior: "when_no_match"
-        httpMethod: "GET"
-        type: "http"
+        httpMethod: "POST"
+        type: "aws"
     post:
       operationId: "CreateAlbum"
       consumes:

@@ -590,6 +590,8 @@ Resources:
           -
             Effect: "Allow"
             Principal:
+              Service:
+                - "apigateway.amazonaws.com"
               Federated:
                 - "cognito-identity.amazonaws.com"
             Action:

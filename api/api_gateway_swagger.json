@@ -1,19 +1,17 @@
 {
   "swagger": "2.0",
   "info": {
-    "description": "Tacocat Gallery API spec for use with Amazon AWS API Gateway.",
+    "version": "2018-11-02T04:06:20Z",
     "title": "Tacocat Gallery API"
   },
+  "host": "nv6jps3f66.execute-api.us-west-2.amazonaws.com",
+  "basePath": "/prod",
   "schemes": [
     "https"
   ],
   "paths": {
     "/": {
       "get": {
-        "tags": [
-          "albums"
-        ],
-        "description": "HTML web page containing API usage information",
         "consumes": [
           "application/json"
         ],
@@ -22,11 +20,10 @@
         ],
         "responses": {
           "200": {
-            "description": "Successful operation",
+            "description": "200 response",
             "headers": {
               "Content-Type": {
-                "type": "string",
-                "description": "Media type of request"
+                "type": "string"
               }
             }
           }
@@ -43,20 +40,19 @@
               }
             }
           },
-          "passthroughBehavior": "when_no_match",
           "requestTemplates": {
             "application/json": "{\"statusCode\": 200}"
           },
+          "passthroughBehavior": "when_no_match",
           "type": "mock"
         }
       }
     },
     "/album": {
       "get": {
-        "tags": [
-          "albums"
+        "consumes": [
+          "application/json"
         ],
-        "summary": "Retrieve root album",
         "produces": [
           "application/json"
         ],
@@ -64,57 +60,47 @@
           {
             "name": "type",
             "in": "query",
-            "description": "The depth of the albums to return",
             "required": false,
             "type": "string"
           },
           {
             "name": "page",
             "in": "query",
-            "description": "Page number of results to return.",
             "required": false,
             "type": "string"
           }
         ],
         "responses": {
           "200": {
-            "description": "Successful operation",
+            "description": "200 response",
             "schema": {
               "$ref": "#/definitions/Albums"
             },
             "headers": {
               "Access-Control-Allow-Origin": {
-                "type": "string",
-                "description": "URI that may access the resource"
+                "type": "string"
               }
             }
           }
         },
         "x-amazon-apigateway-integration": {
+          "credentials": "arn:aws:iam::010410881828:role/TacocatGallery-TestClientIAMRole-1UN3GJHFFSDK5",
+          "uri": "arn:aws:apigateway:us-west-2:dynamodb:action/Query",
           "responses": {
             "default": {
-              "statusCode": "200",
-              "responseParameters": {
-                "method.response.header.Access-Control-Allow-Origin": "'*'"
-              }
+              "statusCode": "200"
             }
           },
-          "requestParameters": {
-            "integration.request.querystring.page": "method.request.querystring.page",
-            "integration.request.querystring.type": "method.request.querystring.type"
+          "requestTemplates": {
+            "application/json": "{\n\t\"TableName\":\"TacocatGallery-AlbumMetadataDDBTable-NOZGIWFCNOA7\",\n\t\"IndexName\":\"userID-creationTime-index\",\n\t\"KeyConditionExpression\":\"userID = :userID\",\n\t\"ExpressionAttributeValues\": \n\t\t{\n\t\t\t\":userID\":\n\t\t\t\t{\"S\":\"moses\"}\n\t\t},\n\t\"ScanIndexForward\":false\n}"
           },
-          "uri": "http://petstore-demo-endpoint.execute-api.com/petstore/pets",
           "passthroughBehavior": "when_no_match",
-          "httpMethod": "GET",
-          "type": "http"
+          "httpMethod": "POST",
+          "type": "aws"
         }
       },
       "post": {
-        "tags": [
-          "albums"
-        ],
         "operationId": "CreateAlbum",
-        "summary": "Create an album",
         "consumes": [
           "application/json"
         ],
@@ -133,19 +119,19 @@
         ],
         "responses": {
           "200": {
-            "description": "Successful operation",
+            "description": "200 response",
             "schema": {
               "$ref": "#/definitions/NewAlbumResponse"
             },
             "headers": {
               "Access-Control-Allow-Origin": {
-                "type": "string",
-                "description": "URI that may access the resource"
+                "type": "string"
               }
             }
           }
         },
         "x-amazon-apigateway-integration": {
+          "uri": "http://petstore-demo-endpoint.execute-api.com/petstore/pets",
           "responses": {
             "default": {
               "statusCode": "200",
@@ -154,7 +140,6 @@
               }
             }
           },
-          "uri": "http://petstore-demo-endpoint.execute-api.com/petstore/pets",
           "passthroughBehavior": "when_no_match",
           "httpMethod": "POST",
           "type": "http"
@@ -169,22 +154,19 @@
         ],
         "responses": {
           "200": {
-            "description": "Successful operation",
+            "description": "200 response",
             "schema": {
               "$ref": "#/definitions/Empty"
             },
             "headers": {
               "Access-Control-Allow-Origin": {
-                "type": "string",
-                "description": "URI that may access the resource"
+                "type": "string"
               },
               "Access-Control-Allow-Methods": {
-                "type": "string",
-                "description": "Method or methods allowed when accessing the resource"
+                "type": "string"
               },
               "Access-Control-Allow-Headers": {
-                "type": "string",
-                "description": "Used in response to a preflight request to indicate which HTTP headers can be used when making the request."
+                "type": "string"
               }
             }
           }
@@ -200,20 +182,16 @@
               }
             }
           },
-          "passthroughBehavior": "when_no_match",
           "requestTemplates": {
             "application/json": "{\"statusCode\": 200}"
           },
+          "passthroughBehavior": "when_no_match",
           "type": "mock"
         }
       }
     },
     "/album/{path}": {
       "get": {
-        "tags": [
-          "albums"
-        ],
-        "summary": "Info for a specific album",
         "operationId": "GetAlbum",
         "produces": [
           "application/json"
@@ -222,26 +200,25 @@
           {
             "name": "path",
             "in": "path",
-            "description": "The path of the album to retrieve",
             "required": true,
             "type": "string"
           }
         ],
         "responses": {
           "200": {
-            "description": "Successful operation",
+            "description": "200 response",
             "schema": {
               "$ref": "#/definitions/Album"
             },
             "headers": {
               "Access-Control-Allow-Origin": {
-                "type": "string",
-                "description": "URI that may access the resource"
+                "type": "string"
               }
             }
           }
         },
         "x-amazon-apigateway-integration": {
+          "uri": "http://petstore-demo-endpoint.execute-api.com/petstore/pets/{path}",
           "responses": {
             "default": {
               "statusCode": "200",
@@ -253,7 +230,6 @@
           "requestParameters": {
             "integration.request.path.petId": "method.request.path.path"
           },
-          "uri": "http://petstore-demo-endpoint.execute-api.com/petstore/pets/{path}",
           "passthroughBehavior": "when_no_match",
           "httpMethod": "GET",
           "type": "http"
@@ -270,29 +246,25 @@
           {
             "name": "path",
             "in": "path",
-            "description": "The path of the album to retrieve",
             "required": true,
             "type": "string"
           }
         ],
         "responses": {
           "200": {
-            "description": "Successful operation",
+            "description": "200 response",
             "schema": {
               "$ref": "#/definitions/Empty"
             },
             "headers": {
               "Access-Control-Allow-Origin": {
-                "type": "string",
-                "description": "URI that may access the resource"
+                "type": "string"
               },
               "Access-Control-Allow-Methods": {
-                "type": "string",
-                "description": "Method or methods allowed when accessing the resource"
+                "type": "string"
               },
               "Access-Control-Allow-Headers": {
-                "type": "string",
-                "description": "Used in response to a preflight request to indicate which HTTP headers can be used when making the request."
+                "type": "string"
               }
             }
           }
@@ -308,22 +280,16 @@
               }
             }
           },
-          "passthroughBehavior": "when_no_match",
           "requestTemplates": {
             "application/json": "{\"statusCode\": 200}"
           },
+          "passthroughBehavior": "when_no_match",
           "type": "mock"
         }
       }
     }
   },
   "definitions": {
-    "Albums": {
-      "type": "array",
-      "items": {
-        "$ref": "#/definitions/Album"
-      }
-    },
     "Empty": {
       "type": "object"
     },
@@ -335,6 +301,17 @@
         },
         "message": {
           "type": "string"
+        }
+      }
+    },
+    "NewAlbum": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "$ref": "#/definitions/AlbumType"
+        },
+        "price": {
+          "type": "number"
         }
       }
     },
@@ -352,187 +329,18 @@
         }
       }
     },
-    "NewAlbum": {
-      "type": "object",
-      "properties": {
-        "type": {
-          "$ref": "#/definitions/AlbumType"
-        },
-        "price": {
-          "type": "number"
-        }
-      }
-    },
     "AlbumType": {
       "type": "string",
       "enum": [
         "week",
         "year"
       ]
-    }
-  },
-  "x-amazon-apigateway-documentation": {
-    "version": "v2.1",
-    "createdDate": "2016-11-17T07:03:59Z",
-    "documentationParts": [
-      {
-        "location": {
-          "type": "API"
-        },
-        "properties": {
-          "info": {
-            "description": "Your first API with Amazon API Gateway. This is a sample API that integrates via HTTP with our demo Pet Store endpoints"
-          }
-        }
-      },
-      {
-        "location": {
-          "type": "METHOD",
-          "method": "GET"
-        },
-        "properties": {
-          "tags": [
-            "albums"
-          ],
-          "description": "HTML web page containing API usage information"
-        }
-      },
-      {
-        "location": {
-          "type": "METHOD",
-          "path": "/album/{path+}",
-          "method": "GET"
-        },
-        "properties": {
-          "tags": [
-            "albums"
-          ],
-          "summary": "Info for a specific album"
-        }
-      },
-      {
-        "location": {
-          "type": "METHOD",
-          "path": "/album",
-          "method": "GET"
-        },
-        "properties": {
-          "tags": [
-            "albums"
-          ],
-          "summary": "List all albums"
-        }
-      },
-      {
-        "location": {
-          "type": "METHOD",
-          "path": "/album",
-          "method": "POST"
-        },
-        "properties": {
-          "tags": [
-            "albums"
-          ],
-          "summary": "Create an album"
-        }
-      },
-      {
-        "location": {
-          "type": "PATH_PARAMETER",
-          "path": "/album/{path+}",
-          "method": "*",
-          "name": "path"
-        },
-        "properties": {
-          "description": "The path of the album to retrieve"
-        }
-      },
-      {
-        "location": {
-          "type": "QUERY_PARAMETER",
-          "path": "/album",
-          "method": "GET",
-          "name": "page"
-        },
-        "properties": {
-          "description": "Page number of results to return."
-        }
-      },
-      {
-        "location": {
-          "type": "QUERY_PARAMETER",
-          "path": "/album",
-          "method": "GET",
-          "name": "type"
-        },
-        "properties": {
-          "description": "The type of pet to retrieve"
-        }
-      },
-      {
-        "location": {
-          "type": "REQUEST_BODY",
-          "path": "/album",
-          "method": "POST"
-        },
-        "properties": {
-          "description": "Album object that needs to be added to the store"
-        }
-      },
-      {
-        "location": {
-          "type": "RESPONSE",
-          "method": "*",
-          "statusCode": "200"
-        },
-        "properties": {
-          "description": "Successful operation"
-        }
-      },
-      {
-        "location": {
-          "type": "RESPONSE_HEADER",
-          "method": "OPTIONS",
-          "statusCode": "200",
-          "name": "Access-Control-Allow-Headers"
-        },
-        "properties": {
-          "description": "Used in response to a preflight request to indicate which HTTP headers can be used when making the request."
-        }
-      },
-      {
-        "location": {
-          "type": "RESPONSE_HEADER",
-          "method": "OPTIONS",
-          "statusCode": "200",
-          "name": "Access-Control-Allow-Methods"
-        },
-        "properties": {
-          "description": "Method or methods allowed when accessing the resource"
-        }
-      },
-      {
-        "location": {
-          "type": "RESPONSE_HEADER",
-          "method": "*",
-          "statusCode": "200",
-          "name": "Access-Control-Allow-Origin"
-        },
-        "properties": {
-          "description": "URI that may access the resource"
-        }
-      },
-      {
-        "location": {
-          "type": "RESPONSE_HEADER",
-          "method": "GET",
-          "statusCode": "200",
-          "name": "Content-Type"
-        },
-        "properties": {
-          "description": "Media type of request"
-        }
+    },
+    "Albums": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/Album"
       }
-    ]
+    }
   }
 }
