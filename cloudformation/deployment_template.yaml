@@ -20,16 +20,6 @@ Description: Back end for Tacocat Gallery -- S3 image repo, Lambda processing of
 Transform: 'AWS::Serverless-2016-10-31'
 
 # -----------------------------------------------------------------------------
-# Custom parameters that CloudFormation will ask you to type in values for 
-# before it creates the stack of resources.
-# -----------------------------------------------------------------------------
-Parameters:
-    GalleryInfrastructureBucketName:
-        Type: String
-        Description: Name of the S3 Bucket where the Tacocat Gallery Lambda functions are hosted
-        Default: cloudformationdeploysource
-
-# -----------------------------------------------------------------------------
 # Output values for use after Cloudformation creates the stack, such as to:
 #  - Import into other stacks (to create cross-stack references)
 #  - Return in response (to describe stack calls)
@@ -291,9 +281,7 @@ Resources:
   ImageProcStartExecutionFunction:
     DependsOn: PhotoRepoS3Bucket
     Properties:
-      CodeUri:
-        Bucket: !Ref GalleryInfrastructureBucketName
-        Key: lambda-functions/start-execution
+      CodeUri: ../lambda_functions/start-execution
       Description: "Triggered by S3 image upload to the repo bucket and start the image processing step function workflow"
       Role:
         !GetAtt BackendProcessingLambdaRole.Arn
@@ -310,9 +298,7 @@ Resources:
 
   ExtractImageMetadataFunction:
     Properties:
-      CodeUri:
-        Bucket: !Ref GalleryInfrastructureBucketName
-        Key: lambda-functions/extract-image-metadata
+      CodeUri: ../lambda_functions/extract-image-metadata
       Description: "Lambda function that extracts image metadata such as format, size, geolocation, etc."
       MemorySize: 1024
       Timeout: 200
@@ -322,9 +308,7 @@ Resources:
 
   TransformMetadataFunction:
     Properties:
-      CodeUri:
-        Bucket: !Ref GalleryInfrastructureBucketName
-        Key: lambda-functions/transform-metadata
+      CodeUri: ../lambda_functions/transform-metadata
       Description: "Lambda function that massages JSON of extracted image metadata"
       Role:
         !GetAtt BackendProcessingLambdaRole.Arn
@@ -332,9 +316,7 @@ Resources:
 
   StoreImageMetadataFunction:
     Properties:
-      CodeUri:
-        Bucket: !Ref GalleryInfrastructureBucketName
-        Key: lambda-functions/store-image-metadata
+      CodeUri: ../lambda_functions/store-image-metadata
       Description: "Lambda function that stores image metadata into database"
       Role:
         !GetAtt BackendProcessingLambdaRole.Arn
@@ -348,16 +330,12 @@ Resources:
       Description: "Lambda function that uses Amazon Rekognition to detect labels from image"
       Role:
         !GetAtt BackendProcessingLambdaRole.Arn
-      CodeUri:
-        Bucket: !Ref GalleryInfrastructureBucketName
-        Key: lambda-functions/rekognition
+      CodeUri: ../lambda_functions/rekognition
     Type: AWS::Serverless::Function
 
   GenerateThumbnailFunction:
     Properties:
-      CodeUri:
-        Bucket: !Ref GalleryInfrastructureBucketName
-        Key: lambda-functions/thumbnail
+      CodeUri: ../lambda_functions/thumbnail
       Description: "Lambda function that generates thumbnails for images"
       MemorySize: 1536
       Timeout: 300
@@ -423,9 +401,7 @@ Resources:
       Timeout: 200
       Role:
         !GetAtt CustomResourceHelperRole.Arn
-      CodeUri:
-        Bucket: !Ref GalleryInfrastructureBucketName
-        Key: lambda-functions/create-s3-event-trigger-helper
+      CodeUri: ../lambda_functions/create-s3-event-trigger-helper
     Type: AWS::Serverless::Function
 
   S3EventTrigger:
@@ -485,9 +461,9 @@ Resources:
           ##{{STATEMACHINE_DEF}}
           - {ExtractImageMetadataLambdaArn: !GetAtt ExtractImageMetadataFunction.Arn,
              TransformMetadataLambdaArn: !GetAtt TransformMetadataFunction.Arn,
-            StoreImageMetadataLambdaArn: !GetAtt StoreImageMetadataFunction.Arn,
-            RekognitionLambdaArn: !GetAtt RekognitionFunction.Arn,
-            GenerateThumbnailLambdaArn: !GetAtt GenerateThumbnailFunction.Arn}
+             StoreImageMetadataLambdaArn: !GetAtt StoreImageMetadataFunction.Arn,
+             RekognitionLambdaArn: !GetAtt RekognitionFunction.Arn,
+             GenerateThumbnailLambdaArn: !GetAtt GenerateThumbnailFunction.Arn}
       RoleArn: !GetAtt StateMachineRole.Arn
 
   # ---------------------------------------------------------------------------
@@ -544,9 +520,7 @@ Resources:
       Timeout: 200
       Role:
         !GetAtt DescribeExecutionFunctionRole.Arn
-      CodeUri:
-        Bucket: !Ref GalleryInfrastructureBucketName
-        Key: lambda-functions/state-machine-describe-execution
+      CodeUri: ../lambda_functions/state-machine-describe-execution
     Type: AWS::Serverless::Function
 
   # ---------------------------------------------------------------------------
