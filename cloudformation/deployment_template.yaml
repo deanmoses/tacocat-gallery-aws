@@ -20,6 +20,17 @@ Description: Back end for Tacocat Gallery -- S3 image repo, Lambda processing of
 Transform: 'AWS::Serverless-2016-10-31'
 
 # -----------------------------------------------------------------------------
+# Parameters that can be specified when deploying this template
+# -----------------------------------------------------------------------------
+Parameters: 
+  ApiStage: 
+    Type: String
+    Default: prod
+    AllowedValues: 
+      - prod
+    Description: The AWS API Gateway stage to deploy the API to
+
+# -----------------------------------------------------------------------------
 # Output values for use after Cloudformation creates the stack, such as to:
 #  - Import into other stacks (to create cross-stack references)
 #  - Return in response (to describe stack calls)
@@ -76,6 +87,16 @@ Outputs:
     Description: AWS Cognito Identity Pool of users allowed to use the web app
     Value:
       Ref: TestClientIdentityPool
+  ApiUrl:
+    Description: URL of the Tacocat Gallery AWS API Gateway endpoint
+    Value: !Join
+      - ''
+      - - https://
+        - !Ref TacocatGalleryApi
+        - '.execute-api.'
+        - !Ref AWS::Region
+        - '.amazonaws.com/'
+        - !Ref ApiStage
 
 # -----------------------------------------------------------------------------
 # Shared configuration inherited by all Lambda functions
@@ -92,6 +113,47 @@ Globals:
 # Resources are the actual AWS systems that will be provisioned
 # -----------------------------------------------------------------------------
 Resources:
+
+  #
+  # The Tacocat Gallery API for listing albums etc.  
+  # This is what web and mobile apps connect to.
+  # The API is served up by the AWS API Gateway.
+  #
+  TacocatGalleryApi:
+    Type: AWS::Serverless::Api
+    DependsOn: AlbumMetadataDDBTable
+    Properties:
+      DefinitionUri: ../api/api_gateway_swagger.yaml
+      StageName: !Ref ApiStage
+      Variables:
+        StageName: !Ref ApiStage
+        Role: !Ref TestClientIAMRole
+        Region: !Ref AWS::Region
+        AlbumTableName: !Ref AlbumMetadataDDBTable
+
+  # An API is deployed to a 'stage', like Prod or Dev
+  TacocatGalleryApiStageProd:
+    Type: AWS::ApiGateway::Stage
+    Properties:
+      StageName: Prod
+      Description: Prod Stage
+      RestApiId: !Ref TacocatGalleryApi
+      DeploymentId: !Ref TacocatGalleryApiDeployment
+
+  # Deploy the API to the Stage
+  TacocatGalleryApiDeployment:
+    Type: AWS::ApiGateway::Deployment
+    Properties:
+      RestApiId: !Ref TacocatGalleryApi
+      Description: "Deployment to stage"
+      # DummyStage will create a stage that we aren't going to use.
+      # CloudFormation recommends doing it this way because this
+      # stage is tied to this deployment, which means you can’t delete one
+      # without deleting the other.  For example, if you delete this deployment, 
+      # API Gateway also deletes this stage, which you might want to keep. 
+      # Instead, use the AWS::ApiGateway::Stage resource to create and associate
+      # a stage with this deployment.
+      StageName: "DummyStage"
 
   #
   # S3 bucket containing images

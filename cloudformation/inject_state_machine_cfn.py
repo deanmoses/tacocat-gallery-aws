@@ -37,7 +37,7 @@ def main(argv):
                     for state_machine_line in state_machine_def:
                         fout.write('            ' + state_machine_line)
                     fout.write('\n')
-                    print("placeholder pattern found and replaced.")
+                    print("\nState machine placeholder pattern found and replaced.")
                 else:
                     fout.write(line)
 

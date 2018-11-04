@@ -3,7 +3,6 @@ swagger: "2.0"
 info:
   version: "2018-11-02T04:06:20Z"
   title: "Tacocat Gallery API"
-host: "nv6jps3f66.execute-api.us-west-2.amazonaws.com"
 basePath: "/prod"
 schemes:
 - "https"
@@ -76,13 +75,13 @@ paths:
             Access-Control-Allow-Origin:
               type: "string"
       x-amazon-apigateway-integration:
-        credentials: "arn:aws:iam::010410881828:role/TacocatGallery-TestClientIAMRole-1UN3GJHFFSDK5"
+        credentials: "arn:aws:iam::010410881828:${stageVariables.Role}"
         uri: "arn:aws:apigateway:us-west-2:dynamodb:action/Query"
         responses:
           default:
             statusCode: "200"
         requestTemplates:
-          application/json: "{\n\t\"TableName\":\"TacocatGallery-AlbumMetadataDDBTable-NOZGIWFCNOA7\"\
+          application/json: "{\n\t\"TableName\":\"${stageVariables.AlbumTableName}\"\
             ,\n\t\"IndexName\":\"userID-creationTime-index\",\n\t\"KeyConditionExpression\"\
             :\"userID = :userID\",\n\t\"ExpressionAttributeValues\": \n\t\t{\n\t\t\
             \t\":userID\":\n\t\t\t\t{\"S\":\"moses\"}\n\t\t},\n\t\"ScanIndexForward\"\
