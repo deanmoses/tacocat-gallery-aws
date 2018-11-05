@@ -1,6 +1,6 @@
 {
   "s3Bucket": "refarch-photorepos3bucket-xvqjajtk05bo",
-  "s3Key": "Incoming/0990309876941-bob/ba-IMG_20160706_094820.jpg",
+  "s3Key": "albums/0990309876941-bob/ba-IMG_20160706_094820.jpg",
   "objectID": "0990309876941-bob/ba-IMG_20160706_094820.jpg",
   "extractedMetadata": {
     "creationTime": "2016:07:06 09:48:21",

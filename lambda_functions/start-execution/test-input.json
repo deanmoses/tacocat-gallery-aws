@@ -27,7 +27,7 @@
           "arn": "arn:aws:s3:::photo-sharing-backend-123-photorepos3bucket-1p51462uzs5zi"
         },
         "object": {
-          "key": "Incoming/9926908113841-angelaw/portland-IMG_20160810_163127.jpg",
+          "key": "albums/9926908113841-angelaw/portland-IMG_20160810_163127.jpg",
           "size": 1580973,
           "eTag": "eb3006e76e92335b3a8bf2095eae980e",
           "sequencer": "0058669611A38DD509"

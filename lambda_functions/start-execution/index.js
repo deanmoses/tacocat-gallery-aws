@@ -7,13 +7,18 @@ var docClient = new AWS.DynamoDB.DocumentClient({
     region: process.env.AWS_REGION
 });
 
+/**
+ * A Lambda function that kicks off the image processing state machine every
+ * time a new object is uploaded into the S3 bucket under the "albums/" prefix.
+ */
 exports.handler = (event, context, callback) => {
     const requestId = context.awsRequestId;
 
     console.log("Reading input from event:\n", util.inspect(event, {depth: 5}));
     const srcBucket = event.Records[0].s3.bucket.name;
     const s3key = event.Records[0].s3.object.key;
-    // the s3key has a "Incoming/" prefix
+
+    // the s3 key starts with "albums/".  Remove that.
     const objectID = s3key.substring(s3key.indexOf("/") + 1);
 
     const input = {

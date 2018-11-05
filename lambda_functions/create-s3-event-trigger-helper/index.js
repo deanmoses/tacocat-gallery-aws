@@ -10,8 +10,13 @@ const lambda = new AWS.Lambda({
 });
 
 /**
- * The reason this function is needed is because the native CloudFormation support for defining S3 event notification triggers
- * to Lambda will result in a circular dependency given how the resources are wired together in this template.
+ * A Lambda function that defines the S3 event notification trigger to the
+ * first actual Lambda.
+ * 
+ * This Lambda is necessary because we can't use the native CloudFormation 
+ * support for defining S3 event notification triggers to Lambda: that would  
+ * result in a circular dependency, given how the resources are wired together
+ * in our CloudFormation template.
  */
 exports.handler = function (event, context) {
     console.log("Reading input from event:\n", util.inspect(event, {depth: 5}));
@@ -64,7 +69,7 @@ exports.handler = function (event, context) {
                             FilterRules: [
                                 {
                                     Name: 'prefix',
-                                    Value: 'Incoming/'
+                                    Value: 'albums/'
                                 }
                             ]
                         }

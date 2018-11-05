@@ -9,6 +9,9 @@ const docClient = new AWS.DynamoDB.DocumentClient({
     region: process.env.AWS_REGION
 });
 
+/**
+ * A Lambda function that adds the image to DynamoDB.
+ */
 exports.handler = (event, context, callback) => {
     console.log("Reading input from event:\n", util.inspect(event, {depth: 5}));
     const srcBucket = event.s3Bucket;
@@ -26,6 +29,10 @@ exports.handler = (event, context, callback) => {
         const fileUploadTimeStamp = Math.floor(Date.parse(s3ObjectMetadata.LastModified) / 1000);
         console.log(util.inspect(s3ObjectMetadata, {depth: 5}));
 
+        var albumId =  srcKey; // something like albums/albumName/subalbumName/image.jpg
+        albumId = albumId.substring(albumId.indexOf("/") + 1);  // strip "albums/"
+        albumId = albumId.substring(0, albumId.lastIndexOf("/")); // strip "/image.jpg"
+ 
         var UpdateExpression = 'SET uploadTime = :uploadTime, ' +
             'imageFormat = :format, dimensions = :dimensions, ' +
             'fileSize = :fileSize, userID = :userID, ' +
@@ -36,8 +43,8 @@ exports.handler = (event, context, callback) => {
             ":format": event.extractedMetadata.format,
             ":dimensions": event.extractedMetadata.dimensions,
             ":fileSize": event.extractedMetadata.fileSize,
-            ":userID": s3ObjectMetadata.Metadata.userid,
-            ":albumID": s3ObjectMetadata.Metadata.albumid
+            ":userID": "moses",
+            ":albumID": albumId
         };
 
         if (event.extractedMetadata.geo) {
