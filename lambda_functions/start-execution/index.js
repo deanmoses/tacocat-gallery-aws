@@ -2,10 +2,10 @@ const AWS = require('aws-sdk');
 const stepfunctions = new AWS.StepFunctions();
 const util = require('util');
 const stateMachineArn = process.env.STATE_MACHINE_ARN;
-const tableName = process.env.IMAGE_METADATA_DDB_TABLE;
-var docClient = new AWS.DynamoDB.DocumentClient({
-    region: process.env.AWS_REGION
-});
+// const tableName = process.env.IMAGE_METADATA_DDB_TABLE;
+// var docClient = new AWS.DynamoDB.DocumentClient({
+//     region: process.env.AWS_REGION
+// });
 
 /**
  * A Lambda function that kicks off the image processing state machine every
@@ -27,16 +27,16 @@ exports.handler = (event, context, callback) => {
         objectID: objectID
     };
 
-    const dynamoItem = {
-        imageID: objectID,
-        s3key: s3key,
-    };
+    // const dynamoItem = {
+    //     imageID: objectID,
+    //     s3key: s3key,
+    // };
 
-    const initialItemPutPromise = docClient.put({
-        TableName: tableName,
-        Item: dynamoItem,
-        ConditionExpression: 'attribute_not_exists (imageID)'
-    }).promise();
+    // const initialItemPutPromise = docClient.put({
+    //     TableName: tableName,
+    //     Item: dynamoItem,
+    //     ConditionExpression: 'attribute_not_exists (imageID)'
+    // }).promise();
 
     const stateMachineExecutionParams = {
         stateMachineArn: stateMachineArn,
@@ -45,39 +45,50 @@ exports.handler = (event, context, callback) => {
     };
 
     const executionArnPromise = new Promise((resolve, reject) => {
-        initialItemPutPromise.then(data => {
-            stepfunctions.startExecution(stateMachineExecutionParams)
-                .promise()
-                .then(function (data) {
-                    resolve(data.executionArn);
-                })
-                .catch(function (err) {
-                    reject(err);
-                });
-        }).catch(err => {
-            reject(err);
-        })
+        stepfunctions.startExecution(stateMachineExecutionParams)
+            .promise()
+            .then(function (data) {
+                resolve(data.executionArn);
+            })
+            .catch(function (err) {
+                reject(err);
+            });
     })
 
-    executionArnPromise.then(arn => {
-        var ddbparams = {
-            TableName: tableName,
-            Key: {
-                'imageID': objectID
-            },
-            UpdateExpression: "SET executionArn = :arn",
-            ExpressionAttributeValues: {
-                ":arn": arn
-            },
-            ConditionExpression: 'attribute_exists (imageID)'
-        };
+    // const executionArnPromise = new Promise((resolve, reject) => {
+    //     initialItemPutPromise.then(data => {
+    //         stepfunctions.startExecution(stateMachineExecutionParams)
+    //             .promise()
+    //             .then(function (data) {
+    //                 resolve(data.executionArn);
+    //             })
+    //             .catch(function (err) {
+    //                 reject(err);
+    //             });
+    //     }).catch(err => {
+    //         reject(err);
+    //     })
+    // })
 
-        docClient.update(ddbparams).promise().then(function (data) {
-            callback(null, arn);
-        }).catch(function (err) {
-            callback(err);
-        });
-    }).catch(err => {
-        callback(err);
-    })
+    // executionArnPromise.then(arn => {
+    //     var ddbparams = {
+    //         TableName: tableName,
+    //         Key: {
+    //             'imageID': objectID
+    //         },
+    //         UpdateExpression: "SET executionArn = :arn",
+    //         ExpressionAttributeValues: {
+    //             ":arn": arn
+    //         },
+    //         ConditionExpression: 'attribute_exists (imageID)'
+    //     };
+
+    //     docClient.update(ddbparams).promise().then(function (data) {
+    //         callback(null, arn);
+    //     }).catch(function (err) {
+    //         callback(err);
+    //     });
+    // }).catch(err => {
+    //     callback(err);
+    // })
 };

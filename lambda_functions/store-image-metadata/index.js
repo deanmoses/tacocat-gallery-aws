@@ -10,56 +10,80 @@ const docClient = new AWS.DynamoDB.DocumentClient({
 });
 
 /**
- * A Lambda function that adds the image to DynamoDB.
+ * A Lambda function that creates/updates the image in DynamoDB.
  */
 exports.handler = (event, context, callback) => {
     console.log("Reading input from event:\n", util.inspect(event, {depth: 5}));
     const srcBucket = event.s3Bucket;
     // Object key may have spaces or unicode non-ASCII characters.
     const srcKey = decodeURIComponent(event.s3Key.replace(/\+/g, " "));
-
     const s3ObjectParams = {
         Bucket: srcBucket,
         Key: srcKey
     };
-
     const s3ObjectMetadataPromise = s3.headObject(s3ObjectParams).promise();
-
     s3ObjectMetadataPromise.then((s3ObjectMetadata) => {
+        // the s3 key starts with "albums/".  Remove that.
+        const imageID = event.s3Key.substring(event.s3Key.indexOf("/") + 1);
+        // albumID will be something like albumName/subalbumName
+        var albumID =  srcKey; // srcKey is something like albums/albumName/subalbumName/image.jpg
+        albumID = albumID.substring(albumID.indexOf("/") + 1);  // strip "albums/"
+        albumID = albumID.substring(0, albumID.lastIndexOf("/")); // strip "/image.jpg"
+
+        //
+        // Create the item if it has not already been created
+        //
+        const dynamoItem = {
+            imageID: imageID,
+            s3key: event.s3Key,
+            albumID: albumID,
+            userID: "moses"
+        };
+        const initialItemPutPromise = docClient.put({
+            TableName: tableName,
+            Item: dynamoItem,
+            ConditionExpression: 'attribute_not_exists (imageID)'
+        }).promise();
+        initialItemPutPromise.then(data => {
+            updateImage(srcKey, imageID, s3ObjectMetadata);
+        });
+    });
+};
+
+/**
+ * Update the previously created image.
+ * 
+ * This update will happen every time a new version of the item is 
+ * uploaded to the bucket.
+ */
+function updateImage(event, srcKey, imageID, s3ObjectMetadata) {
         const fileUploadTimeStamp = Math.floor(Date.parse(s3ObjectMetadata.LastModified) / 1000);
         console.log(util.inspect(s3ObjectMetadata, {depth: 5}));
-
-        var albumId =  srcKey; // something like albums/albumName/subalbumName/image.jpg
-        albumId = albumId.substring(albumId.indexOf("/") + 1);  // strip "albums/"
-        albumId = albumId.substring(0, albumId.lastIndexOf("/")); // strip "/image.jpg"
  
         var UpdateExpression = 'SET uploadTime = :uploadTime, ' +
             'imageFormat = :format, dimensions = :dimensions, ' +
-            'fileSize = :fileSize, userID = :userID, ' +
-            'albumID = :albumID';
+            'fileSize = :fileSize ';
 
         var ExpressionAttributeValues = {
             ":uploadTime": fileUploadTimeStamp,
             ":format": event.extractedMetadata.format,
             ":dimensions": event.extractedMetadata.dimensions,
-            ":fileSize": event.extractedMetadata.fileSize,
-            ":userID": "moses",
-            ":albumID": albumId
+            ":fileSize": event.extractedMetadata.fileSize
         };
 
         if (event.extractedMetadata.geo) {
-            UpdateExpression += ", latitude = :latitude"
+            UpdateExpression += ", latitude = :latitude";
             ExpressionAttributeValues[":latitude"] = event.extractedMetadata.geo.latitude;
-            UpdateExpression += ", longitude = :longitude"
+            UpdateExpression += ", longitude = :longitude";
             ExpressionAttributeValues[":longitude"] = event.extractedMetadata.geo.longitude;
         }
 
         if (event.extractedMetadata.exifMake) {
-            UpdateExpression += ", exifMake = :exifMake"
+            UpdateExpression += ", exifMake = :exifMake";
             ExpressionAttributeValues[":exifMake"] = event.extractedMetadata.exifMake;
         }
         if (event.extractedMetadata.exifModel) {
-            UpdateExpression += ", exifModel = :exifModel"
+            UpdateExpression += ", exifModel = :exifModel";
             ExpressionAttributeValues[":exifModel"] = event.extractedMetadata.exifModel;
         }
 
@@ -68,12 +92,12 @@ exports.handler = (event, context, callback) => {
             var tags = labels.map((data) => {
                 return data["Name"];
             });
-            UpdateExpression += ", tags = :tags"
+            UpdateExpression += ", tags = :tags";
             ExpressionAttributeValues[":tags"] = tags;
         }
 
         if (event.parallelResults[1]) {
-            UpdateExpression += ", thumbnail = :thumbnail"
+            UpdateExpression += ", thumbnail = :thumbnail";
             ExpressionAttributeValues[":thumbnail"] = event.parallelResults[1];
         }
 
@@ -83,7 +107,7 @@ exports.handler = (event, context, callback) => {
         var ddbparams = {
             TableName: tableName,
             Key: {
-                'imageID': event.objectID
+                'imageID': imageID
             },
             UpdateExpression: UpdateExpression,
             ExpressionAttributeValues: ExpressionAttributeValues,
@@ -95,5 +119,4 @@ exports.handler = (event, context, callback) => {
         }).catch(function (err) {
             callback(err);
         });
-    })
 }
