@@ -1,0 +1,14 @@
+{
+    "TableName": "TacocatGallery-AlbumMetadataDDBTable-1P6A34IVII89G",
+    "Key": {
+        "albumID": {
+            "S": "moses/halloween"
+        }
+    },
+    "UpdateExpression": "set description = :description",
+    "ConditionExpression": "attribute_exists(albumID)",
+    "ExpressionAttributeValues": {
+        ":description": {"S": "My First Description"}
+    },
+    "ReturnValues": "UPDATED_NEW"
+}
