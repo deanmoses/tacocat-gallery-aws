@@ -31,9 +31,9 @@ exports.handler = (event, context, callback) => {
         albumID = albumID.substring(0, albumID.lastIndexOf("/")); // strip "/image.jpg"
 
         //
-        // Create the item if it has not already been created
+        // Create image in DynamoDB if it has not already been created
         //
-        const dynamoItem = {
+        const dynamoImageItem = {
             imageID: imageID,
             s3key: event.s3Key,
             albumID: albumID,
@@ -41,22 +41,45 @@ exports.handler = (event, context, callback) => {
         };
         const initialItemPutPromise = docClient.put({
             TableName: tableName,
-            Item: dynamoItem,
+            Item: dynamoImageItem,
             ConditionExpression: 'attribute_not_exists (imageID)'
         }).promise();
-        initialItemPutPromise.then(data => {
-            updateImage(srcKey, imageID, s3ObjectMetadata);
+
+
+        initialItemPutPromise.catch(err => {
+            // A ConditionalCheckFailedException error means the image already
+            // exists.  That's not an error; continue.
+            //
+            // Every other error is a real error
+            if (err.errorType !== "ConditionalCheckFailedException") {
+                callback(err);
+            }
+        }).then(data => {
+            updateImage(event, srcKey, imageID, s3ObjectMetadata)
+            .then(data => {
+                callback(null, data);
+            }).catch(err => {
+                callback(err);
+            });
         });
+        // Promise.all([initialItemPutPromise, updateImage(event, srcKey, imageID, s3ObjectMetadata)])
+        // .then(data => {
+        //     callback(null, data);
+        // }).catch(err => {
+        //     callback(err);
+        // });
     });
 };
 
 /**
- * Update the previously created image.
+ * Update the previously created image in DynamoDB.
  * 
  * This update will happen every time a new version of the item is 
  * uploaded to the bucket.
  */
 function updateImage(event, srcKey, imageID, s3ObjectMetadata) {
+    return new Promise(function(resolve, reject) {
+
         const fileUploadTimeStamp = Math.floor(Date.parse(s3ObjectMetadata.LastModified) / 1000);
         console.log(util.inspect(s3ObjectMetadata, {depth: 5}));
  
@@ -115,8 +138,9 @@ function updateImage(event, srcKey, imageID, s3ObjectMetadata) {
         };
 
         docClient.update(ddbparams).promise().then(function (data) {
-            callback(null, data);
+            resolve(data);
         }).catch(function (err) {
-            callback(err);
+            reject(err);
         });
+    });
 }
