@@ -35,7 +35,6 @@ exports.handler = (event, context, callback) => {
         //
         const dynamoImageItem = {
             imageID: imageID,
-            s3key: event.s3Key,
             albumID: albumID,
             userID: "moses"
         };
@@ -86,6 +85,11 @@ function updateImage(event, srcKey, imageID, s3ObjectMetadata) {
             ":dimensions": event.extractedMetadata.dimensions,
             ":fileSize": event.extractedMetadata.fileSize
         };
+
+        if (event.extractedMetadata.creationTime) {
+            UpdateExpression += ", creationTime = :creationTime";
+            ExpressionAttributeValues[":creationTime"] = event.extractedMetadata.creationTime;
+        }
 
         if (event.extractedMetadata.description) {
             UpdateExpression += ", description = :description";
