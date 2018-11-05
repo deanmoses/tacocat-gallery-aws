@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #
-# Deploy the CloudFormation template
+# Deploy the CloudFormation stack
 #
 
 #

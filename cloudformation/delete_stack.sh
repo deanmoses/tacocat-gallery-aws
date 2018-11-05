@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #
-# Delete the stack
+# Delete the CloudFormation stack
 # 
 # Deletes regardless of whether it's deployed, failed to deploy, or any other state
 #
