@@ -87,6 +87,21 @@ function updateImage(event, srcKey, imageID, s3ObjectMetadata) {
             ":fileSize": event.extractedMetadata.fileSize
         };
 
+        if (event.extractedMetadata.description) {
+            UpdateExpression += ", description = :description";
+            ExpressionAttributeValues[":description"] = event.extractedMetadata.description;
+        }
+
+        if (event.extractedMetadata.title) {
+            UpdateExpression += ", title = :title";
+            ExpressionAttributeValues[":title"] = event.extractedMetadata.title;
+        }
+
+        if (event.extractedMetadata.tags) {
+            UpdateExpression += ", tagz = :tagz";
+            ExpressionAttributeValues[":tagz"] = event.extractedMetadata.tags;
+        }
+
         if (event.extractedMetadata.geo) {
             UpdateExpression += ", latitude = :latitude";
             ExpressionAttributeValues[":latitude"] = event.extractedMetadata.geo.latitude;

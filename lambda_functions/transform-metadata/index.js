@@ -9,6 +9,10 @@ exports.handler = (event, context, callback) => {
             result['creationTime'] = event.Properties["exif:DateTimeOriginal"];
         }
 
+        if (event.Properties["exif:ImageDescription"]) {
+            result['description'] = event.Properties["exif:ImageDescription"];
+        }
+
         if (event.Properties["exif:GPSLatitude"] && event.Properties["exif:GPSLatitudeRef"] && event.Properties["exif:GPSLongitude"] && event.Properties["exif:GPSLongitudeRef"]) {
             try {
                 const lat = parseCoordinate(event.Properties["exif:GPSLatitude"], event.Properties["exif:GPSLatitudeRef"]);
@@ -17,7 +21,7 @@ exports.handler = (event, context, callback) => {
                 console.log("long", long);
                 result.geo = {
                     'latitude': lat, "longitude": long
-                }
+                };
             } catch (err) {
                 // ignore failure in parsing coordinates
                 console.log(err);
@@ -33,8 +37,18 @@ exports.handler = (event, context, callback) => {
         result['fileSize'] = event["Filesize"];
         result['format'] = event["format"];
     }
+    if (event.Profiles) {
+        if (event.Profiles["Profile-iptc"]) {
+            if (event.Profiles["Profile-iptc"]["Headline[2,105]"]) {
+                result['title'] = event.Profiles["Profile-iptc"]["Headline[2,105]"];
+            }
+            if (event.Profiles["Profile-iptc"]["Keyword[2,25]"]) {
+                result['tags'] = event.Profiles["Profile-iptc"]["Keyword[2,25]"];
+            }
+        }
+    } 
     callback(null, result);
-}
+};
 
 /**
  *
