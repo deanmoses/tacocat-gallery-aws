@@ -45,7 +45,6 @@ exports.handler = (event, context, callback) => {
             ConditionExpression: 'attribute_not_exists (imageID)'
         }).promise();
 
-
         initialItemPutPromise.catch(err => {
             // A ConditionalCheckFailedException error means the image already
             // exists.  That's not an error; continue.
@@ -62,12 +61,6 @@ exports.handler = (event, context, callback) => {
                 callback(err);
             });
         });
-        // Promise.all([initialItemPutPromise, updateImage(event, srcKey, imageID, s3ObjectMetadata)])
-        // .then(data => {
-        //     callback(null, data);
-        // }).catch(err => {
-        //     callback(err);
-        // });
     });
 };
 
