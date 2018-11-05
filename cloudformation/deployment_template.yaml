@@ -123,29 +123,29 @@ Resources:
     Type: AWS::Serverless::Api
     DependsOn: AlbumMetadataDDBTable
     Properties:
-      DefinitionUri: ../api/api_gateway_swagger.yaml
+      DefinitionUri: ../api/api.yaml
       StageName: !Ref ApiStage
       Variables:
-        StageName: !Ref ApiStage
         Role: !Ref TestClientIAMRole
         Region: !Ref AWS::Region
         AlbumTableName: !Ref AlbumMetadataDDBTable
+        ImageTableName: !Ref ImageMetadataDDBTable
 
   # An API is deployed to a 'stage', like Prod or Dev
-  TacocatGalleryApiStageProd:
-    Type: AWS::ApiGateway::Stage
-    Properties:
-      StageName: Prod
-      Description: Prod Stage
-      RestApiId: !Ref TacocatGalleryApi
-      DeploymentId: !Ref TacocatGalleryApiDeployment
+ # TacocatGalleryApiStageProd:
+ ##   Type: AWS::ApiGateway::Stage
+ #   Properties:
+ #     StageName: prod
+ #     Description: Prod Stage
+ #     RestApiId: !Ref TacocatGalleryApi
+ #     DeploymentId: !Ref TacocatGalleryApiDeployment
 
   # Deploy the API to the Stage
-  TacocatGalleryApiDeployment:
-    Type: AWS::ApiGateway::Deployment
-    Properties:
-      RestApiId: !Ref TacocatGalleryApi
-      Description: "Deployment to stage"
+ # TacocatGalleryApiDeployment:
+ #   Type: AWS::ApiGateway::Deployment
+ #   Properties:
+ #     RestApiId: !Ref TacocatGalleryApi
+ #     Description: "Deployment to stage"
       # DummyStage will create a stage that we aren't going to use.
       # CloudFormation recommends doing it this way because this
       # stage is tied to this deployment, which means you can’t delete one
@@ -153,7 +153,7 @@ Resources:
       # API Gateway also deletes this stage, which you might want to keep. 
       # Instead, use the AWS::ApiGateway::Stage resource to create and associate
       # a stage with this deployment.
-      StageName: "DummyStage"
+ #     StageName: !Ref ApiStage
 
   #
   # S3 bucket containing images
