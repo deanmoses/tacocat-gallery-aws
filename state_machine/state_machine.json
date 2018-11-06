@@ -1,7 +1,23 @@
 {
   "Comment": "Image Processing workflow",
-  "StartAt": "ExtractImageMetadata",
+  "StartAt": "AlbumOrImage",
   "States": {
+    "AlbumOrImage": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.isAlbum",
+          "BooleanEquals": true,
+          "Next": "Done"
+        },
+        {
+          "Variable": "$.isAlbum",
+          "BooleanEquals": false,
+          "Next": "ExtractImageMetadata"
+        }
+      ],
+      "Default": "Done"
+    },
     "ExtractImageMetadata": {
       "Type": "Task",
       "Resource": "${ExtractImageMetadataLambdaArn}",
@@ -136,6 +152,10 @@
           "BackoffRate": 1.5
         }
       ],
+      "End": true
+    },
+    "Done": {
+      "Type": "Pass",
       "End": true
     }
   }

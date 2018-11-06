@@ -2,10 +2,6 @@ const AWS = require('aws-sdk');
 const stepfunctions = new AWS.StepFunctions();
 const util = require('util');
 const stateMachineArn = process.env.STATE_MACHINE_ARN;
-// const tableName = process.env.IMAGE_METADATA_DDB_TABLE;
-// var docClient = new AWS.DynamoDB.DocumentClient({
-//     region: process.env.AWS_REGION
-// });
 
 /**
  * A Lambda function that kicks off the image processing state machine every
@@ -21,22 +17,15 @@ exports.handler = (event, context, callback) => {
     // the s3 key starts with "albums/".  Remove that.
     const objectID = s3key.substring(s3key.indexOf("/") + 1);
 
+    // if the s3 key ends in a "/", it's a prefix (aka an album), not an image or other file
+    const isAlbum = s3key.endsWith("/");
+
     const input = {
         s3Bucket: srcBucket,
         s3Key: s3key,
-        objectID: objectID
+        objectID: objectID,
+        isAlbum: isAlbum
     };
-
-    // const dynamoItem = {
-    //     imageID: objectID,
-    //     s3key: s3key,
-    // };
-
-    // const initialItemPutPromise = docClient.put({
-    //     TableName: tableName,
-    //     Item: dynamoItem,
-    //     ConditionExpression: 'attribute_not_exists (imageID)'
-    // }).promise();
 
     const stateMachineExecutionParams = {
         stateMachineArn: stateMachineArn,
@@ -44,7 +33,7 @@ exports.handler = (event, context, callback) => {
         name: requestId
     };
 
-    const executionArnPromise = new Promise((resolve, reject) => {
+    new Promise((resolve, reject) => {
         stepfunctions.startExecution(stateMachineExecutionParams)
             .promise()
             .then(function (data) {
@@ -53,42 +42,5 @@ exports.handler = (event, context, callback) => {
             .catch(function (err) {
                 reject(err);
             });
-    })
-
-    // const executionArnPromise = new Promise((resolve, reject) => {
-    //     initialItemPutPromise.then(data => {
-    //         stepfunctions.startExecution(stateMachineExecutionParams)
-    //             .promise()
-    //             .then(function (data) {
-    //                 resolve(data.executionArn);
-    //             })
-    //             .catch(function (err) {
-    //                 reject(err);
-    //             });
-    //     }).catch(err => {
-    //         reject(err);
-    //     })
-    // })
-
-    // executionArnPromise.then(arn => {
-    //     var ddbparams = {
-    //         TableName: tableName,
-    //         Key: {
-    //             'imageID': objectID
-    //         },
-    //         UpdateExpression: "SET executionArn = :arn",
-    //         ExpressionAttributeValues: {
-    //             ":arn": arn
-    //         },
-    //         ConditionExpression: 'attribute_exists (imageID)'
-    //     };
-
-    //     docClient.update(ddbparams).promise().then(function (data) {
-    //         callback(null, arn);
-    //     }).catch(function (err) {
-    //         callback(err);
-    //     });
-    // }).catch(err => {
-    //     callback(err);
-    // })
+    });
 };
