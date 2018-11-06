@@ -25,43 +25,58 @@ exports.handler = (event, context, callback) => {
     s3ObjectMetadataPromise.then((s3ObjectMetadata) => {
         // the s3 key starts with "albums/".  Remove that.
         const imageID = event.s3Key.substring(event.s3Key.indexOf("/") + 1);
-        // albumID will be something like albumName/subalbumName
-        var albumID =  srcKey; // srcKey is something like albums/albumName/subalbumName/image.jpg
-        albumID = albumID.substring(albumID.indexOf("/") + 1);  // strip "albums/"
-        albumID = albumID.substring(0, albumID.lastIndexOf("/")); // strip "/image.jpg"
 
-        //
-        // Create image in DynamoDB if it has not already been created
-        //
-        const dynamoImageItem = {
-            imageID: imageID,
-            albumID: albumID,
-            userID: "moses"
-        };
-        const initialItemPutPromise = docClient.put({
-            TableName: tableName,
-            Item: dynamoImageItem,
-            ConditionExpression: 'attribute_not_exists (imageID)'
-        }).promise();
-
-        initialItemPutPromise.catch(err => {
-            // A ConditionalCheckFailedException error means the image already
-            // exists.  That's not an error; continue.
-            //
-            // Every other error is a real error
-            if (err.errorType !== "ConditionalCheckFailedException") {
-                callback(err);
-            }
-        }).then(data => {
+        createImage(srcKey, imageID).then(data => {
             updateImage(event, srcKey, imageID, s3ObjectMetadata)
             .then(data => {
                 callback(null, data);
             }).catch(err => {
                 callback(err);
             });
+        }).catch(err => {
+            callback(err);
         });
     });
 };
+
+/**
+ * Create the image in DynamoDB if it has not already been created.
+ * 
+ * This will be called every time a new version of the item is uploaded to the 
+ * bucket, but it will do nothing every time but the first.
+ */
+function createImage(srcKey, imageID) {
+    return new Promise(function(resolve, reject) {
+        // albumID will be something like albumName/subalbumName
+        var albumID =  srcKey; // srcKey is something like albums/albumName/subalbumName/image.jpg
+        albumID = albumID.substring(albumID.indexOf("/") + 1);  // strip "albums/"
+        albumID = albumID.substring(0, albumID.lastIndexOf("/")); // strip "/image.jpg"
+
+        const dynamoImageItem = {
+            imageID: imageID,
+            albumID: albumID,
+            userID: "moses"
+        };
+        const ddbparams = {
+            TableName: tableName,
+            Item: dynamoImageItem,
+            ConditionExpression: 'attribute_not_exists (imageID)'
+        };
+        docClient.put(ddbparams).promise().then(data => {
+            resolve(data);
+        }).catch(err => {
+            // A ConditionalCheckFailedException error means the image already
+            // exists.  That's not an error.
+            if (err.errorType !== "ConditionalCheckFailedException") {
+                resolve("Success: item already existed");
+            } 
+            // Every other error is a real error
+            else {
+                reject(err);
+            }
+        });
+    });
+}
 
 /**
  * Update the previously created image in DynamoDB.
@@ -139,7 +154,7 @@ function updateImage(event, srcKey, imageID, s3ObjectMetadata) {
         console.log("UpdateExpression", UpdateExpression);
         console.log("ExpressionAttributeValues", ExpressionAttributeValues);
 
-        var ddbparams = {
+        const ddbparams = {
             TableName: tableName,
             Key: {
                 'imageID': imageID
@@ -149,9 +164,9 @@ function updateImage(event, srcKey, imageID, s3ObjectMetadata) {
             ConditionExpression: 'attribute_exists (imageID)'
         };
 
-        docClient.update(ddbparams).promise().then(function (data) {
+        docClient.update(ddbparams).promise().then(data => {
             resolve(data);
-        }).catch(function (err) {
+        }).catch(err => {
             reject(err);
         });
     });
