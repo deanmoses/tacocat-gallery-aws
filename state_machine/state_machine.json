@@ -8,15 +8,14 @@
         {
           "Variable": "$.isAlbum",
           "BooleanEquals": true,
-          "Next": "Done"
+          "Next": "StoreAlbum"
         },
         {
           "Variable": "$.isAlbum",
           "BooleanEquals": false,
           "Next": "ExtractImageMetadata"
         }
-      ],
-      "Default": "Done"
+      ]
     },
     "ExtractImageMetadata": {
       "Type": "Task",
@@ -137,9 +136,9 @@
       "ResultPath": "$.parallelResults",
       "Next": "StoreImageMetadata"
     },
-    "StoreImageMetadata": {
+    "StoreAlbum": {
       "Type": "Task",
-      "Resource": "${StoreImageMetadataLambdaArn}",
+      "Resource": "${StoreAlbumLambdaArn}",
       "InputPath": "$",
       "ResultPath": "$.storeResult",
       "Retry": [
@@ -152,10 +151,6 @@
           "BackoffRate": 1.5
         }
       ],
-      "End": true
-    },
-    "Done": {
-      "Type": "Pass",
       "End": true
     }
   }
