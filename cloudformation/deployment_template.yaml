@@ -121,8 +121,7 @@ Outputs:
 # -----------------------------------------------------------------------------
 Globals:
   Function:
-    #Runtime: nodejs8.10 -- upgrade Node.js after I get everything working
-    Runtime: nodejs4.3
+    Runtime: nodejs8.10
     Timeout: 60
     MemorySize: 256
     Handler: index.handler
