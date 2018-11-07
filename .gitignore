@@ -64,5 +64,5 @@ typings/
 .vscode/settings.json
 
 # Processed cloudformation templates
-cloudformation/deployment_template.provisional.yaml
-cloudformation/deployment_template.final.yaml
+cloudformation/stack.provisional.yaml
+cloudformation/stack.final.yaml
