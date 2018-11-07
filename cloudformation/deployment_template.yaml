@@ -71,8 +71,14 @@ Outputs:
       Fn::GetAtt:
       - RekognitionFunction
       - Arn
+  StoreAlbumLambda:
+    Description: Lambda function that stores the album in DynamoDB
+    Value:
+      Fn::GetAtt:
+      - StoreAlbumFunction
+      - Arn
   StoreImageMetadataLambda:
-    Description: Lambda function that stores the image metadata into DynamoDB
+    Description: Lambda function that stores the image in DynamoDB
     Value:
       Fn::GetAtt:
       - StoreImageMetadataFunction
@@ -313,6 +319,19 @@ Resources:
                 Resource:
                   !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${ImageMetadataDDBTable}"
         -
+          PolicyName: "WriteToAlbumDDBTable"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              -
+                Sid: "WriteToAlbumDDBTable"
+                Effect: "Allow"
+                Action:
+                  -  "dynamodb:UpdateItem"
+                  -  "dynamodb:PutItem"
+                Resource:
+                  !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${AlbumMetadataDDBTable}"
+        -
           PolicyName: "RekognitionDetectLabels"
           PolicyDocument:
             Version: "2012-10-17"
@@ -376,10 +395,21 @@ Resources:
         !GetAtt BackendProcessingLambdaRole.Arn
     Type: AWS::Serverless::Function
 
+  StoreAlbumFunction:
+    Properties:
+      CodeUri: ../lambda_functions/store-album
+      Description: "Lambda function that stores album into DynamoDB"
+      Role:
+        !GetAtt BackendProcessingLambdaRole.Arn
+      Environment:
+        Variables:
+          ALBUM_DDB_TABLE: !Ref AlbumMetadataDDBTable
+    Type: AWS::Serverless::Function
+
   StoreImageMetadataFunction:
     Properties:
       CodeUri: ../lambda_functions/store-image-metadata
-      Description: "Lambda function that stores image metadata into database"
+      Description: "Lambda function that stores image into DynamoDB"
       Role:
         !GetAtt BackendProcessingLambdaRole.Arn
       Environment:
@@ -523,6 +553,7 @@ Resources:
           ##{{STATEMACHINE_DEF}}
           - {ExtractImageMetadataLambdaArn: !GetAtt ExtractImageMetadataFunction.Arn,
              TransformMetadataLambdaArn: !GetAtt TransformMetadataFunction.Arn,
+             StoreAlbumLambdaArn: !GetAtt StoreAlbumFunction.Arn,
              StoreImageMetadataLambdaArn: !GetAtt StoreImageMetadataFunction.Arn,
              RekognitionLambdaArn: !GetAtt RekognitionFunction.Arn,
              GenerateThumbnailLambdaArn: !GetAtt GenerateThumbnailFunction.Arn}

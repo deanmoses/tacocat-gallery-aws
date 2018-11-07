@@ -134,7 +134,24 @@
         }
       ],
       "ResultPath": "$.parallelResults",
-      "Next": "StoreImageMetadata"
+      "Next": "StoreImage"
+    },
+    "StoreImage": {
+      "Type": "Task",
+      "Resource": "${StoreImageMetadataLambdaArn}",
+      "InputPath": "$",
+      "ResultPath": "$.storeResult",
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "States.ALL"
+          ],
+          "IntervalSeconds": 1,
+          "MaxAttempts": 2,
+          "BackoffRate": 1.5
+        }
+      ],
+      "End": true
     },
     "StoreAlbum": {
       "Type": "Task",
