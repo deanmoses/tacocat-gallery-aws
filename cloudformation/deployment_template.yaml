@@ -46,11 +46,11 @@ Outputs:
   DDBAlbumMetadataTable:
     Description: DynamoDB table containing albums
     Value:
-      Ref: "AlbumMetadataDDBTable"
+      Ref: "AlbumDDBTable"
   DDBImageMetadataTable:
     Description: DynamoDB table containing individual images
     Value:
-      Ref: "ImageMetadataDDBTable"
+      Ref: "ImageDDBTable"
   Region:
     Description: AWS Region the stack has been deployed to
     Value:
@@ -77,11 +77,23 @@ Outputs:
       Fn::GetAtt:
       - StoreAlbumFunction
       - Arn
-  StoreImageMetadataLambda:
+  DeleteAlbumLambda:
+    Description: Lambda function that delete the album from DynamoDB
+    Value:
+      Fn::GetAtt:
+      - DeleteAlbumFunction
+      - Arn
+  StoreImageLambda:
     Description: Lambda function that stores the image in DynamoDB
     Value:
       Fn::GetAtt:
-      - StoreImageMetadataFunction
+      - StoreImageFunction
+      - Arn
+  DeleteImageLambda:
+    Description: Lambda function that deletes the image from DynamoDB
+    Value:
+      Fn::GetAtt:
+      - DeleteImageFunction
       - Arn
   ThumbnailLambda:
     Description: Lambda function that creates thumbnail version of image
@@ -127,15 +139,15 @@ Resources:
   #
   TacocatGalleryApi:
     Type: AWS::Serverless::Api
-    DependsOn: AlbumMetadataDDBTable
+    DependsOn: AlbumDDBTable
     Properties:
       DefinitionUri: ../api/api.yaml
       StageName: !Ref ApiStage
       Variables:
         Role: !Ref TestClientIAMRole
         Region: !Ref AWS::Region
-        AlbumTableName: !Ref AlbumMetadataDDBTable
-        ImageTableName: !Ref ImageMetadataDDBTable
+        AlbumTableName: !Ref AlbumDDBTable
+        ImageTableName: !Ref ImageDDBTable
 
   # An API is deployed to a 'stage', like Prod or Dev
  # TacocatGalleryApiStageProd:
@@ -185,7 +197,7 @@ Resources:
   #
   # DynamoDB table for images
   #
-  ImageMetadataDDBTable:
+  ImageDDBTable:
     Type: AWS::DynamoDB::Table
     Properties:
       AttributeDefinitions:
@@ -217,7 +229,7 @@ Resources:
   #
   # DynamoDB table for albums
   #
-  AlbumMetadataDDBTable:
+  AlbumDDBTable:
     Type: AWS::DynamoDB::Table
     Properties:
       AttributeDefinitions:
@@ -320,7 +332,7 @@ Resources:
                   -  "dynamodb:PutItem"
                   -  "dynamodb:DeleteItem"
                 Resource:
-                  !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${ImageMetadataDDBTable}"
+                  !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${ImageDDBTable}"
         -
           PolicyName: "ManageAlbumDDBTable"
           PolicyDocument:
@@ -334,7 +346,7 @@ Resources:
                   -  "dynamodb:PutItem"
                   -  "dynamodb:DeleteItem"
                 Resource:
-                  !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${AlbumMetadataDDBTable}"
+                  !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${AlbumDDBTable}"
         -
           PolicyName: "RekognitionDetectLabels"
           PolicyDocument:
@@ -363,7 +375,7 @@ Resources:
 # This state machine executes the image processing workflow.
 # -----------------------------------------------------------------------------
 
-  ImageProcStartExecutionFunction:
+  ExecuteStepFunctionsFunction:
     DependsOn: PhotoRepoS3Bucket
     Properties:
       CodeUri: ../lambda_functions/start-execution
@@ -372,7 +384,7 @@ Resources:
         !GetAtt BackendProcessingLambdaRole.Arn
       Environment:
         Variables:
-          IMAGE_METADATA_DDB_TABLE: !Ref ImageMetadataDDBTable
+          IMAGE_DDB_TABLE: !Ref ImageDDBTable
           STATE_MACHINE_ARN: !Ref ImageProcStateMachine
     Type: AWS::Serverless::Function
 
@@ -384,17 +396,17 @@ Resources:
   ExtractImageMetadataFunction:
     Properties:
       CodeUri: ../lambda_functions/extract-image-metadata
-      Description: "Lambda function that extracts image metadata such as format, size, geolocation, etc."
+      Description: "Lambda function that extracts image metadata such as format, size, geolocation, etc"
       MemorySize: 1024
       Timeout: 200
       Role:
         !GetAtt BackendProcessingLambdaRole.Arn
     Type: AWS::Serverless::Function
 
-  TransformMetadataFunction:
+  TransformImageMetadataFunction:
     Properties:
-      CodeUri: ../lambda_functions/transform-metadata
-      Description: "Lambda function that massages JSON of extracted image metadata"
+      CodeUri: ../lambda_functions/transform-image-metadata
+      Description: "Lambda function that massages JSON of extracted image metadata into more usable format"
       Role:
         !GetAtt BackendProcessingLambdaRole.Arn
     Type: AWS::Serverless::Function
@@ -402,23 +414,45 @@ Resources:
   StoreAlbumFunction:
     Properties:
       CodeUri: ../lambda_functions/store-album
-      Description: "Lambda function that stores album into DynamoDB"
+      Description: "Lambda function that stores album in DynamoDB"
       Role:
         !GetAtt BackendProcessingLambdaRole.Arn
       Environment:
         Variables:
-          ALBUM_DDB_TABLE: !Ref AlbumMetadataDDBTable
+          ALBUM_DDB_TABLE: !Ref AlbumDDBTable
     Type: AWS::Serverless::Function
 
-  StoreImageMetadataFunction:
+  DeleteAlbumFunction:
     Properties:
-      CodeUri: ../lambda_functions/store-image-metadata
-      Description: "Lambda function that stores image into DynamoDB"
+      CodeUri: ../lambda_functions/delete-album
+      Description: "Lambda function that deletes album from DynamoDB"
       Role:
         !GetAtt BackendProcessingLambdaRole.Arn
       Environment:
         Variables:
-          IMAGE_METADATA_DDB_TABLE: !Ref ImageMetadataDDBTable
+          ALBUM_DDB_TABLE: !Ref AlbumDDBTable
+    Type: AWS::Serverless::Function
+
+  StoreImageFunction:
+    Properties:
+      CodeUri: ../lambda_functions/store-image
+      Description: "Lambda function that stores image in DynamoDB"
+      Role:
+        !GetAtt BackendProcessingLambdaRole.Arn
+      Environment:
+        Variables:
+          IMAGE_DDB_TABLE: !Ref ImageDDBTable
+    Type: AWS::Serverless::Function
+
+  DeleteImageFunction:
+    Properties:
+      CodeUri: ../lambda_functions/delete-image
+      Description: "Lambda function that deletes image from DynamoDB"
+      Role:
+        !GetAtt BackendProcessingLambdaRole.Arn
+      Environment:
+        Variables:
+          IMAGE_DDB_TABLE: !Ref ImageDDBTable
     Type: AWS::Serverless::Function
 
   RekognitionFunction:
@@ -505,16 +539,16 @@ Resources:
     Version: "1.0"
     DependsOn:
       - PhotoRepoS3Bucket
-      - ImageProcStartExecutionFunction
+      - ExecuteStepFunctionsFunction
     Properties:
       ServiceToken:
         !GetAtt CreateS3EventTriggerFunction.Arn
       PhotoRepoS3Bucket:
         !Ref PhotoRepoS3Bucket
       StartExecutionFunctionArn:
-        !GetAtt ImageProcStartExecutionFunction.Arn
+        !GetAtt ExecuteStepFunctionsFunction.Arn
       StartExecutionFunction:
-        !Ref ImageProcStartExecutionFunction
+        !Ref ExecuteStepFunctionsFunction
       accountId:
         !Ref AWS::AccountId
 
@@ -556,9 +590,11 @@ Resources:
           - |-
           ##{{STATEMACHINE_DEF}}
           - {ExtractImageMetadataLambdaArn: !GetAtt ExtractImageMetadataFunction.Arn,
-             TransformMetadataLambdaArn: !GetAtt TransformMetadataFunction.Arn,
+             TransformImageMetadataLambdaArn: !GetAtt TransformImageMetadataFunction.Arn,
              StoreAlbumLambdaArn: !GetAtt StoreAlbumFunction.Arn,
-             StoreImageMetadataLambdaArn: !GetAtt StoreImageMetadataFunction.Arn,
+             DeleteAlbumLambdaArn: !GetAtt DeleteAlbumFunction.Arn,
+             StoreImageLambdaArn: !GetAtt StoreImageFunction.Arn,
+             DeleteImageLambdaArn: !GetAtt DeleteImageFunction.Arn,
              RekognitionLambdaArn: !GetAtt RekognitionFunction.Arn,
              GenerateThumbnailLambdaArn: !GetAtt GenerateThumbnailFunction.Arn}
       RoleArn: !GetAtt StateMachineRole.Arn
@@ -665,10 +701,10 @@ Resources:
                 Action:
                   - "dynamodb:*"
                 Resource:
-                  - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${AlbumMetadataDDBTable}"
-                  - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${AlbumMetadataDDBTable}/*"
-                  - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${ImageMetadataDDBTable}"
-                  - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${ImageMetadataDDBTable}/*"
+                  - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${AlbumDDBTable}"
+                  - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${AlbumDDBTable}/*"
+                  - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${ImageDDBTable}"
+                  - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${ImageDDBTable}/*"
         -
           PolicyName: "InvokeDescribeExecutionLambda"
           PolicyDocument:

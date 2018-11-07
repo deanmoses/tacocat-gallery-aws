@@ -2,7 +2,7 @@
 const AWS = require('aws-sdk');
 const util = require('util');
 
-const tableName = process.env.IMAGE_METADATA_DDB_TABLE;
+const tableName = process.env.IMAGE_DDB_TABLE;
 // get reference to S3 client
 const s3 = new AWS.S3();
 const docClient = new AWS.DynamoDB.DocumentClient({

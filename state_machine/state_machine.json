@@ -1,19 +1,61 @@
 {
   "Comment": "Image Processing workflow",
-  "StartAt": "AlbumOrImage",
+  "StartAt": "ChooseAction",
   "States": {
-    "AlbumOrImage": {
+    "ChooseAction": {
       "Type": "Choice",
       "Choices": [
         {
-          "Variable": "$.isAlbum",
-          "BooleanEquals": true,
+          "And": [
+            {
+              "Variable": "$.isAlbum",
+              "BooleanEquals": true
+            },
+            {
+              "Variable": "$.action",
+              "StringEquals": "create"
+            }
+          ],
           "Next": "StoreAlbum"
         },
         {
-          "Variable": "$.isAlbum",
-          "BooleanEquals": false,
+          "And": [
+            {
+              "Variable": "$.isAlbum",
+              "BooleanEquals": true
+            },
+            {
+              "Variable": "$.action",
+              "StringEquals": "delete"
+            }
+          ],
+          "Next": "DeleteAlbum"
+        },
+        {
+          "And": [
+            {
+              "Variable": "$.isAlbum",
+              "BooleanEquals": false
+            },
+            {
+              "Variable": "$.action",
+              "StringEquals": "create"
+            }
+          ],
           "Next": "ExtractImageMetadata"
+        },
+        {
+          "And": [
+            {
+              "Variable": "$.isAlbum",
+              "BooleanEquals": false
+            },
+            {
+              "Variable": "$.action",
+              "StringEquals": "delete"
+            }
+          ],
+          "Next": "DeleteImage"
         }
       ]
     },
@@ -62,14 +104,14 @@
               "StringEquals": "PNG"
             }
           ],
-          "Next": "TransformMetadata"
+          "Next": "TransformImageMetadata"
         }
       ],
       "Default": "NotSupportedImageType"
     },
-    "TransformMetadata": {
+    "TransformImageMetadata": {
       "Type": "Task",
-      "Resource": "${TransformMetadataLambdaArn}",
+      "Resource": "${TransformImageMetadataLambdaArn}",
       "InputPath": "$.extractedMetadata",
       "ResultPath": "$.extractedMetadata",
       "Retry": [
@@ -138,7 +180,24 @@
     },
     "StoreImage": {
       "Type": "Task",
-      "Resource": "${StoreImageMetadataLambdaArn}",
+      "Resource": "${StoreImageLambdaArn}",
+      "InputPath": "$",
+      "ResultPath": "$.storeResult",
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "States.ALL"
+          ],
+          "IntervalSeconds": 1,
+          "MaxAttempts": 2,
+          "BackoffRate": 1.5
+        }
+      ],
+      "End": true
+    },
+    "DeleteImage": {
+      "Type": "Task",
+      "Resource": "${DeleteImageLambdaArn}",
       "InputPath": "$",
       "ResultPath": "$.storeResult",
       "Retry": [
@@ -156,6 +215,23 @@
     "StoreAlbum": {
       "Type": "Task",
       "Resource": "${StoreAlbumLambdaArn}",
+      "InputPath": "$",
+      "ResultPath": "$.storeResult",
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "States.ALL"
+          ],
+          "IntervalSeconds": 1,
+          "MaxAttempts": 2,
+          "BackoffRate": 1.5
+        }
+      ],
+      "End": true
+    },
+    "DeleteAlbum": {
+      "Type": "Task",
+      "Resource": "${DeleteAlbumLambdaArn}",
       "InputPath": "$",
       "ResultPath": "$.storeResult",
       "Retry": [

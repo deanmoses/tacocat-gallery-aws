@@ -9,8 +9,8 @@
   "ResourceProperties": {
     "ServiceToken": "arn:aws:lambda:us-west-2:123456789012:function:photo-sharing-backend-CreateS3EventTriggerFunction-1MTXAWKC2LXF",
     "accountId": "123456789012",
-    "StartExecutionFunction": "photo-sharing-backend-ImageProcStartExecutionFunction-CSMQX9E7369E",
-    "StartExecutionFunctionArn": "arn:aws:lambda:us-west-2:123456789012:function:photo-sharing-backend-ImageProcStartExecutionFunction-CSMQX9E7369E",
+    "StartExecutionFunction": "photo-sharing-backend-ExecuteStepFunctionsFunction-CSMQX9E7369E",
+    "StartExecutionFunctionArn": "arn:aws:lambda:us-west-2:123456789012:function:photo-sharing-backend-ExecuteStepFunctionsFunction-CSMQX9E7369E",
     "PhotoRepoS3Bucket": "photo-sharing-backend-photorepos3bucket-1kdx8v1un1flb"
   }
 }
