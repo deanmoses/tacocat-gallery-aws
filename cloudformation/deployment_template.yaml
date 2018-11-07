@@ -371,14 +371,13 @@ Resources:
                 Resource: "*"
 
 # -----------------------------------------------------------------------------
-# This Lambda function triggers the start of the Step Functions state machine.
-# This state machine executes the image processing workflow.
+# This Lambda function triggers the start of the Step Functions state machine
 # -----------------------------------------------------------------------------
 
   ExecuteStepFunctionsFunction:
     DependsOn: PhotoRepoS3Bucket
     Properties:
-      CodeUri: ../lambda_functions/start-execution
+      CodeUri: ../lambda_functions/start_state_machine
       Description: "Triggered by S3 image upload to the repo bucket and start the image processing step function workflow"
       Role:
         !GetAtt BackendProcessingLambdaRole.Arn
@@ -390,12 +389,13 @@ Resources:
 
 # -----------------------------------------------------------------------------
 # These Lambda functions comprise the Step Functions state machine.
-# This state machine executes the image processing workflow.
+# The state machine processes album folder and image file additions and 
+# deletions from a S3 bucket and puts that information into DynamoDB.
 # -----------------------------------------------------------------------------
 
   ExtractImageMetadataFunction:
     Properties:
-      CodeUri: ../lambda_functions/extract-image-metadata
+      CodeUri: ../lambda_functions/extract_image_metadata
       Description: "Lambda function that extracts image metadata such as format, size, geolocation, etc"
       MemorySize: 1024
       Timeout: 200
@@ -405,7 +405,7 @@ Resources:
 
   TransformImageMetadataFunction:
     Properties:
-      CodeUri: ../lambda_functions/transform-image-metadata
+      CodeUri: ../lambda_functions/transform_image_metadata
       Description: "Lambda function that massages JSON of extracted image metadata into more usable format"
       Role:
         !GetAtt BackendProcessingLambdaRole.Arn
@@ -413,7 +413,7 @@ Resources:
 
   StoreAlbumFunction:
     Properties:
-      CodeUri: ../lambda_functions/store-album
+      CodeUri: ../lambda_functions/store_album
       Description: "Lambda function that stores album in DynamoDB"
       Role:
         !GetAtt BackendProcessingLambdaRole.Arn
@@ -424,7 +424,7 @@ Resources:
 
   DeleteAlbumFunction:
     Properties:
-      CodeUri: ../lambda_functions/delete-album
+      CodeUri: ../lambda_functions/delete_album
       Description: "Lambda function that deletes album from DynamoDB"
       Role:
         !GetAtt BackendProcessingLambdaRole.Arn
@@ -435,7 +435,7 @@ Resources:
 
   StoreImageFunction:
     Properties:
-      CodeUri: ../lambda_functions/store-image
+      CodeUri: ../lambda_functions/store_image
       Description: "Lambda function that stores image in DynamoDB"
       Role:
         !GetAtt BackendProcessingLambdaRole.Arn
@@ -446,7 +446,7 @@ Resources:
 
   DeleteImageFunction:
     Properties:
-      CodeUri: ../lambda_functions/delete-image
+      CodeUri: ../lambda_functions/delete_image
       Description: "Lambda function that deletes image from DynamoDB"
       Role:
         !GetAtt BackendProcessingLambdaRole.Arn
@@ -531,7 +531,7 @@ Resources:
       Timeout: 200
       Role:
         !GetAtt CustomResourceHelperRole.Arn
-      CodeUri: ../lambda_functions/create-s3-event-trigger-helper
+      CodeUri: ../lambda_functions/create_s3_event_trigger_helper
     Type: AWS::Serverless::Function
 
   S3EventTrigger:
@@ -653,7 +653,7 @@ Resources:
       Timeout: 200
       Role:
         !GetAtt DescribeExecutionFunctionRole.Arn
-      CodeUri: ../lambda_functions/state-machine-describe-execution
+      CodeUri: ../lambda_functions/describe_state_machine_execution
     Type: AWS::Serverless::Function
 
   # ---------------------------------------------------------------------------
