@@ -62,7 +62,7 @@ exports.handler = function (event, context) {
         NotificationConfiguration: {
             LambdaFunctionConfigurations: [
                 {
-                    Events: ['s3:ObjectCreated:*'],
+                    Events: ['s3:ObjectCreated:*','s3:ObjectRemoved:*'],
                     LambdaFunctionArn: input.StartExecutionFunctionArn,
                     Filter: {
                         Key: {

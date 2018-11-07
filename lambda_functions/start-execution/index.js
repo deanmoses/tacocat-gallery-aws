@@ -20,11 +20,23 @@ exports.handler = (event, context, callback) => {
     // if the s3 key ends in a "/", it's a prefix (aka an album), not an image or other file
     const isAlbum = s3key.endsWith("/");
 
+    var action;
+    if (event.Records[0].eventName.includes("Created")) {
+        action = "create";
+    }
+    else if (event.Records[0].eventName.includes("Removed")) {
+        action = "delete";
+    }
+    else {
+        callback("Unhandled event: " + event.Records[0].eventName);
+    }
+
     const input = {
         s3Bucket: srcBucket,
         s3Key: s3key,
         objectID: objectID,
-        isAlbum: isAlbum
+        isAlbum: isAlbum,
+        action: action
     };
 
     const stateMachineExecutionParams = {

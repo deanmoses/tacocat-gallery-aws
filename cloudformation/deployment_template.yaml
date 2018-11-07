@@ -247,10 +247,12 @@ Resources:
           WriteCapacityUnits: '1'
 
   # ---------------------------------------------------------------------------
-  # IAM role used by Lambda functions that executes the image processing 
+  # IAM role used by all the Lambda functions that executes the image processing 
   # workflow, so it has the union of the required permissions for these Lambda
-  # functions. You might instead create individual IAM roles for each Lambda 
-  # function to follow the Least privilege principle. This template consolidates
+  # functions. 
+  #
+  # Amazon best practices would instead create individual IAM roles for each 
+  # Lambda to follow the Least privilege principle. This template consolidates
   # them simply to reduce the number of IAM roles it takes up in your account.
   # ---------------------------------------------------------------------------
   BackendProcessingLambdaRole:
@@ -306,29 +308,31 @@ Resources:
                 Resource:
                   !Sub "arn:aws:s3:::${PhotoRepoS3Bucket}/*"
         -
-          PolicyName: "WriteToImageMetadataDDBTable"
+          PolicyName: "ManageImageDDBTable"
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
               -
-                Sid: "WriteToImageMetadataDDBTable"
+                Sid: "ManageImageDDBTable"
                 Effect: "Allow"
                 Action:
                   -  "dynamodb:UpdateItem"
                   -  "dynamodb:PutItem"
+                  -  "dynamodb:DeleteItem"
                 Resource:
                   !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${ImageMetadataDDBTable}"
         -
-          PolicyName: "WriteToAlbumDDBTable"
+          PolicyName: "ManageAlbumDDBTable"
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
               -
-                Sid: "WriteToAlbumDDBTable"
+                Sid: "ManageAlbumDDBTable"
                 Effect: "Allow"
                 Action:
                   -  "dynamodb:UpdateItem"
                   -  "dynamodb:PutItem"
+                  -  "dynamodb:DeleteItem"
                 Resource:
                   !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${AlbumMetadataDDBTable}"
         -
