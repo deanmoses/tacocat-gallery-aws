@@ -9,7 +9,7 @@ const tableName = process.env.ALBUM_DDB_TABLE;
 const s3 = new AWS.S3();
 
 const docClient = new AWS.DynamoDB.DocumentClient({
-    region: awsRegion
+    region: process.env.AWS_REGION
 });
 
 /**
