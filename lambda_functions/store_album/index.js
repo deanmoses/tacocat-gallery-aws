@@ -15,18 +15,10 @@ const docClient = new AWS.DynamoDB.DocumentClient({
 /**
  * A Lambda function that creates the album in DynamoDB.
  */
-exports.handler = (event, context, callback) => {
-    console.log("Reading input from event:\n", util.inspect(event, {depth: 1}));
-
-    getS3ObjectMetadata(s3, event.s3Bucket, event.s3Key).then((s3ObjectMetadata) => {
-        const fileUploadTimeStamp = Math.floor(Date.parse(s3ObjectMetadata.LastModified) / 1000);
-        const albumId = getAlbumId(event.s3Key);
-        createAlbum(docClient, tableName, albumId, fileUploadTimeStamp).then(data => {
-            callback(null, data);
-        }).catch(err => {
-            callback(err);
-        });
-    }).catch(err => {
-        callback(err);
-    });
+exports.handler = async (event) => {
+    // console.log("Reading input from event:\n", util.inspect(event, {depth: 1}));
+    const s3ObjectMetadata = await getS3ObjectMetadata(s3, event.s3Bucket, event.s3Key);
+    const fileUploadTimeStamp = Math.floor(Date.parse(s3ObjectMetadata.LastModified) / 1000);
+    const albumId = getAlbumId(event.s3Key);
+    return createAlbum(docClient, tableName, albumId, fileUploadTimeStamp);
 };
