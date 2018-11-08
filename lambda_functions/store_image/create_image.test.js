@@ -1,13 +1,12 @@
-const createAlbum = require('./create_album.js');
+const createImage = require('./create_image.js');
 const AWS = require('aws-sdk')
 const AWS_MOCK = require('aws-sdk-mock');
-const s3bucket = "myTestBucket";
-const s3key = "myS3key";
 const awsRegion = "us-west-2";
-const albumId = "/not/an/album"
-const fileUploadTimeStamp = 100000;
+const tableName = "NotRealImageTable";
+const imageId = "/not/a/real/image.jpg";
+const albumId = "/not/a/real/album"
 
-test('Create Album', async () => {
+test('Create Image', async () => {
     expect.assertions(2);
 
     // Mock out the AWS method
@@ -18,7 +17,7 @@ test('Create Album', async () => {
         region: awsRegion
     });
 
-    const createResult = await createAlbum(docClient, albumId, fileUploadTimeStamp);
+    const createResult = await createImage(docClient, tableName, imageId, albumId);
     expect(createResult).toBeDefined();
     //console.log(createResult);
     expect(createResult).toBe("success");
