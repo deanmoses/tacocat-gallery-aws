@@ -1,0 +1,23 @@
+{
+  "name": "tacocat-gallery-aws",
+  "version": "1.0.0",
+  "description": "The AWS serverless back end infrastructure for the Tacocat image gallery",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/deanmoses/tacocat-gallery-aws.git"
+  },
+  "author": "Dean Moses <moses@tacocat.com>",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/deanmoses/tacocat-gallery-aws/issues"
+  },
+  "homepage": "https://github.com/deanmoses/tacocat-gallery-aws#readme",
+  "devDependencies": {
+    "aws-sdk-mock": "^4.2.0",
+    "jest": "^23.6.0"
+  }
+}
