@@ -1,3 +1,5 @@
+const getParentFromPath = require("./parent_path.js");
+
 /**
  * Create image in DynamoDB if it has not already been created.
  *
@@ -8,12 +10,11 @@
  * @param {*} docClient AWS DynamoDB DocumentClient
  * @param {*} tableName Name of the Image table in DynamoDB
  * @param {*} imageId ID of the image in DynamoDB
- * @param {*} albumId ID of the album in DynamoDB
  */
-function createImage(docClient, tableName, imageId, albumId) {
+function createImage(docClient, tableName, imageId) {
 	const dynamoImageItem = {
 		imageID: imageId,
-		albumID: albumId
+		albumID: getParentFromPath(imageId)
 	};
 	const ddbparams = {
 		TableName: tableName,
