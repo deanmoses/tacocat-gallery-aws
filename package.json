@@ -25,5 +25,8 @@
     "eslint-plugin-promise": "^4.0.1",
     "eslint-plugin-standard": "^4.0.0",
     "jest": "^23.6.0"
+  },
+  "dependencies": {
+    "aws-sdk": "^2.352.0"
   }
 }
