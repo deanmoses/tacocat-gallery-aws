@@ -1,7 +1,7 @@
 const AWS = require("aws-sdk");
 //const util = require('util');
 const getS3ObjectMetadata = require("./get_s3_object_metadata.js");
-const getAlbumId = require("./album_id.js");
+const getAlbumPathFromS3key = require("./album_id.js");
 const createAlbum = require("./create_album.js");
 
 const tableName = process.env.ALBUM_DDB_TABLE;
@@ -25,6 +25,6 @@ exports.handler = async event => {
 	const fileUploadTimeStamp = Math.floor(
 		Date.parse(s3ObjectMetadata.LastModified) / 1000
 	);
-	const albumId = getAlbumId(event.s3Key);
-	return createAlbum(docClient, tableName, albumId, fileUploadTimeStamp);
+	const albumPath = getAlbumPathFromS3key(event.s3Key);
+	return createAlbum(docClient, tableName, albumPath, fileUploadTimeStamp);
 };
