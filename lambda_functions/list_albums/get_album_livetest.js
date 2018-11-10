@@ -10,7 +10,7 @@ async function get(albumId) {
 }
 
 async function doTest() {
-	const result = await get("200111");
+	const result = await get("2001");
 	//console.log("result: ", result);
 	return result;
 }
