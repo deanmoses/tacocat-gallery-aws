@@ -112,7 +112,7 @@ Outputs:
     Value:
       Ref: TestClientIdentityPool
   ApiUrl:
-    Description: URL of the Tacocat Gallery AWS API Gateway endpoint
+    Description: URL of the gallery API endpoint
     Value: !Join
       - ""
       - - https://
@@ -137,7 +137,7 @@ Globals:
 # -----------------------------------------------------------------------------
 Resources:
   #
-  # The Tacocat Gallery API for listing albums etc.
+  # The API for listing albums etc.
   # This is what web and mobile apps connect to.
   # The API is served up by the AWS API Gateway.
   #
@@ -291,7 +291,7 @@ Resources:
                 - "lambda.amazonaws.com"
             Action:
               - "sts:AssumeRole"
-      Path: "/MediaSharingRefarch/"
+      Path: "/Gallery/"
       Policies:
         - PolicyName: "LambdaWriteCWLogs"
           PolicyDocument:
@@ -472,7 +472,7 @@ Resources:
           IMAGE_DDB_TABLE: !Ref ImageDDBTable
     Type: AWS::Serverless::Function
 
-  # Role for Lambdas used by the Tacocat Gallery API Gateway that need read-only access to DynamoDB
+  # Role for Lambdas used by the Gallery API that need read-only access to DynamoDB
   ApiGatewayLambdaReadOnlyRole:
     Type: "AWS::IAM::Role"
     Properties:
@@ -518,7 +518,7 @@ Resources:
                 - "lambda.amazonaws.com"
             Action:
               - "sts:AssumeRole"
-      Path: "/MediaSharingRefarch/"
+      Path: "/Gallery/"
       Policies:
         - PolicyName: "LambdaWriteCWLogs"
           PolicyDocument:
@@ -601,7 +601,7 @@ Resources:
               Service: !Sub states.${AWS::Region}.amazonaws.com
             Action:
               - "sts:AssumeRole"
-      Path: "/MediaSharingRefarch/"
+      Path: "/Gallery/"
       Policies:
         - PolicyName: "InvokeLambda"
           PolicyDocument:
@@ -633,7 +633,7 @@ Resources:
                 - "lambda.amazonaws.com"
             Action:
               - "sts:AssumeRole"
-      Path: "/MediaSharingRefarch/"
+      Path: "/Gallery/"
       Policies:
         - PolicyName: "LambdaWriteCWLogs"
           PolicyDocument:
