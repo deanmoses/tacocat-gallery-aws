@@ -8,7 +8,8 @@ function getAlbumPathFromS3key(s3key) {
 	var albumId = decodeURIComponent(s3key.replace(/\+/g, " "));
 	albumId = albumId.substring(albumId.indexOf("/") + 1); // strip "albums/"
 	albumId = albumId.substring(0, albumId.lastIndexOf("/")); // strip last "/"
-	// final albumID will be something like albumName/subalbumName
+	if (albumId.lastIndexOf("/", 0) !== 0) albumId = "/" + albumId; // make sure albumId starts with a "/"
+	// final albumId will be something like /albumName/subalbumName
 	return albumId;
 }
 

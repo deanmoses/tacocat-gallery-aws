@@ -1,17 +1,17 @@
 openapi: "3.0.1"
 info:
   title: "Tacocat Gallery API"
-  version: "2018-11-02T15:17:31Z"
+  version: "2018-11-09T16:17:31Z"
 paths:
   /album/{path}:
     get:
       operationId: "GetAlbum"
       parameters:
-      - name: "path"
-        in: "path"
-        required: true
-        schema:
-          type: "string"
+        - name: "path"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
       responses:
         200:
           description: "200 response"
@@ -25,26 +25,23 @@ paths:
                 $ref: "#/components/schemas/Album"
       x-amazon-apigateway-integration:
         credentials: "arn:aws:iam::010410881828:role/${stageVariables.Role}"
-        uri: "arn:aws:apigateway:us-west-2:dynamodb:action/Query"
+        uri: "arn:aws:apigateway:us-west-2:lambda:path/2015-03-31/functions/arn:aws:lambda:us-west-2:010410881828:function:${stageVariables.GetAlbumFunctionName}/invocations"
         responses:
           default:
             statusCode: "200"
-        requestTemplates:
-          application/json: "{\n\t\"TableName\":\"${stageVariables.ImageTableName}\"\
-            ,\n\t\"IndexName\":\"albumID-uploadTime-index\",\n\t\"KeyConditionExpression\"\
-            :\"albumID = :albumID\",\n\t\"ExpressionAttributeValues\":{\":albumID\"\
-            :{\"S\":\"moses/$input.params('path')\"}},\n\t\"ScanIndexForward\":false\n\
-            }"
+          requestTemplates:
+            application/json: "{\n  \"albumPath\": \"$input.params('path')\"\n}"
         passthroughBehavior: "when_no_templates"
         httpMethod: "POST"
+        contentHandling: "CONVERT_TO_TEXT"
         type: "aws"
     post:
       parameters:
-      - name: "path"
-        in: "path"
-        required: true
-        schema:
-          type: "string"
+        - name: "path"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
       responses:
         200:
           description: "200 response"
@@ -59,7 +56,8 @@ paths:
           default:
             statusCode: "200"
         requestTemplates:
-          application/json: "{\n\t\"TableName\":\"${stageVariables.AlbumTableName}\"\
+          application/json:
+            "{\n\t\"TableName\":\"${stageVariables.AlbumTableName}\"\
             ,\n\t\"Item\":\n\t{\n\t\t\"albumID\":{\"S\":\"moses/$input.params('path')\"\
             },\n\t\t\"userID\":{\"S\":\"moses\"},\n\t\t\"name\":{\"S\":\"$input.params('path')\"\
             },\n\t\t\"creationTime\":{\"N\":\"$context.requestTimeEpoch\"}\n\t},\n\
@@ -69,11 +67,11 @@ paths:
         type: "aws"
     delete:
       parameters:
-      - name: "path"
-        in: "path"
-        required: true
-        schema:
-          type: "string"
+        - name: "path"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
       responses:
         200:
           description: "200 response"
@@ -88,7 +86,8 @@ paths:
           default:
             statusCode: "200"
         requestTemplates:
-          application/json: "{\n    \"TableName\": “:AlbumTableName\",\n    \"Key\"\
+          application/json:
+            "{\n    \"TableName\": “:AlbumTableName\",\n    \"Key\"\
             : {\n        \"albumID\": {\n            \"S\": \"moses/:albumID\"\n \
             \       }\n    },\n    \"ExpressionAttributeValues\": {\n        “:AlbumTableName\"\
             : {\"S\": \"${stageVariables.AlbumTableName}\"},\n        \":albumID\"\
@@ -99,11 +98,11 @@ paths:
         type: "aws"
     options:
       parameters:
-      - name: "path"
-        in: "path"
-        required: true
-        schema:
-          type: "string"
+        - name: "path"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
       responses:
         200:
           description: "200 response"
@@ -130,28 +129,28 @@ paths:
               method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key'"
               method.response.header.Access-Control-Allow-Origin: "'*'"
         requestTemplates:
-          application/json: "{\"statusCode\": 200}"
+          application/json: '{"statusCode": 200}'
         passthroughBehavior: "when_no_match"
         type: "mock"
     patch:
       parameters:
-      - name: "description"
-        in: "query"
-        schema:
-          type: "string"
-      - name: "title"
-        in: "query"
-        schema:
-          type: "string"
-      - name: "published"
-        in: "query"
-        schema:
-          type: "string"
-      - name: "path"
-        in: "path"
-        required: true
-        schema:
-          type: "string"
+        - name: "description"
+          in: "query"
+          schema:
+            type: "string"
+        - name: "title"
+          in: "query"
+          schema:
+            type: "string"
+        - name: "published"
+          in: "query"
+          schema:
+            type: "string"
+        - name: "path"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
       responses:
         200:
           description: "200 response"
@@ -166,7 +165,8 @@ paths:
           default:
             statusCode: "200"
         requestTemplates:
-          application/json: "#set($title = $input.params('title'))\n#set($desc = $input.params('description'))\n\
+          application/json:
+            "#set($title = $input.params('title'))\n#set($desc = $input.params('description'))\n\
             {\n    \"TableName\": \"${stageVariables.AlbumTableName}\",\n    \"Key\"\
             : {\"albumID\": {\"S\": \"moses/$input.params('path')\"}},\n    \"UpdateExpression\"\
             : \"set #if(\"$!title\" != \"\")title = $title#end#if(\"$!title\" != \"\
@@ -179,14 +179,14 @@ paths:
   /album:
     get:
       parameters:
-      - name: "type"
-        in: "query"
-        schema:
-          type: "string"
-      - name: "page"
-        in: "query"
-        schema:
-          type: "string"
+        - name: "type"
+          in: "query"
+          schema:
+            type: "string"
+        - name: "page"
+          in: "query"
+          schema:
+            type: "string"
       responses:
         200:
           description: "200 response"
@@ -205,7 +205,8 @@ paths:
           default:
             statusCode: "200"
         requestTemplates:
-          application/json: "{\n\t\"TableName\":\"${stageVariables.AlbumTableName}\"\
+          application/json:
+            "{\n\t\"TableName\":\"${stageVariables.AlbumTableName}\"\
             ,\n\t\"IndexName\":\"userID-creationTime-index\",\n\t\"KeyConditionExpression\"\
             :\"userID = :userID\",\n\t\"ExpressionAttributeValues\": \n\t\t{\n\t\t\
             \t\":userID\":\n\t\t\t\t{\"S\":\"moses\"}\n\t\t},\n\t\"ScanIndexForward\"\
@@ -240,7 +241,7 @@ paths:
               method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key'"
               method.response.header.Access-Control-Allow-Origin: "'*'"
         requestTemplates:
-          application/json: "{\"statusCode\": 200}"
+          application/json: '{"statusCode": 200}'
         passthroughBehavior: "when_no_match"
         type: "mock"
   /:
@@ -260,7 +261,8 @@ paths:
             responseParameters:
               method.response.header.Content-Type: "'text/html'"
             responseTemplates:
-              text/html: "<html>\n    <head>\n        <style>\n        body {\n  \
+              text/html:
+                "<html>\n    <head>\n        <style>\n        body {\n  \
                 \          color: #333;\n            font-family: Sans-serif;\n  \
                 \          max-width: 800px;\n            margin: auto;\n        }\n\
                 \        </style>\n    </head>\n    <body>\n        <h1>Welcome to\
@@ -282,7 +284,7 @@ paths:
                 \        </p>\n        <pre>\n{\n    \"type\" : \"cat\",\n    \"price\"\
                 \ : 123.11\n}\n        </pre>\n    </body>\n</html>"
         requestTemplates:
-          application/json: "{\"statusCode\": 200}"
+          application/json: '{"statusCode": 200}'
         passthroughBehavior: "when_no_match"
         type: "mock"
 components:

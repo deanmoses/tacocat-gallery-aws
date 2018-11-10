@@ -1,32 +1,32 @@
+--- # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
 # Amazon AWS CloudFormation template
 #
-# This defines a "stack" of AWS resources needed to run Tacocat Gallery on AWS,  
+# This defines a "stack" of AWS resources needed to run Tacocat Gallery on AWS,
 # such as S3 buckets, Lambda functions, DynamoDB tables and IAM roles.
 #
-# CloudFormation reads this template and takes care of deploying the stack of 
+# CloudFormation reads this template and takes care of deploying the stack of
 # resources defined in this template.
-# -----------------------------------------------------------------------------
-AWSTemplateFormatVersion: '2010-09-09'
+AWSTemplateFormatVersion: "2010-09-09"
 Description: Back end for Tacocat Gallery -- S3 image repo, Lambda processing of images, DynamoDB tables of albums, etc
 
 # -----------------------------------------------------------------------------
-# Allows this template to be written in the AWS Serverless Application Model 
+# Allows this template to be written in the AWS Serverless Application Model
 # (AWS SAM) syntax and when uploaded to CloudFormation, transforms and expands
-# it into an AWS CloudFormation template. The main purpose is that AWS SAM 
-# syntax simplifies the declaration of a Lambda function and its execution 
+# it into an AWS CloudFormation template. The main purpose is that AWS SAM
+# syntax simplifies the declaration of a Lambda function and its execution
 # role.
 # -----------------------------------------------------------------------------
-Transform: 'AWS::Serverless-2016-10-31'
+Transform: "AWS::Serverless-2016-10-31"
 
 # -----------------------------------------------------------------------------
 # Parameters that can be specified when deploying this template
 # -----------------------------------------------------------------------------
-Parameters: 
-  ApiStage: 
+Parameters:
+  ApiStage:
     Type: String
     Default: prod
-    AllowedValues: 
+    AllowedValues:
       - prod
     Description: The AWS API Gateway stage to deploy the API to
 
@@ -63,44 +63,50 @@ Outputs:
     Description: Lambda function that extracts metadata from image
     Value:
       Fn::GetAtt:
-      - ExtractImageMetadataFunction
-      - Arn
+        - ExtractImageMetadataFunction
+        - Arn
   RekognitionLambda:
-    Description: Lambda function that uses Amazon Rekognition to detect objects and labels in image 
+    Description: Lambda function that uses Amazon Rekognition to detect objects and labels in image
     Value:
       Fn::GetAtt:
-      - RekognitionFunction
-      - Arn
+        - RekognitionFunction
+        - Arn
   StoreAlbumLambda:
     Description: Lambda function that stores the album in DynamoDB
     Value:
       Fn::GetAtt:
-      - StoreAlbumFunction
-      - Arn
+        - StoreAlbumFunction
+        - Arn
   DeleteAlbumLambda:
     Description: Lambda function that delete the album from DynamoDB
     Value:
       Fn::GetAtt:
-      - DeleteAlbumFunction
-      - Arn
+        - DeleteAlbumFunction
+        - Arn
   StoreImageLambda:
     Description: Lambda function that stores the image in DynamoDB
     Value:
       Fn::GetAtt:
-      - StoreImageFunction
-      - Arn
+        - StoreImageFunction
+        - Arn
   DeleteImageLambda:
     Description: Lambda function that deletes the image from DynamoDB
     Value:
       Fn::GetAtt:
-      - DeleteImageFunction
-      - Arn
+        - DeleteImageFunction
+        - Arn
   ThumbnailLambda:
     Description: Lambda function that creates thumbnail version of image
     Value:
       Fn::GetAtt:
-      - GenerateThumbnailFunction
-      - Arn
+        - GenerateThumbnailFunction
+        - Arn
+  GetAlbumLambda:
+    Description: Lambda function that retrieves an album and its children from DynamoDB
+    Value:
+      Fn::GetAtt:
+        - GetAlbumFunction
+        - Arn
   CognitoIdentityPool:
     Description: AWS Cognito Identity Pool of users allowed to use the web app
     Value:
@@ -108,12 +114,12 @@ Outputs:
   ApiUrl:
     Description: URL of the Tacocat Gallery AWS API Gateway endpoint
     Value: !Join
-      - ''
+      - ""
       - - https://
         - !Ref TacocatGalleryApi
-        - '.execute-api.'
+        - ".execute-api."
         - !Ref AWS::Region
-        - '.amazonaws.com/'
+        - ".amazonaws.com/"
         - !Ref ApiStage
 
 # -----------------------------------------------------------------------------
@@ -130,9 +136,8 @@ Globals:
 # Resources are the actual AWS systems that will be provisioned
 # -----------------------------------------------------------------------------
 Resources:
-
   #
-  # The Tacocat Gallery API for listing albums etc.  
+  # The Tacocat Gallery API for listing albums etc.
   # This is what web and mobile apps connect to.
   # The API is served up by the AWS API Gateway.
   #
@@ -144,33 +149,35 @@ Resources:
       StageName: !Ref ApiStage
       Variables:
         Role: !Ref TestClientIAMRole
+        ReadOnlyRole: !Ref ApiGatewayLambdaReadOnlyRole
         Region: !Ref AWS::Region
         AlbumTableName: !Ref AlbumDDBTable
         ImageTableName: !Ref ImageDDBTable
+        GetAlbumFunctionName: !Ref GetAlbumFunction
 
   # An API is deployed to a 'stage', like Prod or Dev
- # TacocatGalleryApiStageProd:
- ##   Type: AWS::ApiGateway::Stage
- #   Properties:
- #     StageName: prod
- #     Description: Prod Stage
- #     RestApiId: !Ref TacocatGalleryApi
- #     DeploymentId: !Ref TacocatGalleryApiDeployment
+  # TacocatGalleryApiStageProd:
+  ##   Type: AWS::ApiGateway::Stage
+  #   Properties:
+  #     StageName: prod
+  #     Description: Prod Stage
+  #     RestApiId: !Ref TacocatGalleryApi
+  #     DeploymentId: !Ref TacocatGalleryApiDeployment
 
   # Deploy the API to the Stage
- # TacocatGalleryApiDeployment:
- #   Type: AWS::ApiGateway::Deployment
- #   Properties:
- #     RestApiId: !Ref TacocatGalleryApi
- #     Description: "Deployment to stage"
-      # DummyStage will create a stage that we aren't going to use.
-      # CloudFormation recommends doing it this way because this
-      # stage is tied to this deployment, which means you can’t delete one
-      # without deleting the other.  For example, if you delete this deployment, 
-      # API Gateway also deletes this stage, which you might want to keep. 
-      # Instead, use the AWS::ApiGateway::Stage resource to create and associate
-      # a stage with this deployment.
- #     StageName: !Ref ApiStage
+  # TacocatGalleryApiDeployment:
+  #   Type: AWS::ApiGateway::Deployment
+  #   Properties:
+  #     RestApiId: !Ref TacocatGalleryApi
+  #     Description: "Deployment to stage"
+  # DummyStage will create a stage that we aren't going to use.
+  # CloudFormation recommends doing it this way because this
+  # stage is tied to this deployment, which means you can’t delete one
+  # without deleting the other.  For example, if you delete this deployment,
+  # API Gateway also deletes this stage, which you might want to keep.
+  # Instead, use the AWS::ApiGateway::Stage resource to create and associate
+  # a stage with this deployment.
+  #     StageName: !Ref ApiStage
 
   #
   # S3 bucket containing images
@@ -180,8 +187,7 @@ Resources:
     Properties:
       CorsConfiguration:
         CorsRules:
-          -
-            AllowedHeaders:
+          - AllowedHeaders:
               - "*"
             AllowedMethods:
               - PUT
@@ -200,30 +206,28 @@ Resources:
     Type: AWS::DynamoDB::Table
     Properties:
       AttributeDefinitions:
-      - AttributeName: albumID
-        AttributeType: S
-      - AttributeName: imageID
-        AttributeType: S
-      - AttributeName: uploadTime
-        AttributeType: N
-      KeySchema:
-      - AttributeName: imageID
-        KeyType: HASH
-      ProvisionedThroughput:
-        ReadCapacityUnits: '3'
-        WriteCapacityUnits: '3'
-      GlobalSecondaryIndexes:
-      - IndexName: albumID-uploadTime-index
-        KeySchema:
         - AttributeName: albumID
+          AttributeType: S
+        - AttributeName: imageID
+          AttributeType: S
+      KeySchema:
+        - AttributeName: imageID
           KeyType: HASH
-        - AttributeName: uploadTime
-          KeyType: RANGE
-        Projection:
-          ProjectionType: ALL
-        ProvisionedThroughput:
-          ReadCapacityUnits: '3'
-          WriteCapacityUnits: '3'
+      ProvisionedThroughput:
+        ReadCapacityUnits: "3"
+        WriteCapacityUnits: "3"
+      GlobalSecondaryIndexes:
+        - IndexName: albumID-imageID-index
+          KeySchema:
+            - AttributeName: albumID
+              KeyType: HASH
+            - AttributeName: imageID
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+          ProvisionedThroughput:
+            ReadCapacityUnits: "3"
+            WriteCapacityUnits: "3"
 
   #
   # DynamoDB table for albums
@@ -232,37 +236,35 @@ Resources:
     Type: AWS::DynamoDB::Table
     Properties:
       AttributeDefinitions:
-      - AttributeName: albumID
-        AttributeType: S
-      - AttributeName: creationTime
-        AttributeType: N
-      - AttributeName: userID
-        AttributeType: S
+        - AttributeName: albumID
+          AttributeType: S
+        - AttributeName: parentID
+          AttributeType: S
       KeySchema:
-      - AttributeName: albumID
-        KeyType: HASH
-      ProvisionedThroughput:
-        ReadCapacityUnits: '2'
-        WriteCapacityUnits: '1'
-      GlobalSecondaryIndexes:
-      - IndexName: userID-creationTime-index
-        KeySchema:
-        - AttributeName: userID
+        - AttributeName: albumID
           KeyType: HASH
-        - AttributeName: creationTime
-          KeyType: RANGE
-        Projection:
-          ProjectionType: ALL
-        ProvisionedThroughput:
-          ReadCapacityUnits: '2'
-          WriteCapacityUnits: '1'
+      ProvisionedThroughput:
+        ReadCapacityUnits: "2"
+        WriteCapacityUnits: "1"
+      GlobalSecondaryIndexes:
+        - IndexName: parentID-albumID-index
+          KeySchema:
+            - AttributeName: parentID
+              KeyType: HASH
+            - AttributeName: albumID
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+          ProvisionedThroughput:
+            ReadCapacityUnits: "2"
+            WriteCapacityUnits: "1"
 
   # ---------------------------------------------------------------------------
-  # IAM role used by all the Lambda functions that executes the image processing 
+  # IAM role used by all the Lambda functions that executes the image processing
   # workflow, so it has the union of the required permissions for these Lambda
-  # functions. 
+  # functions.
   #
-  # Amazon best practices would instead create individual IAM roles for each 
+  # Amazon best practices would instead create individual IAM roles for each
   # Lambda to follow the Least privilege principle. This template consolidates
   # them simply to reduce the number of IAM roles it takes up in your account.
   # ---------------------------------------------------------------------------
@@ -272,8 +274,7 @@ Resources:
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:
-          -
-            Effect: "Allow"
+          - Effect: "Allow"
             Principal:
               Service:
                 - "lambda.amazonaws.com"
@@ -281,116 +282,97 @@ Resources:
               - "sts:AssumeRole"
       Path: "/MediaSharingRefarch/"
       Policies:
-        -
-          PolicyName: "LambdaWriteCWLogs"
+        - PolicyName: "LambdaWriteCWLogs"
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
-              -
-                Sid: "AllowLogging"
+              - Sid: "AllowLogging"
                 Effect: "Allow"
                 Action:
                   - "logs:CreateLogGroup"
                   - "logs:CreateLogStream"
                   - "logs:PutLogEvents"
                 Resource: "*"
-        -
-          PolicyName: "ReadFromPhotoRepoS3Bucket"
+        - PolicyName: "ReadFromPhotoRepoS3Bucket"
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
-              -
-                Sid: "ReadFromPhotoRepoS3Bucket"
+              - Sid: "ReadFromPhotoRepoS3Bucket"
                 Effect: "Allow"
                 Action:
                   - "s3:Get*"
-                Resource:
-                  !Sub "arn:aws:s3:::${PhotoRepoS3Bucket}/*"
-        -
-          PolicyName: "WriteToPhotoRepoS3Bucket"
+                Resource: !Sub "arn:aws:s3:::${PhotoRepoS3Bucket}/*"
+        - PolicyName: "WriteToPhotoRepoS3Bucket"
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
-              -
-                Sid: "WriteToPhotoRepoS3Bucket"
+              - Sid: "WriteToPhotoRepoS3Bucket"
                 Effect: "Allow"
                 Action:
                   - "s3:PutObject"
-                Resource:
-                  !Sub "arn:aws:s3:::${PhotoRepoS3Bucket}/*"
-        -
-          PolicyName: "ManageImageDDBTable"
+                Resource: !Sub "arn:aws:s3:::${PhotoRepoS3Bucket}/*"
+        - PolicyName: "ManageImageDDBTable"
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
-              -
-                Sid: "ManageImageDDBTable"
+              - Sid: "ManageImageDDBTable"
                 Effect: "Allow"
                 Action:
-                  -  "dynamodb:UpdateItem"
-                  -  "dynamodb:PutItem"
-                  -  "dynamodb:DeleteItem"
-                Resource:
-                  !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${ImageDDBTable}"
-        -
-          PolicyName: "ManageAlbumDDBTable"
+                  - "dynamodb:UpdateItem"
+                  - "dynamodb:PutItem"
+                  - "dynamodb:DeleteItem"
+                Resource: !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${ImageDDBTable}"
+        - PolicyName: "ManageAlbumDDBTable"
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
-              -
-                Sid: "ManageAlbumDDBTable"
+              - Sid: "ManageAlbumDDBTable"
                 Effect: "Allow"
                 Action:
-                  -  "dynamodb:UpdateItem"
-                  -  "dynamodb:PutItem"
-                  -  "dynamodb:DeleteItem"
-                Resource:
-                  !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${AlbumDDBTable}"
-        -
-          PolicyName: "RekognitionDetectLabels"
+                  - "dynamodb:UpdateItem"
+                  - "dynamodb:PutItem"
+                  - "dynamodb:DeleteItem"
+                Resource: !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${AlbumDDBTable}"
+        - PolicyName: "RekognitionDetectLabels"
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
-              -
-                Sid: "RekognitionDetectLabels"
+              - Sid: "RekognitionDetectLabels"
                 Effect: "Allow"
                 Action:
                   - "rekognition:DetectLabels"
                 Resource: "*"
-        -
-          PolicyName: "StepFunctionStartExecution"
+        - PolicyName: "StepFunctionStartExecution"
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
-              -
-                Sid: "StepFunctionStartExecution"
+              - Sid: "StepFunctionStartExecution"
                 Effect: "Allow"
                 Action:
                   - "states:StartExecution"
                 Resource: "*"
 
-# -----------------------------------------------------------------------------
-# This Lambda function triggers the start of the Step Functions state machine
-# -----------------------------------------------------------------------------
+  # -----------------------------------------------------------------------------
+  # This Lambda function triggers the start of the Step Functions state machine
+  # -----------------------------------------------------------------------------
 
   ExecuteStepFunctionsFunction:
     DependsOn: PhotoRepoS3Bucket
     Properties:
       CodeUri: ../lambda_functions/start_state_machine
       Description: "Triggered by S3 image upload to the repo bucket and start the image processing step function workflow"
-      Role:
-        !GetAtt BackendProcessingLambdaRole.Arn
+      Role: !GetAtt BackendProcessingLambdaRole.Arn
       Environment:
         Variables:
           IMAGE_DDB_TABLE: !Ref ImageDDBTable
           STATE_MACHINE_ARN: !Ref ImageProcStateMachine
     Type: AWS::Serverless::Function
 
-# -----------------------------------------------------------------------------
-# These Lambda functions comprise the Step Functions state machine.
-# The state machine processes album folder and image file additions and 
-# deletions from a S3 bucket and puts that information into DynamoDB.
-# -----------------------------------------------------------------------------
+  # -----------------------------------------------------------------------------
+  # These Lambda functions comprise the Step Functions state machine.
+  # The state machine processes album folder and image file additions and
+  # deletions from a S3 bucket and puts that information into DynamoDB.
+  # -----------------------------------------------------------------------------
 
   ExtractImageMetadataFunction:
     Properties:
@@ -398,24 +380,21 @@ Resources:
       Description: "Lambda function that extracts image metadata such as format, size, geolocation, etc"
       MemorySize: 1024
       Timeout: 200
-      Role:
-        !GetAtt BackendProcessingLambdaRole.Arn
+      Role: !GetAtt BackendProcessingLambdaRole.Arn
     Type: AWS::Serverless::Function
 
   TransformImageMetadataFunction:
     Properties:
       CodeUri: ../lambda_functions/transform_image_metadata
       Description: "Lambda function that massages JSON of extracted image metadata into more usable format"
-      Role:
-        !GetAtt BackendProcessingLambdaRole.Arn
+      Role: !GetAtt BackendProcessingLambdaRole.Arn
     Type: AWS::Serverless::Function
 
   StoreAlbumFunction:
     Properties:
       CodeUri: ../lambda_functions/store_album
       Description: "Lambda function that stores album in DynamoDB"
-      Role:
-        !GetAtt BackendProcessingLambdaRole.Arn
+      Role: !GetAtt BackendProcessingLambdaRole.Arn
       Environment:
         Variables:
           ALBUM_DDB_TABLE: !Ref AlbumDDBTable
@@ -425,8 +404,7 @@ Resources:
     Properties:
       CodeUri: ../lambda_functions/delete_album
       Description: "Lambda function that deletes album from DynamoDB"
-      Role:
-        !GetAtt BackendProcessingLambdaRole.Arn
+      Role: !GetAtt BackendProcessingLambdaRole.Arn
       Environment:
         Variables:
           ALBUM_DDB_TABLE: !Ref AlbumDDBTable
@@ -436,8 +414,7 @@ Resources:
     Properties:
       CodeUri: ../lambda_functions/store_image
       Description: "Lambda function that stores image in DynamoDB"
-      Role:
-        !GetAtt BackendProcessingLambdaRole.Arn
+      Role: !GetAtt BackendProcessingLambdaRole.Arn
       Environment:
         Variables:
           IMAGE_DDB_TABLE: !Ref ImageDDBTable
@@ -447,8 +424,7 @@ Resources:
     Properties:
       CodeUri: ../lambda_functions/delete_image
       Description: "Lambda function that deletes image from DynamoDB"
-      Role:
-        !GetAtt BackendProcessingLambdaRole.Arn
+      Role: !GetAtt BackendProcessingLambdaRole.Arn
       Environment:
         Variables:
           IMAGE_DDB_TABLE: !Ref ImageDDBTable
@@ -457,8 +433,7 @@ Resources:
   RekognitionFunction:
     Properties:
       Description: "Lambda function that uses Amazon Rekognition to detect labels from image"
-      Role:
-        !GetAtt BackendProcessingLambdaRole.Arn
+      Role: !GetAtt BackendProcessingLambdaRole.Arn
       CodeUri: ../lambda_functions/rekognition
     Type: AWS::Serverless::Function
 
@@ -468,9 +443,53 @@ Resources:
       Description: "Lambda function that generates thumbnails for images"
       MemorySize: 1536
       Timeout: 300
-      Role:
-        !GetAtt BackendProcessingLambdaRole.Arn
+      Role: !GetAtt BackendProcessingLambdaRole.Arn
     Type: AWS::Serverless::Function
+
+  # -----------------------------------------------------------------------------
+  # This Lambda function returns an album and its children.
+  # It's hooked up to the API Gateway API to get an album.
+  # -----------------------------------------------------------------------------
+  GetAlbumFunction:
+    Properties:
+      CodeUri: ../lambda_functions/get_album
+      Description: "Lambda function that returns an album and its children from DynamoDB"
+      Role: !GetAtt ApiGatewayLambdaReadOnlyRole.Arn
+      Environment:
+        Variables:
+          ALBUM_DDB_TABLE: !Ref AlbumDDBTable
+          IMAGE_DDB_TABLE: !Ref ImageDDBTable
+    Type: AWS::Serverless::Function
+
+  # Role for Lambdas used by the Tacocat Gallery API Gateway that need read-only access to DynamoDB
+  ApiGatewayLambdaReadOnlyRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Principal:
+              Service:
+                - "lambda.amazonaws.com"
+            Action:
+              - "sts:AssumeRole"
+      Path: "/TacocatGallery/"
+      Policies:
+        - PolicyName: "TacocatGalleryDynamoTableReadAccess"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Sid: "TacocatGalleryDynamoTableReadAccess"
+                Effect: "Allow"
+                Action:
+                  - "dynamodb:GetItem"
+                  - "dynamodb:Query"
+                Resource:
+                  - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${AlbumDDBTable}"
+                  - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${AlbumDDBTable}/*"
+                  - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${ImageDDBTable}"
+                  - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${ImageDDBTable}/*"
 
   # ---------------------------------------------------------------------------
   # Custom resources created with Lambda functions:
@@ -482,8 +501,7 @@ Resources:
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:
-          -
-            Effect: "Allow"
+          - Effect: "Allow"
             Principal:
               Service:
                 - "lambda.amazonaws.com"
@@ -491,33 +509,27 @@ Resources:
               - "sts:AssumeRole"
       Path: "/MediaSharingRefarch/"
       Policies:
-        -
-          PolicyName: "LambdaWriteCWLogs"
+        - PolicyName: "LambdaWriteCWLogs"
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
-              -
-                Sid: "AllowLogging"
+              - Sid: "AllowLogging"
                 Effect: "Allow"
                 Action:
                   - "logs:CreateLogGroup"
                   - "logs:CreateLogStream"
                   - "logs:PutLogEvents"
                 Resource: "*"
-        -
-          PolicyName: "AddS3EventTrigger"
+        - PolicyName: "AddS3EventTrigger"
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
-              -
-                Sid: "PutS3EventNofication"
+              - Sid: "PutS3EventNofication"
                 Effect: "Allow"
                 Action:
                   - "s3:PutBucketNotification"
-                Resource:
-                  !Sub "arn:aws:s3:::${PhotoRepoS3Bucket}"
-              -
-                Sid: "AddPermissionToLambda"
+                Resource: !Sub "arn:aws:s3:::${PhotoRepoS3Bucket}"
+              - Sid: "AddPermissionToLambda"
                 Effect: "Allow"
                 Action:
                   - "lambda:AddPermission"
@@ -528,8 +540,7 @@ Resources:
       Description: "Used with CloudFormation as a custom resource helper to enable S3 event trigger to invoke the start step function Lambda function."
       MemorySize: 1024
       Timeout: 200
-      Role:
-        !GetAtt CustomResourceHelperRole.Arn
+      Role: !GetAtt CustomResourceHelperRole.Arn
       CodeUri: ../lambda_functions/create_s3_event_trigger_helper
     Type: AWS::Serverless::Function
 
@@ -540,16 +551,11 @@ Resources:
       - PhotoRepoS3Bucket
       - ExecuteStepFunctionsFunction
     Properties:
-      ServiceToken:
-        !GetAtt CreateS3EventTriggerFunction.Arn
-      PhotoRepoS3Bucket:
-        !Ref PhotoRepoS3Bucket
-      StartExecutionFunctionArn:
-        !GetAtt ExecuteStepFunctionsFunction.Arn
-      StartExecutionFunction:
-        !Ref ExecuteStepFunctionsFunction
-      accountId:
-        !Ref AWS::AccountId
+      ServiceToken: !GetAtt CreateS3EventTriggerFunction.Arn
+      PhotoRepoS3Bucket: !Ref PhotoRepoS3Bucket
+      StartExecutionFunctionArn: !GetAtt ExecuteStepFunctionsFunction.Arn
+      StartExecutionFunction: !Ref ExecuteStepFunctionsFunction
+      accountId: !Ref AWS::AccountId
 
   # ---------------------------------------------------------------------------
   # Step functions State Machine
@@ -560,22 +566,18 @@ Resources:
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:
-          -
-            Effect: "Allow"
+          - Effect: "Allow"
             Principal:
-              Service:
-                !Sub states.${AWS::Region}.amazonaws.com
+              Service: !Sub states.${AWS::Region}.amazonaws.com
             Action:
               - "sts:AssumeRole"
       Path: "/MediaSharingRefarch/"
       Policies:
-        -
-          PolicyName: "InvokeLambda"
+        - PolicyName: "InvokeLambda"
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
-              -
-                Sid: "InvokeLambda"
+              - Sid: "InvokeLambda"
                 Effect: "Allow"
                 Action:
                   - "lambda:InvokeFunction"
@@ -584,36 +586,36 @@ Resources:
   ImageProcStateMachine:
     Type: "AWS::StepFunctions::StateMachine"
     Properties:
-      DefinitionString:
-        !Sub
-          - |-
-          ##{{STATEMACHINE_DEF}}
-          - {ExtractImageMetadataLambdaArn: !GetAtt ExtractImageMetadataFunction.Arn,
-             TransformImageMetadataLambdaArn: !GetAtt TransformImageMetadataFunction.Arn,
-             StoreAlbumLambdaArn: !GetAtt StoreAlbumFunction.Arn,
-             DeleteAlbumLambdaArn: !GetAtt DeleteAlbumFunction.Arn,
-             StoreImageLambdaArn: !GetAtt StoreImageFunction.Arn,
-             DeleteImageLambdaArn: !GetAtt DeleteImageFunction.Arn,
-             RekognitionLambdaArn: !GetAtt RekognitionFunction.Arn,
-             GenerateThumbnailLambdaArn: !GetAtt GenerateThumbnailFunction.Arn}
+      DefinitionString: !Sub
+        - |-
+        ##{{STATEMACHINE_DEF}}
+        - {
+            ExtractImageMetadataLambdaArn: !GetAtt ExtractImageMetadataFunction.Arn,
+            TransformImageMetadataLambdaArn: !GetAtt TransformImageMetadataFunction.Arn,
+            StoreAlbumLambdaArn: !GetAtt StoreAlbumFunction.Arn,
+            DeleteAlbumLambdaArn: !GetAtt DeleteAlbumFunction.Arn,
+            StoreImageLambdaArn: !GetAtt StoreImageFunction.Arn,
+            DeleteImageLambdaArn: !GetAtt DeleteImageFunction.Arn,
+            RekognitionLambdaArn: !GetAtt RekognitionFunction.Arn,
+            GenerateThumbnailLambdaArn: !GetAtt GenerateThumbnailFunction.Arn,
+          }
       RoleArn: !GetAtt StateMachineRole.Arn
 
   # ---------------------------------------------------------------------------
-  # Lambda function and accompanying role used by the frontend test web app to 
-  # query status of a Step Function state machine execution. 
+  # Lambda function and accompanying role used by the frontend test web app to
+  # query status of a Step Function state machine execution.
   #
-  # The Step Functions API does not support CORS as of today, thus this Lambda 
+  # The Step Functions API does not support CORS as of today, thus this Lambda
   # function is used to proxy calls to Step Functions.
   # ---------------------------------------------------------------------------
-  
+
   DescribeExecutionFunctionRole:
     Type: "AWS::IAM::Role"
     Properties:
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:
-          -
-            Effect: "Allow"
+          - Effect: "Allow"
             Principal:
               Service:
                 - "lambda.amazonaws.com"
@@ -621,26 +623,22 @@ Resources:
               - "sts:AssumeRole"
       Path: "/MediaSharingRefarch/"
       Policies:
-        -
-          PolicyName: "LambdaWriteCWLogs"
+        - PolicyName: "LambdaWriteCWLogs"
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
-              -
-                Sid: "AllowLogging"
+              - Sid: "AllowLogging"
                 Effect: "Allow"
                 Action:
                   - "logs:CreateLogGroup"
                   - "logs:CreateLogStream"
                   - "logs:PutLogEvents"
                 Resource: "*"
-        -
-          PolicyName: "DescribeStepFunction"
+        - PolicyName: "DescribeStepFunction"
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
-              -
-                Sid: "DescribeStepFunction"
+              - Sid: "DescribeStepFunction"
                 Effect: "Allow"
                 Action:
                   - "states:DescribeExecution"
@@ -650,8 +648,7 @@ Resources:
       Description: "Calls DescribeExecution on a state machine execution."
       MemorySize: 1024
       Timeout: 200
-      Role:
-        !GetAtt DescribeExecutionFunctionRole.Arn
+      Role: !GetAtt DescribeExecutionFunctionRole.Arn
       CodeUri: ../lambda_functions/describe_state_machine_execution
     Type: AWS::Serverless::Function
 
@@ -677,25 +674,20 @@ Resources:
     Type: "AWS::IAM::Role"
     Properties:
       Policies:
-        -
-          PolicyName: "S3PhotoRepoBucketAccess"
+        - PolicyName: "S3PhotoRepoBucketAccess"
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
-              -
-                Sid: "S3ReadWrite"
+              - Sid: "S3ReadWrite"
                 Effect: "Allow"
                 Action:
                   - "s3:*"
-                Resource:
-                  !Sub "arn:aws:s3:::${PhotoRepoS3Bucket}/*"
-        -
-          PolicyName: "DynamoTableAccess"
+                Resource: !Sub "arn:aws:s3:::${PhotoRepoS3Bucket}/*"
+        - PolicyName: "DynamoTableAccess"
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
-              -
-                Sid: "DynamoTableAccess"
+              - Sid: "DynamoTableAccess"
                 Effect: "Allow"
                 Action:
                   - "dynamodb:*"
@@ -704,23 +696,30 @@ Resources:
                   - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${AlbumDDBTable}/*"
                   - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${ImageDDBTable}"
                   - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${ImageDDBTable}/*"
-        -
-          PolicyName: "InvokeDescribeExecutionLambda"
+        - PolicyName: "InvokeDescribeExecutionLambda"
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
-              -
-                Sid: "InvokeDescribeExecutionLambda"
+              - Sid: "InvokeDescribeExecutionLambda"
                 Effect: "Allow"
                 Action:
                   - "lambda:InvokeFunction"
                 Resource:
                   - !Sub "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${DescribeExecutionFunction}"
+        - PolicyName: "InvokeGetAlbumLambda"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Sid: "InvokeGetAlbumLambda"
+                Effect: "Allow"
+                Action:
+                  - "lambda:InvokeFunction"
+                Resource:
+                  - !Sub "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${GetAlbumFunction}"
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:
-          -
-            Effect: "Allow"
+          - Effect: "Allow"
             Principal:
               Service:
                 - "apigateway.amazonaws.com"

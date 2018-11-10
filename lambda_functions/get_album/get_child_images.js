@@ -13,7 +13,7 @@ async function getChildImages(docClient, imageTableName, albumId) {
 			":albumID": albumId
 		},
 		ProjectionExpression: "imageID,dimensions",
-		IndexName: "albumID-uploadTime-index"
+		IndexName: "albumID-imageID-index"
 	};
 	const results = await docClient.query(ddbparams).promise();
 	return results.Items;

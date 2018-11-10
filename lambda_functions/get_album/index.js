@@ -1,0 +1,21 @@
+const AWS = require("aws-sdk");
+const getAlbumAndChildren = require("./get_album_and_children.js");
+
+const albumTableName = process.env.ALBUM_DDB_TABLE;
+const imageTableName = process.env.IMAGE_DDB_TABLE;
+
+const docClient = new AWS.DynamoDB.DocumentClient({
+	region: process.env.AWS_REGION
+});
+
+/**
+ * A Lambda function that gets an album and its child images and child albums from DynamoDB
+ */
+exports.handler = async event => {
+	return await getAlbumAndChildren(
+		docClient,
+		albumTableName,
+		imageTableName,
+		event.albumPath
+	);
+};
