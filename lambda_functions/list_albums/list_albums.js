@@ -2,8 +2,8 @@
  * Get an album's child albums in DynamoDB
  *
  * @param {*} docClient AWS DynamoDB DocumentClient
+ * @param {*} albumTableName name of the Album table in DynamoDB
  * @param {*} albumId ID of the album whose children to get
- * @param {*} fileUploadTimeStamp time the album was uploaded
  */
 async function getChildAlbums(docClient, albumTableName, albumId) {
 	const ddbparams = {
