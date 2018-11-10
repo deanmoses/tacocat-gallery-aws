@@ -5,7 +5,7 @@ const awsRegion = "us-west-2";
 const tableName = "NotARealTableName";
 const albumId = "/not/a/real/album";
 
-test("List Albums", async () => {
+test("Get Child Albums", async () => {
 	expect.assertions(5);
 
 	// Mock out the AWS method
