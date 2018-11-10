@@ -148,10 +148,8 @@ Resources:
       DefinitionUri: ../api/api.yaml
       StageName: !Ref ApiStage
       Variables:
-        Role: !Ref TestClientIAMRole
         Region: !Ref AWS::Region
-        AlbumTableName: !Ref AlbumDDBTable
-        ImageTableName: !Ref ImageDDBTable
+        Role: !Ref TestClientIAMRole
         GetAlbumFunctionName: !Ref GetAlbumFunction
 
   #
