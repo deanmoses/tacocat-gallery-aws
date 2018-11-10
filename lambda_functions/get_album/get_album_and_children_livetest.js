@@ -16,8 +16,13 @@ async function get(albumId) {
 }
 
 async function doTest() {
-	const result = await get("2001");
-	//console.log("result: ", result);
-	return result;
+	get("2001")
+		.then(result => {
+			console.log("result: ", result);
+			return result;
+		})
+		.catch(err => {
+			console.log("exception: ", err);
+		});
 }
 doTest();
