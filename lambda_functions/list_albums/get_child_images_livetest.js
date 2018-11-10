@@ -1,4 +1,4 @@
-const getImagesInAlbum = require("./get_images_in_album.js");
+const getChildImages = require("./get_child_images.js");
 const AWS = require("aws-sdk");
 const imageTableName = "TacocatGallery-ImageDDBTable-CSI5QNIP8LTW";
 const docClient = new AWS.DynamoDB.DocumentClient({
@@ -6,7 +6,7 @@ const docClient = new AWS.DynamoDB.DocumentClient({
 });
 
 async function get(albumId) {
-	return getImagesInAlbum(docClient, imageTableName, albumId);
+	return getChildImages(docClient, imageTableName, albumId);
 }
 
 async function doTest() {

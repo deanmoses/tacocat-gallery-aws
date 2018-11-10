@@ -1,6 +1,6 @@
 const getAlbum = require("./get_album.js");
 const getChildAlbums = require("./get_child_albums.js");
-const getImagesInAlbum = require("./get_images_in_album.js");
+const getChildImages = require("./get_child_images.js");
 
 /**
  * Retrieve an album and its child albums from DynamoDB.
@@ -17,11 +17,7 @@ async function getAlbumAndChildren(
 ) {
 	const album = await getAlbum(docClient, albumTableName, albumId);
 	const childAlbums = await getChildAlbums(docClient, albumTableName, albumId);
-	const childImages = await getImagesInAlbum(
-		docClient,
-		imageTableName,
-		albumId
-	);
+	const childImages = await getChildImages(docClient, imageTableName, albumId);
 
 	return {
 		album: album,

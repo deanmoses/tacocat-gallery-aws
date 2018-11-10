@@ -1,4 +1,4 @@
-const getImagesInAlbum = require("./get_images_in_album.js");
+const getChildImages = require("./get_child_images.js");
 const AWS = require("aws-sdk");
 const AWS_MOCK = require("aws-sdk-mock");
 const awsRegion = "us-west-2";
@@ -21,7 +21,7 @@ test("Get Images in Album", async () => {
 		region: awsRegion
 	});
 
-	const result = await getImagesInAlbum(docClient, tableName, albumId);
+	const result = await getChildImages(docClient, tableName, albumId);
 	expect(result).toBeDefined();
 	expect(result[0]).toBeDefined();
 	expect(result[0].imageID).toBe("2001/12-31/cross_country5.jpg");
