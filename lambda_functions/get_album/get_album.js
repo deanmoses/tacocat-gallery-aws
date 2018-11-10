@@ -14,7 +14,6 @@ async function getAlbum(docClient, albumTableName, albumId) {
 		ProjectionExpression: "albumID,uploadTimeStamp"
 	};
 	const result = await docClient.get(ddbparams).promise();
-	if (!result.Item) throw "No such album: " + albumId;
 	return result.Item;
 }
 

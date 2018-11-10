@@ -12,10 +12,26 @@ const docClient = new AWS.DynamoDB.DocumentClient({
  * A Lambda function that gets an album and its child images and child albums from DynamoDB
  */
 exports.handler = async event => {
-	return await getAlbumAndChildren(
+	// event.path is passed in from the API Gateway and represents the full
+	// path of the HTTP request, which starts with "/albums/..."
+	const albumPath = event.path.replace("/album", "");
+	const album = await getAlbumAndChildren(
 		docClient,
 		albumTableName,
 		imageTableName,
-		event.albumPath
+		albumPath
 	);
+	if (!album) {
+		return {
+			isBase64Encoded: false,
+			statusCode: 404,
+			body: "Album not found: " + albumPath
+		};
+	} else {
+		return {
+			isBase64Encoded: false,
+			statusCode: 200,
+			body: JSON.stringify(album)
+		};
+	}
 };

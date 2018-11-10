@@ -123,7 +123,7 @@ Outputs:
         - !Ref ApiStage
 
 # -----------------------------------------------------------------------------
-# Shared configuration inherited by all Lambda functions
+# Configuration inheritable by all Lambda functions
 # -----------------------------------------------------------------------------
 Globals:
   Function:
@@ -149,35 +149,10 @@ Resources:
       StageName: !Ref ApiStage
       Variables:
         Role: !Ref TestClientIAMRole
-        ReadOnlyRole: !Ref ApiGatewayLambdaReadOnlyRole
         Region: !Ref AWS::Region
         AlbumTableName: !Ref AlbumDDBTable
         ImageTableName: !Ref ImageDDBTable
         GetAlbumFunctionName: !Ref GetAlbumFunction
-
-  # An API is deployed to a 'stage', like Prod or Dev
-  # TacocatGalleryApiStageProd:
-  ##   Type: AWS::ApiGateway::Stage
-  #   Properties:
-  #     StageName: prod
-  #     Description: Prod Stage
-  #     RestApiId: !Ref TacocatGalleryApi
-  #     DeploymentId: !Ref TacocatGalleryApiDeployment
-
-  # Deploy the API to the Stage
-  # TacocatGalleryApiDeployment:
-  #   Type: AWS::ApiGateway::Deployment
-  #   Properties:
-  #     RestApiId: !Ref TacocatGalleryApi
-  #     Description: "Deployment to stage"
-  # DummyStage will create a stage that we aren't going to use.
-  # CloudFormation recommends doing it this way because this
-  # stage is tied to this deployment, which means you can’t delete one
-  # without deleting the other.  For example, if you delete this deployment,
-  # API Gateway also deletes this stage, which you might want to keep.
-  # Instead, use the AWS::ApiGateway::Stage resource to create and associate
-  # a stage with this deployment.
-  #     StageName: !Ref ApiStage
 
   #
   # S3 bucket containing images
