@@ -1,5 +1,5 @@
 const AWS = require("aws-sdk");
-const getChildAlbums = require("./list_albums.js");
+const getChildAlbums = require("./get_child_albums.js");
 
 const tableName = process.env.ALBUM_DDB_TABLE;
 
