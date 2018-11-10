@@ -15,6 +15,8 @@ async function getAlbumAndChildren(
 	imageTableName,
 	albumId
 ) {
+	if (albumId.lastIndexOf("/", 0) !== 0) albumId = "/" + albumId; // make sure albumId starts with a "/"
+
 	const album = await getAlbum(docClient, albumTableName, albumId);
 	const childAlbums = await getChildAlbums(docClient, albumTableName, albumId);
 	const childImages = await getChildImages(docClient, imageTableName, albumId);
