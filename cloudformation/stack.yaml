@@ -116,7 +116,7 @@ Outputs:
     Value: !Join
       - ""
       - - https://
-        - !Ref TacocatGalleryApi
+        - !Ref GalleryApi
         - ".execute-api."
         - !Ref AWS::Region
         - ".amazonaws.com/"
@@ -141,7 +141,7 @@ Resources:
   # This is what web and mobile apps connect to.
   # The API is served up by the AWS API Gateway.
   #
-  TacocatGalleryApi:
+  GalleryApi:
     Type: AWS::Serverless::Api
     DependsOn: AlbumDDBTable
     Properties:
@@ -149,8 +149,46 @@ Resources:
       StageName: !Ref ApiStage
       Variables:
         Region: !Ref AWS::Region
-        Role: !Ref TestClientIAMRole
+        Role: !Ref GalleryApiRole
         GetAlbumFunctionName: !Ref GetAlbumFunction
+
+  # Role for Gallery API
+  GalleryApiRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      Policies:
+        - PolicyName: "InvokeDescribeExecutionLambda"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Sid: "InvokeDescribeExecutionLambda"
+                Effect: "Allow"
+                Action:
+                  - "lambda:InvokeFunction"
+                Resource:
+                  - !Sub "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${DescribeExecutionFunction}"
+        - PolicyName: "InvokeGetAlbumLambda"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Sid: "InvokeGetAlbumLambda"
+                Effect: "Allow"
+                Action:
+                  - "lambda:InvokeFunction"
+                Resource:
+                  - !Sub "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${GetAlbumFunction}"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Principal:
+              Service:
+                - "apigateway.amazonaws.com"
+              Federated:
+                - "cognito-identity.amazonaws.com" # not using this yet
+            Action:
+              - "sts:AssumeRole"
+              - "sts:AssumeRoleWithWebIdentity" # not using this yet
 
   #
   # S3 bucket containing images
@@ -531,8 +569,27 @@ Resources:
       accountId: !Ref AWS::AccountId
 
   # ---------------------------------------------------------------------------
-  # Step functions State Machine
+  # Step functions State Machine and accompanying role
   # ---------------------------------------------------------------------------
+
+  ImageProcStateMachine:
+    Type: "AWS::StepFunctions::StateMachine"
+    Properties:
+      DefinitionString: !Sub
+        - |-
+        ##{{STATEMACHINE_DEF}}
+        - {
+            ExtractImageMetadataLambdaArn: !GetAtt ExtractImageMetadataFunction.Arn,
+            TransformImageMetadataLambdaArn: !GetAtt TransformImageMetadataFunction.Arn,
+            StoreAlbumLambdaArn: !GetAtt StoreAlbumFunction.Arn,
+            DeleteAlbumLambdaArn: !GetAtt DeleteAlbumFunction.Arn,
+            StoreImageLambdaArn: !GetAtt StoreImageFunction.Arn,
+            DeleteImageLambdaArn: !GetAtt DeleteImageFunction.Arn,
+            RekognitionLambdaArn: !GetAtt RekognitionFunction.Arn,
+            GenerateThumbnailLambdaArn: !GetAtt GenerateThumbnailFunction.Arn,
+          }
+      RoleArn: !GetAtt StateMachineRole.Arn
+
   StateMachineRole:
     Type: "AWS::IAM::Role"
     Properties:
@@ -555,24 +612,6 @@ Resources:
                 Action:
                   - "lambda:InvokeFunction"
                 Resource: "*"
-
-  ImageProcStateMachine:
-    Type: "AWS::StepFunctions::StateMachine"
-    Properties:
-      DefinitionString: !Sub
-        - |-
-        ##{{STATEMACHINE_DEF}}
-        - {
-            ExtractImageMetadataLambdaArn: !GetAtt ExtractImageMetadataFunction.Arn,
-            TransformImageMetadataLambdaArn: !GetAtt TransformImageMetadataFunction.Arn,
-            StoreAlbumLambdaArn: !GetAtt StoreAlbumFunction.Arn,
-            DeleteAlbumLambdaArn: !GetAtt DeleteAlbumFunction.Arn,
-            StoreImageLambdaArn: !GetAtt StoreImageFunction.Arn,
-            DeleteImageLambdaArn: !GetAtt DeleteImageFunction.Arn,
-            RekognitionLambdaArn: !GetAtt RekognitionFunction.Arn,
-            GenerateThumbnailLambdaArn: !GetAtt GenerateThumbnailFunction.Arn,
-          }
-      RoleArn: !GetAtt StateMachineRole.Arn
 
   # ---------------------------------------------------------------------------
   # Lambda function and accompanying role used by the frontend test web app to
@@ -626,7 +665,7 @@ Resources:
     Type: AWS::Serverless::Function
 
   # ---------------------------------------------------------------------------
-  # Identity pool used by the test web app client
+  # Identity pool and role used by the test web app client
   # ---------------------------------------------------------------------------
 
   TestClientIdentityPool:
