@@ -8,13 +8,9 @@
 async function getAlbum(docClient, albumTableName, albumId) {
 	const ddbparams = {
 		TableName: albumTableName,
-		// Key: {
-		// 	albumID: { S: albumId }
-		// },
 		Key: {
 			albumID: albumId
 		},
-		//AttributesToGet: ["albumID", "uploadTimeStamp"]
 		ProjectionExpression: "albumID,uploadTimeStamp"
 	};
 	const result = await docClient.get(ddbparams).promise();
