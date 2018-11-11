@@ -152,17 +152,18 @@ Resources:
         ClientRole: !Ref TestClientIAMRole
         GetAlbumFunctionName: !Ref GetAlbumFunction
         UpdateAlbumFunctionName: !Ref UpdateAlbumFunction
+        UpdateImageFunctionName: !Ref UpdateImageFunction
 
   # Role for Gallery API
   GalleryApiRole:
     Type: "AWS::IAM::Role"
     Properties:
       Policies:
-        - PolicyName: "InvokeDescribeExecutionLambda"
+        - PolicyName: "InvokeGalleryApiLambdas"
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
-              - Sid: "InvokeDescribeExecutionLambda"
+              - Sid: "InvokeGalleryApiLambdas"
                 Effect: "Allow"
                 Action:
                   - "lambda:InvokeFunction"
@@ -170,6 +171,7 @@ Resources:
                   - !Sub "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${DescribeExecutionFunction}"
                   - !Sub "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${GetAlbumFunction}"
                   - !Sub "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${UpdateAlbumFunction}"
+                  - !Sub "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${UpdateImageFunction}"
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:
@@ -476,6 +478,17 @@ Resources:
       Environment:
         Variables:
           ALBUM_DDB_TABLE: !Ref AlbumDDBTable
+    Type: AWS::Serverless::Function
+
+  # Lambda function that updates attributes like title and description on existing images in DynamoDB
+  UpdateImageFunction:
+    Properties:
+      CodeUri: ../api/lambda_functions/update_image
+      Description: "Lambda function that updates attributes like title and description on existing images in DynamoDB"
+      Role: !GetAtt ApiGatewayLambdaWriteRole.Arn
+      Environment:
+        Variables:
+          IMAGE_DDB_TABLE: !Ref ImageDDBTable
     Type: AWS::Serverless::Function
 
   # Role for Lambdas used by the Gallery API that need read-only access to DynamoDB

@@ -22,6 +22,36 @@ paths:
         httpMethod: "POST"
         contentHandling: "CONVERT_TO_TEXT"
         type: "aws_proxy"
+  /image/{imagePath+}:
+    patch:
+      parameters:
+        - name: "imagePath"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      responses:
+        200:
+          description: "200 response"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Empty"
+      security:
+        - sigv4: []
+      x-amazon-apigateway-integration:
+        credentials: "arn:aws:iam::010410881828:role/${stageVariables.Role}"
+        uri: "arn:aws:apigateway:us-west-2:lambda:path/2015-03-31/functions/arn:aws:lambda:us-west-2:010410881828:function:${stageVariables.UpdateImageFunctionName}/invocations"
+        responses:
+          default:
+            statusCode: "200"
+        passthroughBehavior: "when_no_match"
+        httpMethod: "POST"
+        cacheNamespace: "amhv5q"
+        cacheKeyParameters:
+          - "method.request.path.imagePath"
+        contentHandling: "CONVERT_TO_TEXT"
+        type: "aws_proxy"
   /:
     get:
       responses:
