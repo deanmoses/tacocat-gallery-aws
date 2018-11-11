@@ -363,7 +363,7 @@ Resources:
   ExecuteStepFunctionsFunction:
     DependsOn: PhotoRepoS3Bucket
     Properties:
-      CodeUri: ../lambda_functions/start_state_machine
+      CodeUri: ../state_machine/lambda_functions/start_state_machine
       Description: "Triggered by S3 image upload to the repo bucket and start the image processing step function workflow"
       Role: !GetAtt BackendProcessingLambdaRole.Arn
       Environment:
@@ -380,7 +380,7 @@ Resources:
 
   ExtractImageMetadataFunction:
     Properties:
-      CodeUri: ../lambda_functions/extract_image_metadata
+      CodeUri: ../state_machine/lambda_functions/extract_image_metadata
       Description: "Lambda function that extracts image metadata such as format, size, geolocation, etc"
       MemorySize: 1024
       Timeout: 200
@@ -389,14 +389,14 @@ Resources:
 
   TransformImageMetadataFunction:
     Properties:
-      CodeUri: ../lambda_functions/transform_image_metadata
+      CodeUri: ../state_machine/lambda_functions/transform_image_metadata
       Description: "Lambda function that massages JSON of extracted image metadata into more usable format"
       Role: !GetAtt BackendProcessingLambdaRole.Arn
     Type: AWS::Serverless::Function
 
   StoreAlbumFunction:
     Properties:
-      CodeUri: ../lambda_functions/store_album
+      CodeUri: ../state_machine/lambda_functions/store_album
       Description: "Lambda function that stores album in DynamoDB"
       Role: !GetAtt BackendProcessingLambdaRole.Arn
       Environment:
@@ -406,7 +406,7 @@ Resources:
 
   DeleteAlbumFunction:
     Properties:
-      CodeUri: ../lambda_functions/delete_album
+      CodeUri: ../state_machine/lambda_functions/delete_album
       Description: "Lambda function that deletes album from DynamoDB"
       Role: !GetAtt BackendProcessingLambdaRole.Arn
       Environment:
@@ -416,7 +416,7 @@ Resources:
 
   StoreImageFunction:
     Properties:
-      CodeUri: ../lambda_functions/store_image
+      CodeUri: ../state_machine/lambda_functions/store_image
       Description: "Lambda function that stores image in DynamoDB"
       Role: !GetAtt BackendProcessingLambdaRole.Arn
       Environment:
@@ -426,7 +426,7 @@ Resources:
 
   DeleteImageFunction:
     Properties:
-      CodeUri: ../lambda_functions/delete_image
+      CodeUri: ../state_machine/lambda_functions/delete_image
       Description: "Lambda function that deletes image from DynamoDB"
       Role: !GetAtt BackendProcessingLambdaRole.Arn
       Environment:
@@ -438,12 +438,12 @@ Resources:
     Properties:
       Description: "Lambda function that uses Amazon Rekognition to detect labels from image"
       Role: !GetAtt BackendProcessingLambdaRole.Arn
-      CodeUri: ../lambda_functions/rekognition
+      CodeUri: ../state_machine/lambda_functions/rekognition
     Type: AWS::Serverless::Function
 
   GenerateThumbnailFunction:
     Properties:
-      CodeUri: ../lambda_functions/thumbnail
+      CodeUri: ../state_machine/lambda_functions/thumbnail
       Description: "Lambda function that generates thumbnails for images"
       MemorySize: 1536
       Timeout: 300
@@ -458,7 +458,7 @@ Resources:
   # Lambda function that retrieves an album and its children from DynamoDB
   GetAlbumFunction:
     Properties:
-      CodeUri: ../lambda_functions/get_album
+      CodeUri: ../api/lambda_functions/get_album
       Description: "Lambda function that returns an album and its children from DynamoDB"
       Role: !GetAtt ApiGatewayLambdaReadOnlyRole.Arn
       Environment:
@@ -587,7 +587,7 @@ Resources:
       MemorySize: 1024
       Timeout: 200
       Role: !GetAtt CustomResourceHelperRole.Arn
-      CodeUri: ../lambda_functions/create_s3_event_trigger_helper
+      CodeUri: ../state_machine/lambda_functions/create_s3_event_trigger_helper
     Type: AWS::Serverless::Function
 
   S3EventTrigger:
@@ -696,7 +696,7 @@ Resources:
       MemorySize: 1024
       Timeout: 200
       Role: !GetAtt DescribeExecutionFunctionRole.Arn
-      CodeUri: ../lambda_functions/describe_state_machine_execution
+      CodeUri: ../state_machine/lambda_functions/describe_state_machine_execution
     Type: AWS::Serverless::Function
 
   # ---------------------------------------------------------------------------
