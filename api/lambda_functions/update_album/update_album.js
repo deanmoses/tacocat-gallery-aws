@@ -37,7 +37,7 @@ async function getAlbum(
 	}
 
 	if (Object.keys(ExpressionAttributeValues).length === 0) {
-		throw "No attributes to update";
+		throw new BadRequestException("No attributes to update");
 	}
 
 	UpdateExpression += ", lastUpdated = :lastUpdated";
