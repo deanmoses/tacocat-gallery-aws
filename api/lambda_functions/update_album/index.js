@@ -1,6 +1,7 @@
 const AWS = require("aws-sdk");
 const updateAlbum = require("./update_album.js");
 const NotFoundException = require("./NotFoundException.js");
+const BadRequestException = require("./BadRequestException.js");
 
 const albumTableName = process.env.ALBUM_DDB_TABLE;
 
@@ -27,16 +28,6 @@ exports.handler = async event => {
 	}
 	const attributesToUpdate = JSON.parse(event.body);
 
-	// TODO: right now if an exception is thrown because the input data is wrong,
-	// there's no catch and you get a 502 Bad Gateway. Instead, return a 400 Bad Request
-
-	// TODO: right now an exception is thrown when there's no album,
-	// which results in a 502 Bad Gateway. Instead, return a 404 Not Found
-
-	// TODO: right now if an exception is thrown for an internal reason, there's
-	// no catch and you get a 502 Bad Gateway. Instead, return a 500 internal
-	// server error
-
 	try {
 		const album = await updateAlbum(
 			docClient,
@@ -53,6 +44,12 @@ exports.handler = async event => {
 		if (e instanceof NotFoundException) {
 			return {
 				statusCode: 404,
+				body: JSON.stringify({ errorMessage: e.message }),
+				isBase64Encoded: false
+			};
+		} else if (e instanceof BadRequestException) {
+			return {
+				statusCode: 400,
 				body: JSON.stringify({ errorMessage: e.message }),
 				isBase64Encoded: false
 			};

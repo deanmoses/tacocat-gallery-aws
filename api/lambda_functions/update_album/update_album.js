@@ -17,6 +17,10 @@ async function getAlbum(
 	albumId,
 	attributesToUpdate
 ) {
+	if (!albumId) {
+		throw new BadRequestException("Must specify album");
+	}
+
 	validateAttributes(attributesToUpdate);
 
 	let UpdateExpression = "SET";

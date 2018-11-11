@@ -108,3 +108,16 @@ test("Update Album with both real and bad data", async () => {
 		expect(e.message).toContain("noSuchAttribute");
 	}
 });
+
+test("Missing album ID", async () => {
+	expect.assertions(2);
+	try {
+		let result = await updateAlbum(docClient, tableName, null /*no album*/, {
+			title: "New Title 3"
+		});
+		throw ("Was not expecting success.  Got: ", result);
+	} catch (e) {
+		expect(e).toBeInstanceOf(BadRequestException); // Expect this error
+		expect(e.message).toContain("album");
+	}
+});
