@@ -1,4 +1,3 @@
---- # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
 # Amazon AWS CloudFormation template
 #
@@ -150,6 +149,7 @@ Resources:
       Variables:
         Region: !Ref AWS::Region
         Role: !Ref GalleryApiRole
+        ClientRole: !Ref TestClientIAMRole
         GetAlbumFunctionName: !Ref GetAlbumFunction
         UpdateAlbumFunctionName: !Ref UpdateAlbumFunction
 
@@ -763,6 +763,17 @@ Resources:
                   - "lambda:InvokeFunction"
                 Resource:
                   - !Sub "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${GetAlbumFunction}"
+        - PolicyName: "InvokeGalleryApi"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Sid: "InvokeGetAlbumLambda"
+                Effect: "Allow"
+                Action:
+                  - "execute-api:Invoke"
+                Resource:
+                  - !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${GalleryApi}/${ApiStage}/PATCH/album"
+                  - !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${GalleryApi}/${ApiStage}/PATCH/album/*"
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:
