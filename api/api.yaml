@@ -1,7 +1,7 @@
 openapi: "3.0.1"
 info:
   title: "Tacocat Gallery API"
-  version: "2018-11-09T17:18:31Z"
+  version: "2018-11-10T20:18:31Z"
 paths:
   /album:
     get:
@@ -39,7 +39,8 @@ paths:
             responseParameters:
               method.response.header.Content-Type: "'text/html'"
             responseTemplates:
-              text/html: "<html>\n    <head>\n        <style>\n        body {\n  \
+              text/html:
+                "<html>\n    <head>\n        <style>\n        body {\n  \
                 \          color: #333;\n            font-family: Sans-serif;\n  \
                 \          max-width: 800px;\n            margin: auto;\n        }\n\
                 \        </style>\n    </head>\n    <body>\n        <h1>Welcome to\
@@ -61,17 +62,17 @@ paths:
                 \        </p>\n        <pre>\n{\n    \"type\" : \"cat\",\n    \"price\"\
                 \ : 123.11\n}\n        </pre>\n    </body>\n</html>"
         requestTemplates:
-          application/json: "{\"statusCode\": 200}"
+          application/json: '{"statusCode": 200}'
         passthroughBehavior: "when_no_match"
         type: "mock"
   /album/{albumPath+}:
     get:
       parameters:
-      - name: "albumPath"
-        in: "path"
-        required: true
-        schema:
-          type: "string"
+        - name: "albumPath"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
       responses:
         200:
           description: "200 response"
@@ -89,7 +90,34 @@ paths:
         httpMethod: "POST"
         cacheNamespace: "68kvx2"
         cacheKeyParameters:
-        - "method.request.path.albumPath"
+          - "method.request.path.albumPath"
+        contentHandling: "CONVERT_TO_TEXT"
+        type: "aws_proxy"
+    patch:
+      parameters:
+        - name: "albumPath"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      responses:
+        200:
+          description: "200 response"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Empty"
+      x-amazon-apigateway-integration:
+        credentials: "arn:aws:iam::010410881828:role/${stageVariables.Role}"
+        uri: "arn:aws:apigateway:us-west-2:lambda:path/2015-03-31/functions/arn:aws:lambda:us-west-2:010410881828:function:${stageVariables.UpdateAlbumFunctionName}/invocations"
+        responses:
+          default:
+            statusCode: "200"
+        passthroughBehavior: "when_no_match"
+        httpMethod: "POST"
+        cacheNamespace: "63semf"
+        cacheKeyParameters:
+          - "method.request.path.albumPath"
         contentHandling: "CONVERT_TO_TEXT"
         type: "aws_proxy"
 components:

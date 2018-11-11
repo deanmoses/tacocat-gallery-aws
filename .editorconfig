@@ -16,3 +16,7 @@ trim_trailing_whitespace = false
 # configuration for javascript, react JSX, and its TypeScript variants
 [*.{js,jsx,ts,tsx}]
 quote_type = double
+
+
+[*.yaml]
+editor.formatOnSave: false

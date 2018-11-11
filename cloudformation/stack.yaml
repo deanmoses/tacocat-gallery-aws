@@ -151,6 +151,7 @@ Resources:
         Region: !Ref AWS::Region
         Role: !Ref GalleryApiRole
         GetAlbumFunctionName: !Ref GetAlbumFunction
+        UpdateAlbumFunctionName: !Ref UpdateAlbumFunction
 
   # Role for Gallery API
   GalleryApiRole:
@@ -167,16 +168,8 @@ Resources:
                   - "lambda:InvokeFunction"
                 Resource:
                   - !Sub "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${DescribeExecutionFunction}"
-        - PolicyName: "InvokeGetAlbumLambda"
-          PolicyDocument:
-            Version: "2012-10-17"
-            Statement:
-              - Sid: "InvokeGetAlbumLambda"
-                Effect: "Allow"
-                Action:
-                  - "lambda:InvokeFunction"
-                Resource:
                   - !Sub "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${GetAlbumFunction}"
+                  - !Sub "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${UpdateAlbumFunction}"
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:
@@ -458,9 +451,11 @@ Resources:
     Type: AWS::Serverless::Function
 
   # -----------------------------------------------------------------------------
-  # This Lambda function returns an album and its children.
-  # It's hooked up to the API Gateway API to get an album.
+  # Lambda functions hooked up to the API Gateway API to read and write albums,
+  # and their accompanying roles
   # -----------------------------------------------------------------------------
+
+  # Lambda function that retrieves an album and its children from DynamoDB
   GetAlbumFunction:
     Properties:
       CodeUri: ../lambda_functions/get_album
@@ -470,6 +465,17 @@ Resources:
         Variables:
           ALBUM_DDB_TABLE: !Ref AlbumDDBTable
           IMAGE_DDB_TABLE: !Ref ImageDDBTable
+    Type: AWS::Serverless::Function
+
+  # Lambda function that updates attributes like title and description on existing albums in DynamoDB
+  UpdateAlbumFunction:
+    Properties:
+      CodeUri: ../api/lambda_functions/update_album
+      Description: "Lambda function that updates attributes like title and description on existing albums in DynamoDB"
+      Role: !GetAtt ApiGatewayLambdaWriteRole.Arn
+      Environment:
+        Variables:
+          ALBUM_DDB_TABLE: !Ref AlbumDDBTable
     Type: AWS::Serverless::Function
 
   # Role for Lambdas used by the Gallery API that need read-only access to DynamoDB
@@ -485,17 +491,46 @@ Resources:
                 - "lambda.amazonaws.com"
             Action:
               - "sts:AssumeRole"
-      Path: "/TacocatGallery/"
+      Path: "/Gallery/"
       Policies:
-        - PolicyName: "TacocatGalleryDynamoTableReadAccess"
+        - PolicyName: "GalleryDynamoTableReadAccess"
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
-              - Sid: "TacocatGalleryDynamoTableReadAccess"
+              - Sid: "GalleryDynamoTableReadAccess"
                 Effect: "Allow"
                 Action:
                   - "dynamodb:GetItem"
                   - "dynamodb:Query"
+                Resource:
+                  - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${AlbumDDBTable}"
+                  - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${AlbumDDBTable}/*"
+                  - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${ImageDDBTable}"
+                  - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${ImageDDBTable}/*"
+
+  # Role for Lambdas used by the Gallery API that need write access to DynamoDB
+  ApiGatewayLambdaWriteRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Principal:
+              Service:
+                - "lambda.amazonaws.com"
+            Action:
+              - "sts:AssumeRole"
+      Path: "/Gallery/"
+      Policies:
+        - PolicyName: "GalleryDynamoTableWriteAccess"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Sid: "GalleryDynamoTableWriteAccess"
+                Effect: "Allow"
+                Action:
+                  - "dynamodb:UpdateItem"
                 Resource:
                   - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${AlbumDDBTable}"
                   - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${AlbumDDBTable}/*"
