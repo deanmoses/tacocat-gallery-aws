@@ -1,4 +1,4 @@
-const getImageId = require("./image_id.js");
+const getImageId = require("./get_image_path.js");
 
 test("albums/2001/image.jpg", () => {
 	expect(getImageId("albums/2001/image.jpg")).toBe("/2001/image.jpg");

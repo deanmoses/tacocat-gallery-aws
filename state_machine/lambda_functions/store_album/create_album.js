@@ -1,29 +1,25 @@
-const getParentFromPath = require("./parent_path.js");
-
+const getParentAndNameFromPath = require("./get_parent_and_name_from_path.js");
 /**
  * Create album in DynamoDB
  *
  * @param {*} docClient AWS DynamoDB DocumentClient
- * @param {*} albumTableName name of Album table in DynamoDB
+ * @param {*} tableName name of the Gallery Item table in DynamoDB
  * @param {*} albumPath path of the album, like '/2001/12-31/'
- * @param {*} fileUploadTimeStamp time the album was uploaded
+ * @param {*} uploadTimestamp time the album was uploaded to S3
  */
-function createAlbum(
-	docClient,
-	albumTableName,
-	albumPath,
-	fileUploadTimeStamp
-) {
-	const parentAlbumPath = getParentFromPath(albumPath);
+function createAlbum(docClient, tableName, albumPath, uploadTimestamp) {
+	const pathParts = getParentAndNameFromPath(albumPath);
 	const dynamoAlbumItem = {
-		albumID: albumPath,
-		parentID: parentAlbumPath,
-		uploadTimeStamp: fileUploadTimeStamp
+		ParentPath: pathParts.parent,
+		ItemName: pathParts.name,
+		ItemType: "album",
+		UploadDateTime: uploadTimestamp,
+		UpdateDateTime: uploadTimestamp
 	};
 	const ddbparams = {
-		TableName: albumTableName,
+		TableName: tableName,
 		Item: dynamoAlbumItem,
-		ConditionExpression: "attribute_not_exists (albumID)"
+		ConditionExpression: "attribute_not_exists (ItemName)"
 	};
 	return docClient.put(ddbparams).promise();
 }

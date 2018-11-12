@@ -42,6 +42,10 @@ Outputs:
     Description: S3 bucket containing the image repository
     Value:
       Ref: "PhotoRepoS3Bucket"
+  DDBGalleryItemTable:
+    Description: DynamoDB table containing gallery albums and images
+    Value:
+      Ref: "GalleryItemDDBTable"
   DDBAlbumMetadataTable:
     Description: DynamoDB table containing albums
     Value:
@@ -206,6 +210,26 @@ Resources:
               - ETag
 
   #
+  # DynamoDB table containing both albums and images
+  #
+  GalleryItemDDBTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: ParentPath
+          AttributeType: S
+        - AttributeName: ItemName
+          AttributeType: S
+      KeySchema:
+        - AttributeName: ParentPath
+          KeyType: HASH
+        - AttributeName: ItemName
+          KeyType: RANGE
+      ProvisionedThroughput:
+        ReadCapacityUnits: "3"
+        WriteCapacityUnits: "3"
+
+  #
   # DynamoDB table for images
   #
   ImageDDBTable:
@@ -317,6 +341,17 @@ Resources:
                 Action:
                   - "s3:PutObject"
                 Resource: !Sub "arn:aws:s3:::${PhotoRepoS3Bucket}/*"
+        - PolicyName: "ManageGalleryItemDDBTable"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Sid: "ManageGalleryItemDDBTable"
+                Effect: "Allow"
+                Action:
+                  - "dynamodb:UpdateItem"
+                  - "dynamodb:PutItem"
+                  - "dynamodb:DeleteItem"
+                Resource: !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${GalleryItemDDBTable}"
         - PolicyName: "ManageImageDDBTable"
           PolicyDocument:
             Version: "2012-10-17"
@@ -370,6 +405,7 @@ Resources:
       Role: !GetAtt BackendProcessingLambdaRole.Arn
       Environment:
         Variables:
+          GALLERY_ITEM_DDB_TABLE: !Ref GalleryItemDDBTable
           IMAGE_DDB_TABLE: !Ref ImageDDBTable
           STATE_MACHINE_ARN: !Ref ImageProcStateMachine
     Type: AWS::Serverless::Function
@@ -403,6 +439,7 @@ Resources:
       Role: !GetAtt BackendProcessingLambdaRole.Arn
       Environment:
         Variables:
+          GALLERY_ITEM_DDB_TABLE: !Ref GalleryItemDDBTable
           ALBUM_DDB_TABLE: !Ref AlbumDDBTable
     Type: AWS::Serverless::Function
 
@@ -413,6 +450,7 @@ Resources:
       Role: !GetAtt BackendProcessingLambdaRole.Arn
       Environment:
         Variables:
+          GALLERY_ITEM_DDB_TABLE: !Ref GalleryItemDDBTable
           ALBUM_DDB_TABLE: !Ref AlbumDDBTable
     Type: AWS::Serverless::Function
 
@@ -423,6 +461,7 @@ Resources:
       Role: !GetAtt BackendProcessingLambdaRole.Arn
       Environment:
         Variables:
+          GALLERY_ITEM_DDB_TABLE: !Ref GalleryItemDDBTable
           IMAGE_DDB_TABLE: !Ref ImageDDBTable
     Type: AWS::Serverless::Function
 
@@ -433,6 +472,7 @@ Resources:
       Role: !GetAtt BackendProcessingLambdaRole.Arn
       Environment:
         Variables:
+          GALLERY_ITEM_DDB_TABLE: !Ref GalleryItemDDBTable
           IMAGE_DDB_TABLE: !Ref ImageDDBTable
     Type: AWS::Serverless::Function
 
@@ -465,6 +505,7 @@ Resources:
       Role: !GetAtt ApiGatewayLambdaReadOnlyRole.Arn
       Environment:
         Variables:
+          GALLERY_ITEM_DDB_TABLE: !Ref GalleryItemDDBTable
           ALBUM_DDB_TABLE: !Ref AlbumDDBTable
           IMAGE_DDB_TABLE: !Ref ImageDDBTable
     Type: AWS::Serverless::Function
@@ -477,6 +518,7 @@ Resources:
       Role: !GetAtt ApiGatewayLambdaWriteRole.Arn
       Environment:
         Variables:
+          GALLERY_ITEM_DDB_TABLE: !Ref GalleryItemDDBTable
           ALBUM_DDB_TABLE: !Ref AlbumDDBTable
     Type: AWS::Serverless::Function
 
@@ -488,6 +530,7 @@ Resources:
       Role: !GetAtt ApiGatewayLambdaWriteRole.Arn
       Environment:
         Variables:
+          GALLERY_ITEM_DDB_TABLE: !Ref GalleryItemDDBTable
           IMAGE_DDB_TABLE: !Ref ImageDDBTable
     Type: AWS::Serverless::Function
 
@@ -516,6 +559,8 @@ Resources:
                   - "dynamodb:GetItem"
                   - "dynamodb:Query"
                 Resource:
+                  - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${GalleryItemDDBTable}"
+                  - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${GalleryItemDDBTable}/*"
                   - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${AlbumDDBTable}"
                   - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${AlbumDDBTable}/*"
                   - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${ImageDDBTable}"
@@ -545,6 +590,8 @@ Resources:
                 Action:
                   - "dynamodb:UpdateItem"
                 Resource:
+                  - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${GalleryItemDDBTable}"
+                  - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${GalleryItemDDBTable}/*"
                   - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${AlbumDDBTable}"
                   - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${AlbumDDBTable}/*"
                   - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${ImageDDBTable}"
@@ -752,6 +799,8 @@ Resources:
                 Action:
                   - "dynamodb:*"
                 Resource:
+                  - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${GalleryItemDDBTable}"
+                  - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${GalleryItemDDBTable}/*"
                   - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${AlbumDDBTable}"
                   - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${AlbumDDBTable}/*"
                   - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${ImageDDBTable}"

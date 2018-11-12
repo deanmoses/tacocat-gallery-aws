@@ -1,9 +1,9 @@
 /**
- * Given a S3 key, return the image ID
+ * Given a S3 key, return the image path as should be used in URLs and stored in DynamoDB
  *
  * @param {*} s3key Amazon S3 key of object, needs to be something like albums/albumName/subalbumName/someImage.jpg
  */
-function getImageId(s3key) {
+function getImagePath(s3key) {
 	// S3 key may have spaces or unicode non-ASCII characters
 	var imageId = decodeURIComponent(s3key.replace(/\+/g, " "));
 	// the s3 key starts with "albums/".  Remove that.
@@ -13,4 +13,4 @@ function getImageId(s3key) {
 	return imageId;
 }
 
-module.exports = getImageId;
+module.exports = getImagePath;

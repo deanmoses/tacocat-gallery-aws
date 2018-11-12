@@ -1,4 +1,4 @@
-const getParentFromPath = require("./parent_path.js");
+const getParentAndNameFromPath = require("./get_parent_and_name_from_path.js");
 
 /**
  * Create image in DynamoDB if it has not already been created.
@@ -8,18 +8,24 @@ const getParentFromPath = require("./parent_path.js");
  * first.
  *
  * @param {*} docClient AWS DynamoDB DocumentClient
- * @param {*} tableName Name of the Image table in DynamoDB
- * @param {*} imageId ID of the image in DynamoDB
+ * @param {*} tableName Name of the table in DynamoDB in which to store gallery items
+ * @param {*} imagePath Path of the image like /2001/12-31/image.jpg
+ * @param {*} fileUploadTimeStamp time the image was uploaded to S3
  */
-function createImage(docClient, tableName, imageId) {
-	const dynamoImageItem = {
-		imageID: imageId,
-		albumID: getParentFromPath(imageId)
+function createImage(docClient, tableName, imagePath, fileUploadTimeStamp) {
+	const pathParts = getParentAndNameFromPath(imagePath);
+
+	const dynamoItem = {
+		ParentPath: pathParts.parent,
+		ItemName: pathParts.name,
+		ItemType: "media",
+		UploadDateTime: fileUploadTimeStamp,
+		UpdateDateTime: fileUploadTimeStamp
 	};
 	const ddbparams = {
 		TableName: tableName,
-		Item: dynamoImageItem,
-		ConditionExpression: "attribute_not_exists (imageID)"
+		Item: dynamoItem,
+		ConditionExpression: "attribute_not_exists (ItemName)"
 	};
 
 	return new Promise(function(resolve, reject) {
