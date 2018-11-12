@@ -7,7 +7,7 @@ const imageTableName = "NotARealTableName";
 const albumId = "/not/a/real/album";
 
 test("Get Images in Album", async () => {
-	expect.assertions(9);
+	expect.assertions(8);
 
 	// Mock out the AWS 'get' method
 	const mockGetResponse = {
@@ -36,16 +36,15 @@ test("Get Images in Album", async () => {
 	);
 	expect(result).toBeDefined();
 
-	expect(result.album).toBeDefined();
-	expect(result.album.albumID).toBe("/2001");
+	expect(result.children).toBeDefined();
 
-	expect(result.childAlbums).toBeDefined();
-	expect(result.childAlbums[0]).toBeDefined();
-	expect(result.childAlbums[0].imageID).toBeDefined();
+	expect(result.children).toBeDefined();
+	expect(result.children[0]).toBeDefined();
+	expect(result.children[0].ItemName).toBe("cross_country5.jpg");
 
-	expect(result.childImages).toBeDefined();
-	expect(result.childImages[0]).toBeDefined();
-	expect(result.childImages[0].imageID).toBe("2001/12-31/cross_country5.jpg");
+	expect(result.children).toBeDefined();
+	expect(result.children[1]).toBeDefined();
+	expect(result.children[1].ItemName).toBe("cross_country6.jpg");
 
 	AWS_MOCK.restore("DynamoDB.DocumentClient");
 });
@@ -53,7 +52,8 @@ test("Get Images in Album", async () => {
 const mockItems = [
 	{
 		fileSize: "2.803MB",
-		imageID: "2001/12-31/cross_country5.jpg",
+		ItemName: "cross_country5.jpg",
+		ItemType: "media",
 		imageFormat: "JPEG",
 		creationTime: "2018:11:03 16:25:41",
 		dimensions: { width: 4032, height: 3024 },
@@ -88,7 +88,7 @@ const mockItems = [
 	},
 	{
 		fileSize: "1.845MB",
-		imageID: "2001/12-31/cross_country6.jpg",
+		ItemName: "cross_country6.jpg",
 		imageFormat: "JPEG",
 		creationTime: "2018:11:03 16:26:04",
 		dimensions: { width: 4032, height: 3024 },
