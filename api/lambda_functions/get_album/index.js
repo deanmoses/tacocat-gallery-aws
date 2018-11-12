@@ -1,8 +1,7 @@
 const AWS = require("aws-sdk");
 const getAlbumAndChildren = require("./get_album_and_children.js");
 
-const albumTableName = process.env.ALBUM_DDB_TABLE;
-const imageTableName = process.env.IMAGE_DDB_TABLE;
+const tableName = process.env.GALLERY_ITEM_DDB_TABLE;
 
 const docClient = new AWS.DynamoDB.DocumentClient({
 	region: process.env.AWS_REGION
@@ -15,12 +14,7 @@ exports.handler = async event => {
 	// event.path is passed in from the API Gateway and represents the full
 	// path of the HTTP request, which starts with "/albums/..."
 	const albumPath = event.path.replace("/album", "");
-	const album = await getAlbumAndChildren(
-		docClient,
-		albumTableName,
-		imageTableName,
-		albumPath
-	);
+	const album = await getAlbumAndChildren(docClient, tableName, albumPath);
 	if (!album) {
 		return {
 			isBase64Encoded: false,

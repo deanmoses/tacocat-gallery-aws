@@ -1,17 +1,21 @@
+const getParentAndNameFromPath = require("./get_parent_and_name_from_path.js");
+
 /**
  * Retrieve an album from DynamoDB.  Does not retrieve any child photos or child albums.
  *
  * @param {*} docClient AWS DynamoDB DocumentClient
- * @param {*} albumTableName name of the Album table in DynamoDB
- * @param {*} albumId ID of the album to get
+ * @param {*} tableName Name of the table in DynamoDB containing gallery items
+ * @param {*} path Path of the album to retrieve, like /2001/12-31/
  */
-async function getAlbum(docClient, albumTableName, albumId) {
+async function getAlbum(docClient, tableName, path) {
+	const pathParts = getParentAndNameFromPath(path);
 	const ddbparams = {
-		TableName: albumTableName,
+		TableName: tableName,
 		Key: {
-			albumID: albumId
+			ParentPath: pathParts.parent,
+			ItemName: pathParts.name
 		},
-		ProjectionExpression: "albumID,uploadTimeStamp"
+		ProjectionExpression: "title,description,UploadDateTime"
 	};
 	const result = await docClient.get(ddbparams).promise();
 	return result.Item;

@@ -5,7 +5,7 @@ const getParentAndNameFromPath = require("./get_parent_and_name_from_path.js");
  *
  * @param {*} docClient AWS DynamoDB DocumentClient
  * @param {*} tableName Name of the table in DynamoDB in which to store gallery items
- * @param {*} path Path of the image like /2001/12-31/
+ * @param {*} path Path of the album to delete, like /2001/12-31/
  */
 function deleteAlbum(docClient, tableName, path) {
 	const pathParts = getParentAndNameFromPath(path);

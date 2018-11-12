@@ -1,4 +1,4 @@
-const getChildAlbums = require("./get_child_albums.js");
+const getChildren = require("./get_children.js");
 const AWS = require("aws-sdk");
 const AWS_MOCK = require("aws-sdk-mock");
 const awsRegion = "us-west-2";
@@ -21,7 +21,7 @@ test("Get Child Albums", async () => {
 		region: awsRegion
 	});
 
-	const result = await getChildAlbums(docClient, tableName, albumId);
+	const result = await getChildren(docClient, tableName, albumId);
 	expect(result).toBeDefined();
 	expect(result[0]).toBeDefined();
 	expect(result[0].albumID).toBeDefined();

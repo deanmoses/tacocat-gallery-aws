@@ -1,31 +1,23 @@
 const getAlbum = require("./get_album.js");
-const getChildAlbums = require("./get_child_albums.js");
-const getChildImages = require("./get_child_images.js");
+const getChildren = require("./get_children.js");
 
 /**
- * Retrieve an album and its child albums from DynamoDB.
+ * Retrieve an album and its children (images and subalbums) from DynamoDB.
  *
  * @param {*} docClient AWS DynamoDB DocumentClient
- * @param {*} albumTableName name of the Album table in DynamoDB
- * @param {*} albumId ID of the album to get
+ * @param {*} tableName name of the Album table in DynamoDB
+ * @param {*} path path of the album to get, like /2001/12-31/
  */
-async function getAlbumAndChildren(
-	docClient,
-	albumTableName,
-	imageTableName,
-	albumId
-) {
-	if (albumId.lastIndexOf("/", 0) !== 0) albumId = "/" + albumId; // make sure albumId starts with a "/"
+async function getAlbumAndChildren(docClient, tableName, path) {
+	if (path.lastIndexOf("/", 0) !== 0) path = "/" + path; // make sure albumId starts with a "/"
 
-	const album = await getAlbum(docClient, albumTableName, albumId);
-	if (!album) return null;
-	const childAlbums = await getChildAlbums(docClient, albumTableName, albumId);
-	const childImages = await getChildImages(docClient, imageTableName, albumId);
+	const album = await getAlbum(docClient, tableName, path);
+	if (!album) return null; // TODO: throw exception
+	const children = await getChildren(docClient, tableName, path);
 
 	return {
 		album: album,
-		childAlbums: childAlbums,
-		childImages: childImages
+		children: children
 	};
 }
 
