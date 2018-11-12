@@ -1,42 +1,21 @@
-// dependencies
-const AWS = require('aws-sdk');
+const AWS = require("aws-sdk");
+const deleteImage = require("./delete_image.js");
 
-const tableName = process.env.IMAGE_DDB_TABLE;
+const tableName = process.env.GALLERY_ITEM_DDB_TABLE;
+
 const docClient = new AWS.DynamoDB.DocumentClient({
-    region: process.env.AWS_REGION
+	region: process.env.AWS_REGION
 });
 
 /**
- * A Lambda function that deletes image in DynamoDB.
+ * A Lambda function that deletes an image from DynamoDB
  */
-exports.handler = (event, context, callback) => {
-    // The s3 srcKey may have spaces or unicode non-ASCII characters
-    const srcKey = decodeURIComponent(event.s3Key.replace(/\+/g, " "));
+exports.handler = async event => {
+	// The s3 srcKey may have spaces or unicode non-ASCII characters
+	const srcKey = decodeURIComponent(event.s3Key.replace(/\+/g, " "));
 
-    // The s3 srcKey starts with "albums/".  Remove that.
-    const imageID = srcKey.substring(srcKey.indexOf("/") + 1);
+	// The s3 srcKey starts with "albums/".  Remove that.
+	const imagePath = srcKey.substring(srcKey.indexOf("/") + 1);
 
-    deleteImage(imageID).then(data => {
-        callback(null, data);
-    }).catch(err => {
-        callback(err);
-    });
+	return await deleteImage(docClient, tableName, imagePath);
 };
-
-/**
- * Delete the album from DynamoDB
- */
-function deleteImage(imageID) {
-    return new Promise(function(resolve, reject) {
-        const ddbparams = {
-            TableName: tableName,
-            Key:{"imageID": imageID},
-            ConditionExpression: 'attribute_exists (imageID)'
-        };
-        docClient.delete(ddbparams).promise().then(data => {
-            resolve(data);
-        }).catch(err => {
-            reject(err);
-        });
-    });
-}
