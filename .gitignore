@@ -66,3 +66,6 @@ typings/
 # Processed cloudformation templates
 cloudformation/stack.provisional.yaml
 cloudformation/stack.final.yaml
+
+#OSX folder information file
+.DS_Store
