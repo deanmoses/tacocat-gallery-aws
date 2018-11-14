@@ -46,14 +46,6 @@ Outputs:
     Description: DynamoDB table containing gallery albums and images
     Value:
       Ref: "GalleryItemDDBTable"
-  DDBAlbumMetadataTable:
-    Description: DynamoDB table containing albums
-    Value:
-      Ref: "AlbumDDBTable"
-  DDBImageMetadataTable:
-    Description: DynamoDB table containing individual images
-    Value:
-      Ref: "ImageDDBTable"
   Region:
     Description: AWS Region the stack has been deployed to
     Value:
@@ -146,7 +138,7 @@ Resources:
   #
   GalleryApi:
     Type: AWS::Serverless::Api
-    DependsOn: AlbumDDBTable
+    DependsOn: GalleryItemDDBTable
     Properties:
       DefinitionUri: ../api/api.yaml
       StageName: !Ref ApiStage
@@ -229,66 +221,6 @@ Resources:
         ReadCapacityUnits: "3"
         WriteCapacityUnits: "3"
 
-  #
-  # DynamoDB table for images
-  #
-  ImageDDBTable:
-    Type: AWS::DynamoDB::Table
-    Properties:
-      AttributeDefinitions:
-        - AttributeName: albumID
-          AttributeType: S
-        - AttributeName: imageID
-          AttributeType: S
-      KeySchema:
-        - AttributeName: imageID
-          KeyType: HASH
-      ProvisionedThroughput:
-        ReadCapacityUnits: "3"
-        WriteCapacityUnits: "3"
-      GlobalSecondaryIndexes:
-        - IndexName: albumID-imageID-index
-          KeySchema:
-            - AttributeName: albumID
-              KeyType: HASH
-            - AttributeName: imageID
-              KeyType: RANGE
-          Projection:
-            ProjectionType: ALL
-          ProvisionedThroughput:
-            ReadCapacityUnits: "3"
-            WriteCapacityUnits: "3"
-
-  #
-  # DynamoDB table for albums
-  #
-  AlbumDDBTable:
-    Type: AWS::DynamoDB::Table
-    Properties:
-      AttributeDefinitions:
-        - AttributeName: albumID
-          AttributeType: S
-        - AttributeName: parentID
-          AttributeType: S
-      KeySchema:
-        - AttributeName: albumID
-          KeyType: HASH
-      ProvisionedThroughput:
-        ReadCapacityUnits: "2"
-        WriteCapacityUnits: "1"
-      GlobalSecondaryIndexes:
-        - IndexName: parentID-albumID-index
-          KeySchema:
-            - AttributeName: parentID
-              KeyType: HASH
-            - AttributeName: albumID
-              KeyType: RANGE
-          Projection:
-            ProjectionType: ALL
-          ProvisionedThroughput:
-            ReadCapacityUnits: "2"
-            WriteCapacityUnits: "1"
-
   # ---------------------------------------------------------------------------
   # IAM role used by all the Lambda functions that executes the image processing
   # workflow, so it has the union of the required permissions for these Lambda
@@ -352,28 +284,6 @@ Resources:
                   - "dynamodb:PutItem"
                   - "dynamodb:DeleteItem"
                 Resource: !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${GalleryItemDDBTable}"
-        - PolicyName: "ManageImageDDBTable"
-          PolicyDocument:
-            Version: "2012-10-17"
-            Statement:
-              - Sid: "ManageImageDDBTable"
-                Effect: "Allow"
-                Action:
-                  - "dynamodb:UpdateItem"
-                  - "dynamodb:PutItem"
-                  - "dynamodb:DeleteItem"
-                Resource: !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${ImageDDBTable}"
-        - PolicyName: "ManageAlbumDDBTable"
-          PolicyDocument:
-            Version: "2012-10-17"
-            Statement:
-              - Sid: "ManageAlbumDDBTable"
-                Effect: "Allow"
-                Action:
-                  - "dynamodb:UpdateItem"
-                  - "dynamodb:PutItem"
-                  - "dynamodb:DeleteItem"
-                Resource: !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${AlbumDDBTable}"
         - PolicyName: "RekognitionDetectLabels"
           PolicyDocument:
             Version: "2012-10-17"
@@ -405,8 +315,6 @@ Resources:
       Role: !GetAtt BackendProcessingLambdaRole.Arn
       Environment:
         Variables:
-          GALLERY_ITEM_DDB_TABLE: !Ref GalleryItemDDBTable
-          IMAGE_DDB_TABLE: !Ref ImageDDBTable
           STATE_MACHINE_ARN: !Ref ImageProcStateMachine
     Type: AWS::Serverless::Function
 
@@ -440,7 +348,6 @@ Resources:
       Environment:
         Variables:
           GALLERY_ITEM_DDB_TABLE: !Ref GalleryItemDDBTable
-          ALBUM_DDB_TABLE: !Ref AlbumDDBTable
     Type: AWS::Serverless::Function
 
   DeleteAlbumFunction:
@@ -451,7 +358,6 @@ Resources:
       Environment:
         Variables:
           GALLERY_ITEM_DDB_TABLE: !Ref GalleryItemDDBTable
-          ALBUM_DDB_TABLE: !Ref AlbumDDBTable
     Type: AWS::Serverless::Function
 
   StoreImageFunction:
@@ -462,7 +368,6 @@ Resources:
       Environment:
         Variables:
           GALLERY_ITEM_DDB_TABLE: !Ref GalleryItemDDBTable
-          IMAGE_DDB_TABLE: !Ref ImageDDBTable
     Type: AWS::Serverless::Function
 
   DeleteImageFunction:
@@ -473,7 +378,6 @@ Resources:
       Environment:
         Variables:
           GALLERY_ITEM_DDB_TABLE: !Ref GalleryItemDDBTable
-          IMAGE_DDB_TABLE: !Ref ImageDDBTable
     Type: AWS::Serverless::Function
 
   RekognitionFunction:
@@ -506,8 +410,6 @@ Resources:
       Environment:
         Variables:
           GALLERY_ITEM_DDB_TABLE: !Ref GalleryItemDDBTable
-          ALBUM_DDB_TABLE: !Ref AlbumDDBTable
-          IMAGE_DDB_TABLE: !Ref ImageDDBTable
     Type: AWS::Serverless::Function
 
   # Lambda function that updates attributes like title and description on existing albums in DynamoDB
@@ -519,7 +421,6 @@ Resources:
       Environment:
         Variables:
           GALLERY_ITEM_DDB_TABLE: !Ref GalleryItemDDBTable
-          ALBUM_DDB_TABLE: !Ref AlbumDDBTable
     Type: AWS::Serverless::Function
 
   # Lambda function that updates attributes like title and description on existing images in DynamoDB
@@ -531,7 +432,6 @@ Resources:
       Environment:
         Variables:
           GALLERY_ITEM_DDB_TABLE: !Ref GalleryItemDDBTable
-          IMAGE_DDB_TABLE: !Ref ImageDDBTable
     Type: AWS::Serverless::Function
 
   # Role for Lambdas used by the Gallery API that need read-only access to DynamoDB
@@ -561,10 +461,6 @@ Resources:
                 Resource:
                   - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${GalleryItemDDBTable}"
                   - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${GalleryItemDDBTable}/*"
-                  - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${AlbumDDBTable}"
-                  - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${AlbumDDBTable}/*"
-                  - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${ImageDDBTable}"
-                  - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${ImageDDBTable}/*"
 
   # Role for Lambdas used by the Gallery API that need write access to DynamoDB
   ApiGatewayLambdaWriteRole:
@@ -592,10 +488,6 @@ Resources:
                 Resource:
                   - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${GalleryItemDDBTable}"
                   - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${GalleryItemDDBTable}/*"
-                  - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${AlbumDDBTable}"
-                  - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${AlbumDDBTable}/*"
-                  - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${ImageDDBTable}"
-                  - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${ImageDDBTable}/*"
 
   # ---------------------------------------------------------------------------
   # Custom resources created with Lambda functions:
@@ -801,10 +693,7 @@ Resources:
                 Resource:
                   - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${GalleryItemDDBTable}"
                   - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${GalleryItemDDBTable}/*"
-                  - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${AlbumDDBTable}"
-                  - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${AlbumDDBTable}/*"
-                  - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${ImageDDBTable}"
-                  - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${ImageDDBTable}/*"
+
         - PolicyName: "InvokeDescribeExecutionLambda"
           PolicyDocument:
             Version: "2012-10-17"
