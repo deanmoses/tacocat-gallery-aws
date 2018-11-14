@@ -1,27 +1,30 @@
 const NotFoundException = require("./NotFoundException.js");
 const BadRequestException = require("./BadRequestException.js");
+const getParentAndNameFromPath = require("./get_parent_and_name_from_path.js");
 
 /**
  * Update an image's attributes (like title and description) in DynamoDB
  *
  * @param {*} docClient AWS DynamoDB DocumentClient
- * @param {*} imageTableName name of the Image table in DynamoDB
- * @param {*} imageId ID of the image to get
+ * @param {*} tableName Name of the table in DynamoDB containing gallery items
+ * @param {*} path Path of the image to update, like /2001/12-31/image.jpg
  * @param {*} attributesToUpdate bag of attributes to update
  *
  * @returns {} if success, throws exception if there's a problem with the input
  */
 async function getImage(
 	docClient,
-	imageTableName,
-	imageId,
+	tableName,
+	path,
 	attributesToUpdate
 ) {
-	if (!imageId) {
+	if (!path) {
 		throw new BadRequestException("Must specify image");
 	}
 
 	validateAttributes(attributesToUpdate);
+
+	const pathParts = getParentAndNameFromPath(path);
 
 	let UpdateExpression = "SET";
 	let ExpressionAttributeValues = {};
@@ -40,19 +43,20 @@ async function getImage(
 		throw new BadRequestException("No attributes to update");
 	}
 
-	UpdateExpression += ", lastUpdated = :lastUpdated";
-	ExpressionAttributeValues[":lastUpdated"] = Math.floor(
+	UpdateExpression += ", UpdateDateTime = :UpdateDateTime";
+	ExpressionAttributeValues[":UpdateDateTime"] = Math.floor(
 		new Date().getTime() / 1000
 	);
 
 	const ddbparams = {
-		TableName: imageTableName,
+		TableName: tableName,
 		Key: {
-			imageID: imageId
+			ParentPath: pathParts.parent,
+			ItemName: pathParts.name
 		},
 		UpdateExpression: UpdateExpression,
 		ExpressionAttributeValues: ExpressionAttributeValues,
-		ConditionExpression: "attribute_exists (imageID)"
+		ConditionExpression: "attribute_exists (ItemName)"
 	};
 
 	try {
@@ -60,7 +64,7 @@ async function getImage(
 		return result;
 	} catch (e) {
 		if (e.toString().indexOf("conditional") !== -1) {
-			throw new NotFoundException("Image not found: " + imageId);
+			throw new NotFoundException("Image not found: " + path);
 		} else {
 			throw e;
 		}

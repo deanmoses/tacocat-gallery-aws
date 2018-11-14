@@ -3,7 +3,7 @@ const updateImage = require("./update_image.js");
 const NotFoundException = require("./NotFoundException.js");
 const BadRequestException = require("./BadRequestException.js");
 
-const imageTableName = process.env.IMAGE_DDB_TABLE;
+const tableName = process.env.GALLERY_ITEM_DDB_TABLE;
 
 const docClient = new AWS.DynamoDB.DocumentClient({
 	region: process.env.AWS_REGION
@@ -15,7 +15,7 @@ const docClient = new AWS.DynamoDB.DocumentClient({
 exports.handler = async event => {
 	// event.path is passed in from the API Gateway and contains the full path
 	// of the HTTP request, which starts with "/images/..."
-	const imagePath = event.path.replace("/image", "");
+	const path = event.path.replace("/image", "");
 
 	// event.body is passed in from the API Gateway and contains the body of
 	// the HTTP request
@@ -31,8 +31,8 @@ exports.handler = async event => {
 	try {
 		const image = await updateImage(
 			docClient,
-			imageTableName,
-			imagePath,
+			tableName,
+			path,
 			attributesToUpdate
 		);
 		return {
