@@ -1,17 +1,17 @@
 const updateAlbum = require("./update_album.js");
 const NotFoundException = require("./NotFoundException.js");
 const AWS = require("aws-sdk");
-const tableName = "TacocatGallery-AlbumDDBTable-MYVMPEMDQAPV";
+const tableName = "TacocatGallery-GalleryItemDDBTable-GA5UVC6VCQRQ";
 const docClient = new AWS.DynamoDB.DocumentClient({
 	region: "us-west-2"
 });
 
-async function test(albumId, attributesToUpdate) {
-	return updateAlbum(docClient, tableName, albumId, attributesToUpdate);
+async function test(path, attributesToUpdate) {
+	return updateAlbum(docClient, tableName, path, attributesToUpdate);
 }
 
 async function doTest() {
-	let result = await test("/2001", { title: "Something Wonderful!" });
+	let result = await test("/2002/", { title: "Something Wonderful!" });
 	//console.log(result);
 
 	try {
