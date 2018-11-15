@@ -4,7 +4,8 @@
   "description": "The AWS serverless back end infrastructure for the Tacocat image gallery",
   "main": "index.js",
   "scripts": {
-    "test": "jest"
+    "test": "jest",
+    "deploy": "cloudformation/deploy_stack.sh"
   },
   "repository": {
     "type": "git",
