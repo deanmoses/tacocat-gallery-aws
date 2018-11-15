@@ -9,11 +9,11 @@
 async function getChildren(docClient, tableName, path) {
 	const ddbparams = {
 		TableName: tableName,
-		KeyConditionExpression: "ParentPath = :ParentPath",
+		KeyConditionExpression: "parentPath = :parentPath",
 		ExpressionAttributeValues: {
-			":ParentPath": path
+			":parentPath": path
 		},
-		ProjectionExpression: "ItemName,ItemType,UpdateDateTime,dimensions"
+		ProjectionExpression: "itemName,itemType,title,description,updateDateTime,dimensions"
 	};
 	const results = await docClient.query(ddbparams).promise();
 	return results.Items;

@@ -12,10 +12,10 @@ function deleteImage(docClient, tableName, path) {
 	const ddbparams = {
 		TableName: tableName,
 		Key: {
-			ParentPath: pathParts.parent,
-			ItemName: pathParts.name
+			parentPath: pathParts.parent,
+			itemName: pathParts.name
 		},
-		ConditionExpression: "attribute_exists (ItemName)"
+		ConditionExpression: "attribute_exists (itemName)"
 	};
 	return docClient.delete(ddbparams).promise();
 }

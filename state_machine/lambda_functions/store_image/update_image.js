@@ -24,21 +24,21 @@ function updateImage(
 	labels
 ) {
 	var UpdateExpression =
-		"SET UpdateDateTime = :UpdateDateTime, " +
+		"SET updateDateTime = :updateDateTime, " +
 		"imageFormat = :format, dimensions = :dimensions, " +
 		"fileSize = :fileSize ";
 
 	var ExpressionAttributeValues = {
-		":UpdateDateTime": Math.floor(new Date().getTime() / 1000),
+		":updateDateTime": fileUploadTimeStamp,
 		":format": metadata.format,
 		":dimensions": metadata.dimensions,
 		":fileSize": metadata.fileSize
 	};
 
 	if (metadata.creationTime) {
-		UpdateExpression += ", creationTime = :creationTime";
-		ExpressionAttributeValues[":creationTime"] = metadata.creationTime;
-	}
+		UpdateExpression += ", itemDateTime = :itemDateTime";
+		ExpressionAttributeValues[":itemDateTime"] = metadata.creationTime;
+	}	
 
 	if (metadata.description) {
 		UpdateExpression += ", description = :description";
@@ -91,12 +91,12 @@ function updateImage(
 	const ddbparams = {
 		TableName: tableName,
 		Key: {
-			ParentPath: pathParts.parent,
-			ItemName: pathParts.name
+			parentPath: pathParts.parent,
+			itemName: pathParts.name
 		},
 		UpdateExpression: UpdateExpression,
 		ExpressionAttributeValues: ExpressionAttributeValues,
-		ConditionExpression: "attribute_exists (ItemName)"
+		ConditionExpression: "attribute_exists (itemName)"
 	};
 
 	return docClient.update(ddbparams).promise();

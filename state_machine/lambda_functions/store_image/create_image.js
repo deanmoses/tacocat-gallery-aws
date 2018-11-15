@@ -16,16 +16,16 @@ function createImage(docClient, tableName, imagePath, fileUploadTimeStamp) {
 	const pathParts = getParentAndNameFromPath(imagePath);
 
 	const dynamoItem = {
-		ParentPath: pathParts.parent,
-		ItemName: pathParts.name,
-		ItemType: "media",
-		UploadDateTime: fileUploadTimeStamp,
-		UpdateDateTime: fileUploadTimeStamp
+		parentPath: pathParts.parent,
+		itemName: pathParts.name,
+		itemType: "media",
+		uploadDateTime: fileUploadTimeStamp,
+		updateDateTime: fileUploadTimeStamp
 	};
 	const ddbparams = {
 		TableName: tableName,
 		Item: dynamoItem,
-		ConditionExpression: "attribute_not_exists (ItemName)"
+		ConditionExpression: "attribute_not_exists (itemName)"
 	};
 
 	return new Promise(function(resolve, reject) {

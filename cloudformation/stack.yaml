@@ -208,14 +208,14 @@ Resources:
     Type: AWS::DynamoDB::Table
     Properties:
       AttributeDefinitions:
-        - AttributeName: ParentPath
+        - AttributeName: parentPath
           AttributeType: S
-        - AttributeName: ItemName
+        - AttributeName: itemName
           AttributeType: S
       KeySchema:
-        - AttributeName: ParentPath
+        - AttributeName: parentPath
           KeyType: HASH
-        - AttributeName: ItemName
+        - AttributeName: itemName
           KeyType: RANGE
       ProvisionedThroughput:
         ReadCapacityUnits: "3"

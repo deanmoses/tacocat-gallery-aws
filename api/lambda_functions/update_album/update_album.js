@@ -43,20 +43,20 @@ async function getAlbum(
 		throw new BadRequestException("No attributes to update");
 	}
 
-	UpdateExpression += ", UpdateDateTime = :UpdateDateTime";
-	ExpressionAttributeValues[":UpdateDateTime"] = Math.floor(
+	UpdateExpression += ", updateDateTime = :updateDateTime";
+	ExpressionAttributeValues[":updateDateTime"] = Math.floor(
 		new Date().getTime() / 1000
 	);
 
 	const ddbparams = {
 		TableName: tableName,
 		Key: {
-			ParentPath: pathParts.parent,
-			ItemName: pathParts.name
+			parentPath: pathParts.parent,
+			itemName: pathParts.name
 		},
 		UpdateExpression: UpdateExpression,
 		ExpressionAttributeValues: ExpressionAttributeValues,
-		ConditionExpression: "attribute_exists (ItemName)"
+		ConditionExpression: "attribute_exists (itemName)"
 	};
 
 	try {
