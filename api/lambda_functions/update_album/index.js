@@ -3,7 +3,7 @@ const updateAlbum = require("./update_album.js");
 const NotFoundException = require("./NotFoundException.js");
 const BadRequestException = require("./BadRequestException.js");
 
-const albumTableName = process.env.ALBUM_DDB_TABLE;
+const tableName = process.env.GALLERY_ITEM_DDB_TABLE;
 
 const docClient = new AWS.DynamoDB.DocumentClient({
 	region: process.env.AWS_REGION
@@ -15,7 +15,7 @@ const docClient = new AWS.DynamoDB.DocumentClient({
 exports.handler = async event => {
 	// event.path is passed in from the API Gateway and contains the full path
 	// of the HTTP request, which starts with "/albums/..."
-	const albumPath = event.path.replace("/album", "");
+	const path = event.path.replace("/album", "");
 
 	// event.body is passed in from the API Gateway and contains the body of
 	// the HTTP request
@@ -31,8 +31,8 @@ exports.handler = async event => {
 	try {
 		const album = await updateAlbum(
 			docClient,
-			albumTableName,
-			albumPath,
+			tableName,
+			path,
 			attributesToUpdate
 		);
 		return {

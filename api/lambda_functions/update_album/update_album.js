@@ -1,27 +1,30 @@
 const NotFoundException = require("./NotFoundException.js");
 const BadRequestException = require("./BadRequestException.js");
+const getParentAndNameFromPath = require("./get_parent_and_name_from_path.js");
 
 /**
  * Update an album's attributes (like title and description) in DynamoDB
  *
  * @param {*} docClient AWS DynamoDB DocumentClient
- * @param {*} albumTableName name of the Album table in DynamoDB
- * @param {*} albumId ID of the album to get
+ * @param {*} tableName Name of the table in DynamoDB containing gallery items
+ * @param {*} path Path of the album to update, like /2001/12-31/
  * @param {*} attributesToUpdate bag of attributes to update
  *
  * @returns {} if success, throws exception if there's a problem with the input
  */
 async function getAlbum(
 	docClient,
-	albumTableName,
-	albumId,
+	tableName,
+	path,
 	attributesToUpdate
 ) {
-	if (!albumId) {
+	if (!path) {
 		throw new BadRequestException("Must specify album");
 	}
 
 	validateAttributes(attributesToUpdate);
+
+	const pathParts = getParentAndNameFromPath(path);
 
 	let UpdateExpression = "SET";
 	let ExpressionAttributeValues = {};
@@ -40,19 +43,20 @@ async function getAlbum(
 		throw new BadRequestException("No attributes to update");
 	}
 
-	UpdateExpression += ", lastUpdated = :lastUpdated";
-	ExpressionAttributeValues[":lastUpdated"] = Math.floor(
+	UpdateExpression += ", updateDateTime = :updateDateTime";
+	ExpressionAttributeValues[":updateDateTime"] = Math.floor(
 		new Date().getTime() / 1000
 	);
 
 	const ddbparams = {
-		TableName: albumTableName,
+		TableName: tableName,
 		Key: {
-			albumID: albumId
+			parentPath: pathParts.parent,
+			itemName: pathParts.name
 		},
 		UpdateExpression: UpdateExpression,
 		ExpressionAttributeValues: ExpressionAttributeValues,
-		ConditionExpression: "attribute_exists (albumID)"
+		ConditionExpression: "attribute_exists (itemName)"
 	};
 
 	try {
@@ -60,7 +64,7 @@ async function getAlbum(
 		return result;
 	} catch (e) {
 		if (e.toString().indexOf("conditional") !== -1) {
-			throw new NotFoundException("Album not found: " + albumId);
+			throw new NotFoundException("Album not found: " + path);
 		} else {
 			throw e;
 		}

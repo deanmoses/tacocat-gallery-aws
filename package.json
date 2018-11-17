@@ -4,7 +4,8 @@
   "description": "The AWS serverless back end infrastructure for the Tacocat image gallery",
   "main": "index.js",
   "scripts": {
-    "test": "jest"
+    "test": "jest",
+    "deploy": "cloudformation/deploy_stack.sh"
   },
   "repository": {
     "type": "git",
@@ -17,7 +18,9 @@
   },
   "homepage": "https://github.com/deanmoses/tacocat-gallery-aws#readme",
   "devDependencies": {
+    "aws-sdk": "^2.355.0",
     "aws-sdk-mock": "^4.2.0",
+    "babel-eslint": "^10.0.1",
     "eslint": "^5.8.0",
     "eslint-config-standard": "^12.0.0",
     "eslint-plugin-import": "^2.14.0",
@@ -26,7 +29,5 @@
     "eslint-plugin-standard": "^4.0.0",
     "jest": "^23.6.0"
   },
-  "dependencies": {
-    "aws-sdk": "^2.352.0"
-  }
+  "dependencies": {}
 }

@@ -12,10 +12,10 @@ async function getAlbum(docClient, tableName, path) {
 	const ddbparams = {
 		TableName: tableName,
 		Key: {
-			ParentPath: pathParts.parent,
-			ItemName: pathParts.name
+			parentPath: pathParts.parent,
+			itemName: pathParts.name
 		},
-		ProjectionExpression: "title,description,UploadDateTime"
+		ProjectionExpression: "title,description,uploadDateTime"
 	};
 	const result = await docClient.get(ddbparams).promise();
 	return result.Item;

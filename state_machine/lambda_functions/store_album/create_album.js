@@ -10,16 +10,16 @@ const getParentAndNameFromPath = require("./get_parent_and_name_from_path.js");
 function createAlbum(docClient, tableName, albumPath, uploadTimestamp) {
 	const pathParts = getParentAndNameFromPath(albumPath);
 	const dynamoAlbumItem = {
-		ParentPath: pathParts.parent,
-		ItemName: pathParts.name,
-		ItemType: "album",
-		UploadDateTime: uploadTimestamp,
-		UpdateDateTime: uploadTimestamp
+		parentPath: pathParts.parent,
+		itemName: pathParts.name,
+		itemType: "album",
+		uploadDateTime: uploadTimestamp,
+		updateDateTime: uploadTimestamp
 	};
 	const ddbparams = {
 		TableName: tableName,
 		Item: dynamoAlbumItem,
-		ConditionExpression: "attribute_not_exists (ItemName)"
+		ConditionExpression: "attribute_not_exists (itemName)"
 	};
 	return docClient.put(ddbparams).promise();
 }
