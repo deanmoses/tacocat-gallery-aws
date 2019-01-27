@@ -19,7 +19,7 @@ exports.handler = async event => {
 		return {
 			isBase64Encoded: false,
 			statusCode: 404,
-			body: JSON.stringify({ errorMessage: e.message })
+			body: JSON.stringify({ errorMessage: "Album Not Found" })
 		};
 	} else {
 		return {
