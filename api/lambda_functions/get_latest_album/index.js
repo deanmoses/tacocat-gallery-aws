@@ -18,8 +18,8 @@ exports.handler = async () => {
 	if (!album) {
 		return {
 			isBase64Encoded: false,
-			statusCode: 404,
-			body: JSON.stringify({ errorMessage: e.message })
+			statusCode: 200,
+			body: JSON.stringify({})
 		};
 	} else {
 		return {
