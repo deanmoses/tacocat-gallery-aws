@@ -1,11 +1,11 @@
 /**
- * For the given path, return 1) the leaf item and 2) the parent path
+ * For the given path, return the parent path and the leaf item name like this { parent: '', name: ''}
  *
  * For example:
- *  - /2001/12-31/image.jpg returns  '/2001/12-31/' and 'image.jpg'
- *  - /2001/12-31 returns '/2001/' and '12-31'
- *  - /2001 returns '/' and 2000'
- *  - / returns  ''
+ *  - /2001/12-31/image.jpg returns  {parent: '/2001/12-31/', name: 'image.jpg'}
+ *  - /2001/12-31 returns {parent: '/2001/', name: '12-31'}
+ *  - /2001 returns {parent: '/', name: 2000'}
+ *  - / returns  {parent: '', name: ''}
  */
 function getParentAndNameFromPath(path) {
 	if (!path) throw new Error("Path cannot be empty");
