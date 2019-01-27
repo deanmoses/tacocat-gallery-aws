@@ -3,6 +3,25 @@ info:
   title: "Tacocat Gallery API"
   version: "2018-11-10T20:19:31Z"
 paths:
+  /latest-album:
+    get:
+      responses:
+        200:
+          description: "200 response"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Empty"
+      x-amazon-apigateway-integration:
+        credentials: "arn:aws:iam::010410881828:role/${stageVariables.Role}"
+        uri: "arn:aws:apigateway:us-west-2:lambda:path/2015-03-31/functions/arn:aws:lambda:us-west-2:010410881828:function:${stageVariables.GetLatestAlbumFunctionName}/invocations"
+        responses:
+          default:
+            statusCode: "200"
+        passthroughBehavior: "when_no_match"
+        httpMethod: "POST"
+        contentHandling: "CONVERT_TO_TEXT"
+        type: "aws_proxy"
   /album:
     get:
       responses:

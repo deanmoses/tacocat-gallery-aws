@@ -102,6 +102,12 @@ Outputs:
       Fn::GetAtt:
         - GetAlbumFunction
         - Arn
+  GetLatestAlbumLambda:
+    Description: Lambda function that retrieves the latest album from DynamoDB
+    Value:
+      Fn::GetAtt:
+        - GetLatestAlbumFunction
+        - Arn
   CognitoIdentityPool:
     Description: AWS Cognito Identity Pool of users allowed to use the web app
     Value:
@@ -147,6 +153,7 @@ Resources:
         Role: !Ref GalleryApiRole
         ClientRole: !Ref TestClientIAMRole
         GetAlbumFunctionName: !Ref GetAlbumFunction
+        GetLatestAlbumFunctionName: !Ref GetLatestAlbumFunction
         UpdateAlbumFunctionName: !Ref UpdateAlbumFunction
         UpdateImageFunctionName: !Ref UpdateImageFunction
 
@@ -166,6 +173,7 @@ Resources:
                 Resource:
                   - !Sub "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${DescribeExecutionFunction}"
                   - !Sub "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${GetAlbumFunction}"
+                  - !Sub "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${GetLatestAlbumFunction}"
                   - !Sub "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${UpdateAlbumFunction}"
                   - !Sub "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${UpdateImageFunction}"
       AssumeRolePolicyDocument:
@@ -406,6 +414,17 @@ Resources:
     Properties:
       CodeUri: ../api/lambda_functions/get_album
       Description: "Lambda function that returns an album and its children from DynamoDB"
+      Role: !GetAtt ApiGatewayLambdaReadOnlyRole.Arn
+      Environment:
+        Variables:
+          GALLERY_ITEM_DDB_TABLE: !Ref GalleryItemDDBTable
+    Type: AWS::Serverless::Function
+
+  # Lambda function that retrieves the latest album from DynamoDB
+  GetLatestAlbumFunction:
+    Properties:
+      CodeUri: ../api/lambda_functions/get_latest_album
+      Description: "Lambda function that retrieves the latest album from DynamoDB"
       Role: !GetAtt ApiGatewayLambdaReadOnlyRole.Arn
       Environment:
         Variables:
