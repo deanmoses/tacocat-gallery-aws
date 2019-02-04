@@ -228,6 +228,8 @@ Resources:
       ProvisionedThroughput:
         ReadCapacityUnits: "3"
         WriteCapacityUnits: "3"
+      StreamSpecification: # enable streaming so that the SearchIndexerFunction lambda can send the stream to be indexed by search engine
+        StreamViewType: "NEW_IMAGE"
 
   # ---------------------------------------------------------------------------
   # IAM role used by all the Lambda functions that executes the image processing
@@ -403,6 +405,67 @@ Resources:
       Timeout: 300
       Role: !GetAtt BackendProcessingLambdaRole.Arn
     Type: AWS::Serverless::Function
+
+  # -----------------------------------------------------------------------------
+  # Lambda for moving albums and images from DynamoDB to ElasticSearch,
+  # ... and a mapping that streams events from DynamoDB to the lambda
+  # ... and the lambda's accompanying role
+  # -----------------------------------------------------------------------------
+
+  # Lambda function that moves albums and images from DynamoDB to ElasticSearch
+  SearchIndexerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../search_indexing/lambda_functions/dynamodb_to_elasticsearch
+      Description: "Lambda function that syncs albums and images from DynamoDB to ElasticSearch"
+      Role: !GetAtt SearchIndexerFunctionRole.Arn
+      Environment:
+        Variables:
+          GALLERY_ITEM_DDB_TABLE: !Ref GalleryItemDDBTable
+
+  # Event mapping between DynamoDB and SearchIndexerFunction.
+  # Whenever there's something new in DynamoDB Streams it will
+  # trigger the lambda function with those records
+  TableStreamLambdaMapping:
+    Type: "AWS::Lambda::EventSourceMapping"
+    Properties:
+      BatchSize: 2
+      EventSourceArn: !GetAtt GalleryItemDDBTable.StreamArn
+      FunctionName: !GetAtt SearchIndexerFunction.Arn
+      StartingPosition: "LATEST"
+
+  # Role that allows the SearchIndexerFunction to:
+  # 1) write logs to CloudWatch
+  # 2) read DynamoDB streams
+  SearchIndexerFunctionRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Principal:
+              Service: "lambda.amazonaws.com"
+            Action: "sts:AssumeRole"
+      Path: "/"
+      Policies:
+        - PolicyName: "SearchIndexerFunctionPolicy"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: "Allow"
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: "arn:aws:logs:*:*:*"
+              - Effect: "Allow"
+                Action:
+                  - dynamodb:DescribeStream
+                  - dynamodb:GetRecords
+                  - dynamodb:GetShardIterator
+                  - dynamodb:ListStreams
+                Resource: !GetAtt GalleryItemDDBTable.StreamArn
 
   # -----------------------------------------------------------------------------
   # Lambda functions hooked up to the API Gateway API to read and write albums,
