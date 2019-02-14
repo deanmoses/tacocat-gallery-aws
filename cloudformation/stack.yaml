@@ -156,6 +156,7 @@ Resources:
         GetLatestAlbumFunctionName: !Ref GetLatestAlbumFunction
         UpdateAlbumFunctionName: !Ref UpdateAlbumFunction
         UpdateImageFunctionName: !Ref UpdateImageFunction
+        RecutThumbnailFunctionName: !Ref RecutThumbnailFunction
 
   # Role for Gallery API
   GalleryApiRole:
@@ -176,6 +177,7 @@ Resources:
                   - !Sub "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${GetLatestAlbumFunction}"
                   - !Sub "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${UpdateAlbumFunction}"
                   - !Sub "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${UpdateImageFunction}"
+                  - !Sub "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${RecutThumbnailFunction}"
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:
@@ -516,6 +518,20 @@ Resources:
           GALLERY_ITEM_DDB_TABLE: !Ref GalleryItemDDBTable
     Type: AWS::Serverless::Function
 
+  # Lambda function that re-cuts an image's thumbnail to the specified region of the image
+  RecutThumbnailFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../api/lambda_functions/recut_thumbnail
+      Description: "Lambda function that re-cuts an image's thumbnail to the specified region of the image"
+      MemorySize: 1536
+      Timeout: 300
+      Role: !GetAtt ApiGatewayLambdaWriteDBAndPhotosRole.Arn
+      Environment:
+        Variables:
+          GALLERY_ITEM_DDB_TABLE: !Ref GalleryItemDDBTable
+          IMAGES_S3_BUCKET: !Ref PhotoRepoS3Bucket
+
   # Role for Lambdas used by the Gallery API that need read-only access to DynamoDB
   ApiGatewayLambdaReadOnlyRole:
     Type: "AWS::IAM::Role"
@@ -570,6 +586,62 @@ Resources:
                 Resource:
                   - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${GalleryItemDDBTable}"
                   - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${GalleryItemDDBTable}/*"
+
+  # Role for Lambdas used by the Gallery API that need write access to DynamoDB *and* write access to the images in S3
+  ApiGatewayLambdaWriteDBAndPhotosRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Principal:
+              Service:
+                - "lambda.amazonaws.com"
+            Action:
+              - "sts:AssumeRole"
+      Path: "/Gallery/"
+      Policies:
+        - PolicyName: "GalleryDynamoTableWriteAccess"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Sid: "GalleryDynamoTableWriteAccess"
+                Effect: "Allow"
+                Action:
+                  - "dynamodb:UpdateItem"
+                Resource:
+                  - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${GalleryItemDDBTable}"
+                  - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${GalleryItemDDBTable}/*"
+        - PolicyName: "LambdaWriteCWLogs"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Sid: "AllowLogging"
+                Effect: "Allow"
+                Action:
+                  - "logs:CreateLogGroup"
+                  - "logs:CreateLogStream"
+                  - "logs:PutLogEvents"
+                Resource: "*"
+        - PolicyName: "ReadFromPhotoRepoS3Bucket"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Sid: "ReadFromPhotoRepoS3Bucket"
+                Effect: "Allow"
+                Action:
+                  - "s3:Get*"
+                Resource: !Sub "arn:aws:s3:::${PhotoRepoS3Bucket}/*"
+        - PolicyName: "WriteToPhotoRepoS3Bucket"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Sid: "WriteToPhotoRepoS3Bucket"
+                Effect: "Allow"
+                Action:
+                  - "s3:PutObject"
+                Resource: !Sub "arn:aws:s3:::${PhotoRepoS3Bucket}/*"
 
   # ---------------------------------------------------------------------------
   # Custom resources created with Lambda functions:
