@@ -20,14 +20,27 @@ Transform: "AWS::Serverless-2016-10-31"
 
 # -----------------------------------------------------------------------------
 # Parameters that can be specified when deploying this template
+# This is the only way to define constants for use elsewhere in the template
 # -----------------------------------------------------------------------------
 Parameters:
+  OriginalImageS3Prefix:
+    Description: The prefx / location of the original images within the AWS S3 bucket
+    Type: String
+    Default: albums
+  LargeImageS3Prefix:
+    Description: The prefx / location of the resized large / full screen images within the AWS S3 bucket
+    Type: String
+    Default: large
+  ThumbnailImageS3Prefix:
+    Description: The prefx / location of the resized thumbnail images within the AWS S3 bucket
+    Type: String
+    Default: Thumbnail
   ApiStage:
+    Description: The AWS API Gateway stage to deploy the API to
     Type: String
     Default: prod
     AllowedValues:
       - prod
-    Description: The AWS API Gateway stage to deploy the API to
 
 # -----------------------------------------------------------------------------
 # Output values for use after Cloudformation creates the stack, such as to:
@@ -530,7 +543,9 @@ Resources:
       Environment:
         Variables:
           GALLERY_ITEM_DDB_TABLE: !Ref GalleryItemDDBTable
-          IMAGES_S3_BUCKET: !Ref PhotoRepoS3Bucket
+          IMAGE_S3_BUCKET: !Ref PhotoRepoS3Bucket
+          ORIGINAL_IMAGE_S3_PREFIX: !Ref OriginalImageS3Prefix
+          THUMBNAIL_IMAGE_S3_PREFX: !Ref ThumbnailImageS3Prefix
 
   # Role for Lambdas used by the Gallery API that need read-only access to DynamoDB
   ApiGatewayLambdaReadOnlyRole:

@@ -1,13 +1,16 @@
+const recutThumbnail = require("./recut_thumbnail.js");
+const saveThumbnailCropInfoToDynamo = require("./save_thumb_crop_info_to_dynamo.js");
+const BadRequestException = require("./BadRequestException.js");
+const NotFoundException = require("./NotFoundException.js");
 const AWS = require("aws-sdk");
-const S3 = require("aws-sdk/clients/s3");
-const gm = require("gm").subClass({ imageMagick: true }); // Enable ImageMagick integration.
+const s3 = new AWS.S3();
 
-const s3 = new S3();
+const s3BucketName = process.env.IMAGE_S3_BUCKET;
+const originalImagePrefix = process.env.ORIGINAL_IMAGE_S3_PREFIX;
+const thumbnailImagePrefix = process.env.THUMBNAIL_IMAGE_S3_PREFIX;
 
-const tableName = process.env.GALLERY_ITEM_DDB_TABLE;
-const s3BucketName = process.env.IMAGES_S3_BUCKET;
-
-const docClient = new AWS.DynamoDB.DocumentClient({
+const dynamoTableName = process.env.GALLERY_ITEM_DDB_TABLE;
+const dynamoDocClient = new AWS.DynamoDB.DocumentClient({
 	region: process.env.AWS_REGION
 });
 
@@ -27,7 +30,7 @@ const docClient = new AWS.DynamoDB.DocumentClient({
  *                }
  *          }
  *
- * @returns something like thefollowing format:
+ * @returns something like the following format, as required by AWS API Gateway:
  * 		{
  * 			isBase64Encoded: false,
  *			statusCode: 400,
@@ -45,8 +48,7 @@ exports.handler = async event => {
 		};
 	}
 
-	// Pop off that first segment of the path
-	//const imagePath = event.path.split("/").shift().join("/");
+	// Remove the first segment of the URL path to get the image path
 	const imagePath = event.path.replace("/thumb", "");
 
 	// event.body contains the body of the HTTP request
@@ -72,43 +74,52 @@ exports.handler = async event => {
 		};
 	}
 
-	const s3Object = await s3
-		.getObject({
-			Bucket: s3BucketName,
-			Key: "albums" + imagePath
-		})
-		.promise();
+	try {
+		// Cut the new thumbnail
+		await recutThumbnail(
+			s3,
+			s3BucketName,
+			originalImagePrefix,
+			thumbnailImagePrefix,
+			imagePath,
+			crop
+		);
 
-	const buffer = await new Promise((resolve, reject) => {
-		gm(s3Object.Body)
-			.autoOrient()
-			.crop(crop.length, crop.length, crop.x, crop.y)
-			.resize(200, 200 + "^") // resize, ^ means overflow to get dimensions (shouldn't need it because I just cropped it to square)
-			.interlace("Line") // aka JPEG Progressive
-			.quality(85) // default is 75.  I'm seeing smaller files at 85!
-			.noProfile() // remove EXIF, ICM, etc profile data
-			.toBuffer("jpg", (err, buffer) => {
-				if (err) {
-					return reject(err);
-				}
-				resolve(buffer);
-			});
-	});
+		// Save the crop info to Dynamo DB
+		await saveThumbnailCropInfoToDynamo(
+			dynamoDocClient,
+			dynamoTableName,
+			imagePath,
+			crop
+		);
+	} catch (e) {
+		if (e instanceof NotFoundException) {
+			return {
+				statusCode: 404,
+				body: JSON.stringify({ errorMessage: e.message }),
+				isBase64Encoded: false
+			};
+		} else if (e instanceof BadRequestException) {
+			return {
+				statusCode: 400,
+				body: JSON.stringify({ errorMessage: e.message }),
+				isBase64Encoded: false
+			};
+		} else {
+			return {
+				statusCode: 500,
+				body: JSON.stringify({ errorMessage: e }), // TODO: handle case where e is not a string
+				isBase64Encoded: false
+			};
+		}
+	}
 
-	await s3
-		.upload({
-			Bucket: s3BucketName,
-			Key: "Thumbnail" + imagePath,
-			ContentType: "image/jpeg",
-			Body: buffer
-		})
-		.promise();
-
+	// Success
 	return {
 		isBase64Encoded: false,
 		statusCode: 200,
 		body: JSON.stringify({
-			successMessage: "Successfully recut thumbnail of image " + imagePath
+			successMessage: "Recut thumbnail of image " + imagePath
 		})
 	};
 };
