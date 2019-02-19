@@ -150,11 +150,91 @@ Globals:
 # Resources are the actual AWS systems that will be provisioned
 # -----------------------------------------------------------------------------
 Resources:
-  #
-  # The API for listing albums etc.
+  # S3 bucket containing the gallery's images
+  PhotoRepoS3Bucket:
+    Type: AWS::S3::Bucket
+
+  # Allow CloudFront CDN to retrieve images from the S3 bucket
+  GalleryS3BucketCloudfrontReadPolicy:
+    Type: "AWS::S3::BucketPolicy"
+    Properties:
+      Bucket: !Ref PhotoRepoS3Bucket
+      PolicyDocument:
+        Statement:
+          - Action: "s3:GetObject"
+            Effect: Allow
+            Resource: !Sub "arn:aws:s3:::${PhotoRepoS3Bucket}/*"
+            Principal:
+              CanonicalUser: !GetAtt GalleryS3BucketCloudFrontOriginAccessIdentity.S3CanonicalUserId
+
+  # CloudFront identity of the S3 gallery bucket
+  GalleryS3BucketCloudFrontOriginAccessIdentity:
+    Type: "AWS::CloudFront::CloudFrontOriginAccessIdentity"
+    Properties:
+      CloudFrontOriginAccessIdentityConfig:
+        Comment: !Ref PhotoRepoS3Bucket
+
+  # CloudFront distribution that serves the images to users
+  GalleryCloudFrontDistribution:
+    Type: AWS::CloudFront::Distribution
+    DependsOn:
+      - PhotoRepoS3Bucket
+    Properties:
+      DistributionConfig:
+        Comment: Serves Tacocat photo gallery images to end users
+        Enabled: "true"
+        HttpVersion: "http2" # allow http2 and anything lower
+        PriceClass: PriceClass_100 # PriceClass_100 = the cheapest class: just US, Canada and Europe
+        Origins:
+          - DomainName: !GetAtt PhotoRepoS3Bucket.DomainName
+            Id: TacocatGalleryS3Origin
+            S3OriginConfig:
+              OriginAccessIdentity: !Sub "origin-access-identity/cloudfront/${GalleryS3BucketCloudFrontOriginAccessIdentity}"
+        DefaultCacheBehavior:
+          TargetOriginId: TacocatGalleryS3Origin
+          Compress: true
+          ViewerProtocolPolicy: redirect-to-https
+          AllowedMethods:
+            - GET
+            - HEAD
+            - OPTIONS
+          CachedMethods:
+            - GET
+            - HEAD
+            - OPTIONS
+          ForwardedValues:
+            QueryString: "false"
+            Cookies:
+              Forward: none
+        ViewerCertificate:
+          CloudFrontDefaultCertificate: "true"
+
+  # -----------------------------------------------------------------------------
+  # DynamoDB table containing both albums and images
+  # -----------------------------------------------------------------------------
+  GalleryItemDDBTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: parentPath
+          AttributeType: S
+        - AttributeName: itemName
+          AttributeType: S
+      KeySchema:
+        - AttributeName: parentPath
+          KeyType: HASH
+        - AttributeName: itemName
+          KeyType: RANGE
+      ProvisionedThroughput:
+        ReadCapacityUnits: "3"
+        WriteCapacityUnits: "3"
+      StreamSpecification: # enable streaming so that the SearchIndexerFunction lambda can send the stream to be indexed by search engine
+        StreamViewType: "NEW_IMAGE"
+
+  # -----------------------------------------------------------------------------
+  # The AWS API Gateway API for listing albums etc.
   # This is what web and mobile apps connect to.
-  # The API is served up by the AWS API Gateway.
-  #
+  # -----------------------------------------------------------------------------
   GalleryApi:
     Type: AWS::Serverless::Api
     DependsOn: GalleryItemDDBTable
@@ -203,48 +283,6 @@ Resources:
             Action:
               - "sts:AssumeRole"
               - "sts:AssumeRoleWithWebIdentity" # not using this yet
-
-  #
-  # S3 bucket containing images
-  #
-  PhotoRepoS3Bucket:
-    Type: AWS::S3::Bucket
-    Properties:
-      CorsConfiguration:
-        CorsRules:
-          - AllowedHeaders:
-              - "*"
-            AllowedMethods:
-              - PUT
-              - GET
-              - POST
-              - HEAD
-            AllowedOrigins:
-              - "*"
-            ExposedHeaders:
-              - ETag
-
-  #
-  # DynamoDB table containing both albums and images
-  #
-  GalleryItemDDBTable:
-    Type: AWS::DynamoDB::Table
-    Properties:
-      AttributeDefinitions:
-        - AttributeName: parentPath
-          AttributeType: S
-        - AttributeName: itemName
-          AttributeType: S
-      KeySchema:
-        - AttributeName: parentPath
-          KeyType: HASH
-        - AttributeName: itemName
-          KeyType: RANGE
-      ProvisionedThroughput:
-        ReadCapacityUnits: "3"
-        WriteCapacityUnits: "3"
-      StreamSpecification: # enable streaming so that the SearchIndexerFunction lambda can send the stream to be indexed by search engine
-        StreamViewType: "NEW_IMAGE"
 
   # ---------------------------------------------------------------------------
   # IAM role used by all the Lambda functions that executes the image processing
