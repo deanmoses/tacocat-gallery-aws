@@ -56,7 +56,7 @@ async function recutThumbnail(
 			.resize(200, 200 + "^") // resize, ^ means overflow to get dimensions (shouldn't need it because I just cropped it to square)
 			.interlace("Line") // aka JPEG Progressive
 			.quality(85) // default is 75.  I'm seeing smaller files at 85!
-			.noProfile() // remove EXIF, ICM, etc profile data
+			.noProfile() // remove EXIF, ICM, etc profile data // TODO: add copyright info
 			.toBuffer("jpg", (err, buffer) => {
 				if (err) {
 					return reject(err);
@@ -65,7 +65,7 @@ async function recutThumbnail(
 			});
 	});
 
-	// Write the thumbnail back to S3
+	// Write the thumbnail to S3
 	await s3
 		.upload({
 			Bucket: s3BucketName,
