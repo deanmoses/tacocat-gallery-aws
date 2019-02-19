@@ -24,19 +24,43 @@ Transform: "AWS::Serverless-2016-10-31"
 # -----------------------------------------------------------------------------
 Parameters:
   OriginalImageS3Prefix:
-    Description: The prefx / location of the original images within the AWS S3 bucket
+    Description: The key prefix of the original images within the S3 bucket
     Type: String
     Default: albums
+  ThumbnailImageS3Prefix:
+    Description: The key prefix of the thumbnail version of images within the S3 bucket
+    Type: String
+    Default: thumb
   LargeImageS3Prefix:
-    Description: The prefx / location of the resized large / full screen images within the AWS S3 bucket
+    Description: The key prefix of the large version of images within the S3 bucket
     Type: String
     Default: large
-  ThumbnailImageS3Prefix:
-    Description: The prefx / location of the resized thumbnail images within the AWS S3 bucket
-    Type: String
-    Default: Thumbnail
+  ThumbnailImageSize:
+    Description: The longest edge of thumbnail images in pixels.
+    Type: Number
+    Default: 200
+    MaxValue: 1024
+    MinValue: 30
+  ThumbnailImageQuality:
+    Description: The JPEG quality of the thumbnail version of images on a scale of 0 to 100
+    Type: Number
+    Default: 85 # GraphicsMagick's default is 75.  I'm seeing smaller files at 85!
+    MaxValue: 100
+    MinValue: 30
+  LargeImageSize:
+    Description: The longest edge of the large version of images in pixels
+    Type: Number
+    Default: 1024
+    MaxValue: 5000
+    MinValue: 500
+  LargeImageQuality:
+    Description: The JPEG quality of the large version of images on a scale of 0 to 100
+    Type: Number
+    Default: 85 # GraphicsMagick's default is 75.  I'm seeing smaller files at 85!
+    MaxValue: 100
+    MinValue: 30
   ApiStage:
-    Description: The AWS API Gateway stage to deploy the API to
+    Description: The AWS API Gateway stage to which to deploy the API
     Type: String
     Default: prod
     AllowedValues:
@@ -103,11 +127,17 @@ Outputs:
       Fn::GetAtt:
         - DeleteImageFunction
         - Arn
-  ThumbnailLambda:
+  GenerateThumbnailImageLambda:
     Description: Lambda function that creates thumbnail version of image
     Value:
       Fn::GetAtt:
-        - GenerateThumbnailFunction
+        - GenerateThumbnailImageFunction
+        - Arn
+  GenerateLargeImageLambda:
+    Description: Lambda function that creates large version of image
+    Value:
+      Fn::GetAtt:
+        - GenerateLargeImageFunction
         - Arn
   GetAlbumLambda:
     Description: Lambda function that retrieves an album and its children from DynamoDB
@@ -367,10 +397,11 @@ Resources:
                 Resource: "*"
 
   # -----------------------------------------------------------------------------
-  # This Lambda function triggers the start of the Step Functions state machine
+  # Lambda function that triggers the start of the Step Functions state machine
   # -----------------------------------------------------------------------------
 
   ExecuteStepFunctionsFunction:
+    Type: AWS::Serverless::Function
     DependsOn: PhotoRepoS3Bucket
     Properties:
       CodeUri: ../state_machine/lambda_functions/start_state_machine
@@ -379,31 +410,31 @@ Resources:
       Environment:
         Variables:
           STATE_MACHINE_ARN: !Ref ImageProcStateMachine
-    Type: AWS::Serverless::Function
 
   # -----------------------------------------------------------------------------
-  # These Lambda functions comprise the Step Functions state machine.
+  # Lambda functions that comprise the Step Functions state machine.
   # The state machine processes album folder and image file additions and
   # deletions from a S3 bucket and puts that information into DynamoDB.
   # -----------------------------------------------------------------------------
 
   ExtractImageMetadataFunction:
+    Type: AWS::Serverless::Function
     Properties:
       CodeUri: ../state_machine/lambda_functions/extract_image_metadata
       Description: "Lambda function that extracts image metadata such as format, size, geolocation, etc"
       MemorySize: 1024
       Timeout: 200
       Role: !GetAtt BackendProcessingLambdaRole.Arn
-    Type: AWS::Serverless::Function
 
   TransformImageMetadataFunction:
+    Type: AWS::Serverless::Function
     Properties:
       CodeUri: ../state_machine/lambda_functions/transform_image_metadata
       Description: "Lambda function that massages JSON of extracted image metadata into more usable format"
       Role: !GetAtt BackendProcessingLambdaRole.Arn
-    Type: AWS::Serverless::Function
 
   StoreAlbumFunction:
+    Type: AWS::Serverless::Function
     Properties:
       CodeUri: ../state_machine/lambda_functions/store_album
       Description: "Lambda function that stores album in DynamoDB"
@@ -411,9 +442,9 @@ Resources:
       Environment:
         Variables:
           GALLERY_ITEM_DDB_TABLE: !Ref GalleryItemDDBTable
-    Type: AWS::Serverless::Function
 
   DeleteAlbumFunction:
+    Type: AWS::Serverless::Function
     Properties:
       CodeUri: ../state_machine/lambda_functions/delete_album
       Description: "Lambda function that deletes album from DynamoDB"
@@ -421,9 +452,9 @@ Resources:
       Environment:
         Variables:
           GALLERY_ITEM_DDB_TABLE: !Ref GalleryItemDDBTable
-    Type: AWS::Serverless::Function
 
   StoreImageFunction:
+    Type: AWS::Serverless::Function
     Properties:
       CodeUri: ../state_machine/lambda_functions/store_image
       Description: "Lambda function that stores image in DynamoDB"
@@ -431,9 +462,9 @@ Resources:
       Environment:
         Variables:
           GALLERY_ITEM_DDB_TABLE: !Ref GalleryItemDDBTable
-    Type: AWS::Serverless::Function
 
   DeleteImageFunction:
+    Type: AWS::Serverless::Function
     Properties:
       CodeUri: ../state_machine/lambda_functions/delete_image
       Description: "Lambda function that deletes image from DynamoDB"
@@ -441,23 +472,43 @@ Resources:
       Environment:
         Variables:
           GALLERY_ITEM_DDB_TABLE: !Ref GalleryItemDDBTable
-    Type: AWS::Serverless::Function
 
   RekognitionFunction:
+    Type: AWS::Serverless::Function
     Properties:
       Description: "Lambda function that uses Amazon Rekognition to detect labels from image"
       Role: !GetAtt BackendProcessingLambdaRole.Arn
       CodeUri: ../state_machine/lambda_functions/rekognition
-    Type: AWS::Serverless::Function
 
-  GenerateThumbnailFunction:
+  GenerateThumbnailImageFunction:
+    Type: AWS::Serverless::Function
     Properties:
-      CodeUri: ../state_machine/lambda_functions/thumbnail
-      Description: "Lambda function that generates thumbnails for images"
+      CodeUri: ../state_machine/lambda_functions/generate_thumbnail_image
+      Description: "Lambda function that generates thumbnail version of image"
       MemorySize: 1536
       Timeout: 300
       Role: !GetAtt BackendProcessingLambdaRole.Arn
+      Environment:
+        Variables:
+          IMAGE_S3_BUCKET: !Ref PhotoRepoS3Bucket
+          THUMBNAIL_IMAGE_S3_PREFIX: !Ref ThumbnailImageS3Prefix
+          THUMBNAIL_IMAGE_SIZE: !Ref ThumbnailImageSize
+          THUMBNAIL_IMAGE_QUALITY: !Ref ThumbnailImageQuality
+
+  GenerateLargeImageFunction:
     Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../state_machine/lambda_functions/generate_large_image
+      Description: "Lambda function that generates large version of image"
+      MemorySize: 1536
+      Timeout: 300
+      Role: !GetAtt BackendProcessingLambdaRole.Arn
+      Environment:
+        Variables:
+          IMAGE_S3_BUCKET: !Ref PhotoRepoS3Bucket
+          LARGE_IMAGE_S3_PREFIX: !Ref LargeImageS3Prefix
+          LARGE_IMAGE_SIZE: !Ref LargeImageSize
+          LARGE_IMAGE_QUALITY: !Ref LargeImageQuality
 
   # -----------------------------------------------------------------------------
   # Lambda for moving albums and images from DynamoDB to ElasticSearch,
@@ -569,7 +620,7 @@ Resources:
           GALLERY_ITEM_DDB_TABLE: !Ref GalleryItemDDBTable
     Type: AWS::Serverless::Function
 
-  # Lambda function that re-cuts an image's thumbnail to the specified region of the image
+  # Lambda function that regenerates an image's thumbnail to the specified region of the image
   RecutThumbnailFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -583,7 +634,9 @@ Resources:
           GALLERY_ITEM_DDB_TABLE: !Ref GalleryItemDDBTable
           IMAGE_S3_BUCKET: !Ref PhotoRepoS3Bucket
           ORIGINAL_IMAGE_S3_PREFIX: !Ref OriginalImageS3Prefix
-          THUMBNAIL_IMAGE_S3_PREFX: !Ref ThumbnailImageS3Prefix
+          THUMBNAIL_IMAGE_S3_PREFIX: !Ref ThumbnailImageS3Prefix
+          THUMBNAIL_IMAGE_SIZE: !Ref ThumbnailImageSize
+          THUMBNAIL_IMAGE_QUALITY: !Ref ThumbnailImageQuality
 
   # Role for Lambdas used by the Gallery API that need read-only access to DynamoDB
   ApiGatewayLambdaReadOnlyRole:
@@ -780,7 +833,8 @@ Resources:
             StoreImageLambdaArn: !GetAtt StoreImageFunction.Arn,
             DeleteImageLambdaArn: !GetAtt DeleteImageFunction.Arn,
             RekognitionLambdaArn: !GetAtt RekognitionFunction.Arn,
-            GenerateThumbnailLambdaArn: !GetAtt GenerateThumbnailFunction.Arn,
+            GenerateThumbnailImageLambdaArn: !GetAtt GenerateThumbnailImageFunction.Arn,
+            GenerateLargeImageLambdaArn: !GetAtt GenerateLargeImageFunction.Arn,
           }
       RoleArn: !GetAtt StateMachineRole.Arn
 

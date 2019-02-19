@@ -1,250 +1,248 @@
 {
-  "Comment": "Image Processing workflow",
-  "StartAt": "ChooseAction",
-  "States": {
-    "ChooseAction": {
-      "Type": "Choice",
-      "Choices": [
-        {
-          "And": [
-            {
-              "Variable": "$.isAlbum",
-              "BooleanEquals": true
-            },
-            {
-              "Variable": "$.action",
-              "StringEquals": "create"
-            }
-          ],
-          "Next": "StoreAlbum"
-        },
-        {
-          "And": [
-            {
-              "Variable": "$.isAlbum",
-              "BooleanEquals": true
-            },
-            {
-              "Variable": "$.action",
-              "StringEquals": "delete"
-            }
-          ],
-          "Next": "DeleteAlbum"
-        },
-        {
-          "And": [
-            {
-              "Variable": "$.isAlbum",
-              "BooleanEquals": false
-            },
-            {
-              "Variable": "$.action",
-              "StringEquals": "create"
-            }
-          ],
-          "Next": "ExtractImageMetadata"
-        },
-        {
-          "And": [
-            {
-              "Variable": "$.isAlbum",
-              "BooleanEquals": false
-            },
-            {
-              "Variable": "$.action",
-              "StringEquals": "delete"
-            }
-          ],
-          "Next": "DeleteImage"
-        }
-      ]
-    },
-    "ExtractImageMetadata": {
-      "Type": "Task",
-      "Resource": "${ExtractImageMetadataLambdaArn}",
-      "InputPath": "$",
-      "ResultPath": "$.extractedMetadata",
-      "Next": "ImageTypeCheck",
-      "Catch": [
-        {
-          "ErrorEquals": [
-            "ImageIdentifyError"
-          ],
-          "Next": "NotSupportedImageType"
-        }
-      ],
-      "Retry": [
-        {
-          "ErrorEquals": [
-            "ImageIdentifyError"
-          ],
-          "MaxAttempts": 0
-        },
-        {
-          "ErrorEquals": [
-            "States.ALL"
-          ],
-          "IntervalSeconds": 1,
-          "MaxAttempts": 2,
-          "BackoffRate": 1.5
-        }
-      ]
-    },
-    "ImageTypeCheck": {
-      "Type": "Choice",
-      "Choices": [
-        {
-          "Or": [
-            {
-              "Variable": "$.extractedMetadata.format",
-              "StringEquals": "JPEG"
-            },
-            {
-              "Variable": "$.extractedMetadata.format",
-              "StringEquals": "PNG"
-            }
-          ],
-          "Next": "TransformImageMetadata"
-        }
-      ],
-      "Default": "NotSupportedImageType"
-    },
-    "TransformImageMetadata": {
-      "Type": "Task",
-      "Resource": "${TransformImageMetadataLambdaArn}",
-      "InputPath": "$.extractedMetadata",
-      "ResultPath": "$.extractedMetadata",
-      "Retry": [
-        {
-          "ErrorEquals": [
-            "States.ALL"
-          ],
-          "IntervalSeconds": 1,
-          "MaxAttempts": 2,
-          "BackoffRate": 1.5
-        }
-      ],
-      "Next": "ParallelProcessing"
-    },
-    "NotSupportedImageType": {
-      "Type": "Fail",
-      "Cause": "Image type not supported!",
-      "Error": "FileTypeNotSupported"
-    },
-    "ParallelProcessing": {
-      "Type": "Parallel",
-      "Branches": [
-        {
-          "StartAt": "Rekognition",
-          "States": {
-            "Rekognition": {
-              "Type": "Task",
-              "Resource": "${RekognitionLambdaArn}",
-              "Retry": [
-                {
-                  "ErrorEquals": [
-                    "States.ALL"
-                  ],
-                  "IntervalSeconds": 1,
-                  "MaxAttempts": 2,
-                  "BackoffRate": 1.5
-                }
-              ],
-              "End": true
-            }
-          }
-        },
-        {
-          "StartAt": "Thumbnail",
-          "States": {
-            "Thumbnail": {
-              "Type": "Task",
-              "Resource": "${GenerateThumbnailLambdaArn}",
-              "Retry": [
-                {
-                  "ErrorEquals": [
-                    "States.ALL"
-                  ],
-                  "IntervalSeconds": 1,
-                  "MaxAttempts": 2,
-                  "BackoffRate": 1.5
-                }
-              ],
-              "End": true
-            }
-          }
-        }
-      ],
-      "ResultPath": "$.parallelResults",
-      "Next": "StoreImage"
-    },
-    "StoreImage": {
-      "Type": "Task",
-      "Resource": "${StoreImageLambdaArn}",
-      "InputPath": "$",
-      "ResultPath": "$.storeResult",
-      "Retry": [
-        {
-          "ErrorEquals": [
-            "States.ALL"
-          ],
-          "IntervalSeconds": 1,
-          "MaxAttempts": 2,
-          "BackoffRate": 1.5
-        }
-      ],
-      "End": true
-    },
-    "DeleteImage": {
-      "Type": "Task",
-      "Resource": "${DeleteImageLambdaArn}",
-      "InputPath": "$",
-      "ResultPath": "$.storeResult",
-      "Retry": [
-        {
-          "ErrorEquals": [
-            "States.ALL"
-          ],
-          "IntervalSeconds": 1,
-          "MaxAttempts": 2,
-          "BackoffRate": 1.5
-        }
-      ],
-      "End": true
-    },
-    "StoreAlbum": {
-      "Type": "Task",
-      "Resource": "${StoreAlbumLambdaArn}",
-      "InputPath": "$",
-      "ResultPath": "$.storeResult",
-      "Retry": [
-        {
-          "ErrorEquals": [
-            "States.ALL"
-          ],
-          "IntervalSeconds": 1,
-          "MaxAttempts": 2,
-          "BackoffRate": 1.5
-        }
-      ],
-      "End": true
-    },
-    "DeleteAlbum": {
-      "Type": "Task",
-      "Resource": "${DeleteAlbumLambdaArn}",
-      "InputPath": "$",
-      "ResultPath": "$.storeResult",
-      "Retry": [
-        {
-          "ErrorEquals": [
-            "States.ALL"
-          ],
-          "IntervalSeconds": 1,
-          "MaxAttempts": 2,
-          "BackoffRate": 1.5
-        }
-      ],
-      "End": true
-    }
-  }
+	"Comment": "Image Processing workflow",
+	"StartAt": "ChooseAction",
+	"States": {
+		"ChooseAction": {
+			"Type": "Choice",
+			"Choices": [
+				{
+					"And": [
+						{
+							"Variable": "$.isAlbum",
+							"BooleanEquals": true
+						},
+						{
+							"Variable": "$.action",
+							"StringEquals": "create"
+						}
+					],
+					"Next": "StoreAlbum"
+				},
+				{
+					"And": [
+						{
+							"Variable": "$.isAlbum",
+							"BooleanEquals": true
+						},
+						{
+							"Variable": "$.action",
+							"StringEquals": "delete"
+						}
+					],
+					"Next": "DeleteAlbum"
+				},
+				{
+					"And": [
+						{
+							"Variable": "$.isAlbum",
+							"BooleanEquals": false
+						},
+						{
+							"Variable": "$.action",
+							"StringEquals": "create"
+						}
+					],
+					"Next": "ExtractImageMetadata"
+				},
+				{
+					"And": [
+						{
+							"Variable": "$.isAlbum",
+							"BooleanEquals": false
+						},
+						{
+							"Variable": "$.action",
+							"StringEquals": "delete"
+						}
+					],
+					"Next": "DeleteImage"
+				}
+			]
+		},
+		"ExtractImageMetadata": {
+			"Type": "Task",
+			"Resource": "${ExtractImageMetadataLambdaArn}",
+			"InputPath": "$",
+			"ResultPath": "$.extractedMetadata",
+			"Next": "ImageTypeCheck",
+			"Catch": [
+				{
+					"ErrorEquals": ["ImageIdentifyError"],
+					"Next": "NotSupportedImageType"
+				}
+			],
+			"Retry": [
+				{
+					"ErrorEquals": ["ImageIdentifyError"],
+					"MaxAttempts": 0
+				},
+				{
+					"ErrorEquals": ["States.ALL"],
+					"IntervalSeconds": 1,
+					"MaxAttempts": 2,
+					"BackoffRate": 1.5
+				}
+			]
+		},
+		"ImageTypeCheck": {
+			"Type": "Choice",
+			"Choices": [
+				{
+					"Or": [
+						{
+							"Variable": "$.extractedMetadata.format",
+							"StringEquals": "JPEG"
+						},
+						{
+							"Variable": "$.extractedMetadata.format",
+							"StringEquals": "PNG"
+						}
+					],
+					"Next": "TransformImageMetadata"
+				}
+			],
+			"Default": "NotSupportedImageType"
+		},
+		"TransformImageMetadata": {
+			"Type": "Task",
+			"Resource": "${TransformImageMetadataLambdaArn}",
+			"InputPath": "$.extractedMetadata",
+			"ResultPath": "$.extractedMetadata",
+			"Retry": [
+				{
+					"ErrorEquals": ["States.ALL"],
+					"IntervalSeconds": 1,
+					"MaxAttempts": 2,
+					"BackoffRate": 1.5
+				}
+			],
+			"Next": "ParallelProcessing"
+		},
+		"NotSupportedImageType": {
+			"Type": "Fail",
+			"Cause": "Image type not supported!",
+			"Error": "FileTypeNotSupported"
+		},
+		"ParallelProcessing": {
+			"Type": "Parallel",
+			"Branches": [
+				{
+					"StartAt": "Rekognition",
+					"States": {
+						"Rekognition": {
+							"Type": "Task",
+							"Resource": "${RekognitionLambdaArn}",
+							"Retry": [
+								{
+									"ErrorEquals": ["States.ALL"],
+									"IntervalSeconds": 1,
+									"MaxAttempts": 2,
+									"BackoffRate": 1.5
+								}
+							],
+							"End": true
+						}
+					}
+				},
+				{
+					"StartAt": "CutLargeImage",
+					"States": {
+						"CutLargeImage": {
+							"Type": "Task",
+							"Resource": "${GenerateLargeImageLambdaArn}",
+							"Retry": [
+								{
+									"ErrorEquals": ["States.ALL"],
+									"IntervalSeconds": 1,
+									"MaxAttempts": 2,
+									"BackoffRate": 1.5
+								}
+							],
+							"End": true
+						}
+					}
+				},
+				{
+					"StartAt": "Thumbnail",
+					"States": {
+						"Thumbnail": {
+							"Type": "Task",
+							"Resource": "${GenerateThumbnailImageLambdaArn}",
+							"Retry": [
+								{
+									"ErrorEquals": ["States.ALL"],
+									"IntervalSeconds": 1,
+									"MaxAttempts": 2,
+									"BackoffRate": 1.5
+								}
+							],
+							"End": true
+						}
+					}
+				}
+			],
+			"ResultPath": "$.parallelResults",
+			"Next": "StoreImage"
+		},
+		"StoreImage": {
+			"Type": "Task",
+			"Resource": "${StoreImageLambdaArn}",
+			"InputPath": "$",
+			"ResultPath": "$.storeResult",
+			"Retry": [
+				{
+					"ErrorEquals": ["States.ALL"],
+					"IntervalSeconds": 1,
+					"MaxAttempts": 2,
+					"BackoffRate": 1.5
+				}
+			],
+			"End": true
+		},
+		"DeleteImage": {
+			"Type": "Task",
+			"Resource": "${DeleteImageLambdaArn}",
+			"InputPath": "$",
+			"ResultPath": "$.storeResult",
+			"Retry": [
+				{
+					"ErrorEquals": ["States.ALL"],
+					"IntervalSeconds": 1,
+					"MaxAttempts": 2,
+					"BackoffRate": 1.5
+				}
+			],
+			"End": true
+		},
+		"StoreAlbum": {
+			"Type": "Task",
+			"Resource": "${StoreAlbumLambdaArn}",
+			"InputPath": "$",
+			"ResultPath": "$.storeResult",
+			"Retry": [
+				{
+					"ErrorEquals": ["States.ALL"],
+					"IntervalSeconds": 1,
+					"MaxAttempts": 2,
+					"BackoffRate": 1.5
+				}
+			],
+			"End": true
+		},
+		"DeleteAlbum": {
+			"Type": "Task",
+			"Resource": "${DeleteAlbumLambdaArn}",
+			"InputPath": "$",
+			"ResultPath": "$.storeResult",
+			"Retry": [
+				{
+					"ErrorEquals": ["States.ALL"],
+					"IntervalSeconds": 1,
+					"MaxAttempts": 2,
+					"BackoffRate": 1.5
+				}
+			],
+			"End": true
+		}
+	}
 }

@@ -5,9 +5,11 @@ const NotFoundException = require("./NotFoundException.js");
 const AWS = require("aws-sdk");
 const s3 = new AWS.S3();
 
-const s3BucketName = process.env.IMAGE_S3_BUCKET;
-const originalImagePrefix = process.env.ORIGINAL_IMAGE_S3_PREFIX;
-const thumbnailImagePrefix = process.env.THUMBNAIL_IMAGE_S3_PREFIX;
+const s3BucketName = process.env.IMAGE_S3_BUCKET; // S3 image bucket
+const originalImagePrefix = process.env.ORIGINAL_IMAGE_S3_PREFIX; // S3 key prefix under which to read the original image
+const thumbnailImagePrefix = process.env.THUMBNAIL_IMAGE_S3_PREFIX; // S3 key prefix under which to store resized image
+const edgeSize = process.env.THUMBNAIL_IMAGE_SIZE; // longest edge of the resized image, in pixels
+const jpegQuality = process.env.THUMBNAIL_IMAGE_QUALITY; // JPEG quality of the resized image
 
 const dynamoTableName = process.env.GALLERY_ITEM_DDB_TABLE;
 const dynamoDocClient = new AWS.DynamoDB.DocumentClient({
@@ -38,6 +40,13 @@ const dynamoDocClient = new AWS.DynamoDB.DocumentClient({
  * 		}
  */
 exports.handler = async event => {
+	if (!s3BucketName) throw "Undefined s3BucketName";
+	if (!originalImagePrefix) throw "Undefined originalImagePrefix";
+	if (!thumbnailImagePrefix) throw "Undefined thumbnailImagePrefix";
+	if (!edgeSize) throw "Undefined edgeSize";
+	if (!jpegQuality) throw "Undefined jpegQuality";
+	if (!event) throw "Undefined event";
+
 	// event.path is passed in from the API Gateway and contains the full path
 	// of the HTTP request, such as  "/thumb/path/to/image.jpg"
 	if (!event.path) {
@@ -81,6 +90,8 @@ exports.handler = async event => {
 			s3BucketName,
 			originalImagePrefix,
 			thumbnailImagePrefix,
+			edgeSize,
+			jpegQuality,
 			imagePath,
 			crop
 		);
