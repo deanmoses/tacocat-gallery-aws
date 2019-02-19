@@ -31,9 +31,9 @@ exports.handler = async event => {
 
 	await createImage(docClient, tableName, imagePath, fileUploadTimeStamp);
 
-	const thumbnailS3key = event.parallelResults[0];
+	const thumbnailS3key = event.parallelNewImageResults[0];
 	const metadata = event.extractedMetadata;
-	const labels = event.parallelResults[0];
+	const labels = event.parallelNewImageResults[0];
 	return await updateImage(
 		docClient,
 		tableName,

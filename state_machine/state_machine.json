@@ -55,7 +55,7 @@
 							"StringEquals": "delete"
 						}
 					],
-					"Next": "DeleteImage"
+					"Next": "ParallelProcessDeleteImage"
 				}
 			]
 		},
@@ -116,14 +116,14 @@
 					"BackoffRate": 1.5
 				}
 			],
-			"Next": "ParallelProcessing"
+			"Next": "ParallelProcessNewImage"
 		},
 		"NotSupportedImageType": {
 			"Type": "Fail",
 			"Cause": "Image type not supported!",
 			"Error": "FileTypeNotSupported"
 		},
-		"ParallelProcessing": {
+		"ParallelProcessNewImage": {
 			"Type": "Parallel",
 			"Branches": [
 				{
@@ -181,14 +181,14 @@
 					}
 				}
 			],
-			"ResultPath": "$.parallelResults",
+			"ResultPath": "$.parallelNewImageResults",
 			"Next": "StoreImage"
 		},
 		"StoreImage": {
 			"Type": "Task",
 			"Resource": "${StoreImageLambdaArn}",
 			"InputPath": "$",
-			"ResultPath": "$.storeResult",
+			"ResultPath": "$.storeImageResult",
 			"Retry": [
 				{
 					"ErrorEquals": ["States.ALL"],
@@ -199,26 +199,58 @@
 			],
 			"End": true
 		},
-		"DeleteImage": {
-			"Type": "Task",
-			"Resource": "${DeleteImageLambdaArn}",
-			"InputPath": "$",
-			"ResultPath": "$.storeResult",
-			"Retry": [
+		"ParallelProcessDeleteImage": {
+			"Type": "Parallel",
+			"Branches": [
 				{
-					"ErrorEquals": ["States.ALL"],
-					"IntervalSeconds": 1,
-					"MaxAttempts": 2,
-					"BackoffRate": 1.5
+					"StartAt": "DeleteImageFromDynamo",
+					"States": {
+						"DeleteImageFromDynamo": {
+							"Type": "Task",
+							"Resource": "${DeleteImageFromDynamoLambdaArn}",
+							"InputPath": "$",
+							"ResultPath": "$.deleteImageFromDynamoResult",
+							"Retry": [
+								{
+									"ErrorEquals": ["States.ALL"],
+									"IntervalSeconds": 1,
+									"MaxAttempts": 2,
+									"BackoffRate": 1.5
+								}
+							],
+							"End": true
+						}
+					}
+				},
+				{
+					"StartAt": "DeleteResizedImagesFromS3",
+					"States": {
+						"DeleteResizedImagesFromS3": {
+							"Type": "Task",
+							"Resource": "${DeleteResizedImagesFromS3LambdaArn}",
+							"InputPath": "$",
+							"ResultPath": "$.deleteResizedImagesFromS3Result",
+							"Retry": [
+								{
+									"ErrorEquals": ["States.ALL"],
+									"IntervalSeconds": 1,
+									"MaxAttempts": 2,
+									"BackoffRate": 1.5
+								}
+							],
+							"End": true
+						}
+					}
 				}
 			],
+			"ResultPath": "$.parallelDeleteImageResults",
 			"End": true
 		},
 		"StoreAlbum": {
 			"Type": "Task",
 			"Resource": "${StoreAlbumLambdaArn}",
 			"InputPath": "$",
-			"ResultPath": "$.storeResult",
+			"ResultPath": "$.storeAlbumResult",
 			"Retry": [
 				{
 					"ErrorEquals": ["States.ALL"],
@@ -231,9 +263,9 @@
 		},
 		"DeleteAlbum": {
 			"Type": "Task",
-			"Resource": "${DeleteAlbumLambdaArn}",
+			"Resource": "${DeleteAlbumFromDynamoLambdaArn}",
 			"InputPath": "$",
-			"ResultPath": "$.storeResult",
+			"ResultPath": "$.deleteAlbumFromDynamoResult",
 			"Retry": [
 				{
 					"ErrorEquals": ["States.ALL"],

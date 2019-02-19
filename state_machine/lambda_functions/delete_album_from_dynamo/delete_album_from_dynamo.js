@@ -1,13 +1,13 @@
 const getParentAndNameFromPath = require("./get_parent_and_name_from_path.js");
 
 /**
- * Delete image from DynamoDB
+ * Delete album from DynamoDB
  *
  * @param {*} docClient AWS DynamoDB DocumentClient
  * @param {*} tableName Name of the table in DynamoDB in which to store gallery items
- * @param {*} path Path of the image like /2001/12-31/image.jpg
+ * @param {*} path Path of the album to delete, like /2001/12-31/
  */
-function deleteImage(docClient, tableName, path) {
+function deleteAlbumFromDynamo(docClient, tableName, path) {
 	const pathParts = getParentAndNameFromPath(path);
 	const ddbparams = {
 		TableName: tableName,
@@ -20,4 +20,4 @@ function deleteImage(docClient, tableName, path) {
 	return docClient.delete(ddbparams).promise();
 }
 
-module.exports = deleteImage;
+module.exports = deleteAlbumFromDynamo;

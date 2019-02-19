@@ -1,5 +1,5 @@
 const AWS = require("aws-sdk");
-const deleteAlbum = require("./delete_album.js");
+const deleteAlbumFromDynamo = require("./delete_album_from_dynamo.js");
 
 const tableName = process.env.GALLERY_ITEM_DDB_TABLE;
 
@@ -19,5 +19,5 @@ exports.handler = async event => {
 	albumPath = albumPath.substring(albumPath.indexOf("/") + 1); // strip "albums/"
 	albumPath = albumPath.substring(0, albumPath.lastIndexOf("/")); // strip last "/"
 
-	return await deleteAlbum(docClient, tableName, albumPath);
+	return await deleteAlbumFromDynamo(docClient, tableName, albumPath);
 };

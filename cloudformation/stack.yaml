@@ -109,11 +109,11 @@ Outputs:
       Fn::GetAtt:
         - StoreAlbumFunction
         - Arn
-  DeleteAlbumLambda:
+  DeleteAlbumFromDynamoLambda:
     Description: Lambda function that delete the album from DynamoDB
     Value:
       Fn::GetAtt:
-        - DeleteAlbumFunction
+        - DeleteAlbumFromDynamoFunction
         - Arn
   StoreImageLambda:
     Description: Lambda function that stores the image in DynamoDB
@@ -121,11 +121,11 @@ Outputs:
       Fn::GetAtt:
         - StoreImageFunction
         - Arn
-  DeleteImageLambda:
+  DeleteImageFromDynamoLambda:
     Description: Lambda function that deletes the image from DynamoDB
     Value:
       Fn::GetAtt:
-        - DeleteImageFunction
+        - DeleteImageFromDynamoFunction
         - Arn
   GenerateThumbnailImageLambda:
     Description: Lambda function that creates thumbnail version of image
@@ -366,6 +366,15 @@ Resources:
                 Action:
                   - "s3:PutObject"
                 Resource: !Sub "arn:aws:s3:::${PhotoRepoS3Bucket}/*"
+        - PolicyName: "DeleteFromPhotoRepoS3Bucket"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Sid: "DeleteFromPhotoRepoS3Bucket"
+                Effect: "Allow"
+                Action:
+                  - "s3:DeleteObject"
+                Resource: !Sub "arn:aws:s3:::${PhotoRepoS3Bucket}/*"
         - PolicyName: "ManageGalleryItemDDBTable"
           PolicyDocument:
             Version: "2012-10-17"
@@ -443,10 +452,10 @@ Resources:
         Variables:
           GALLERY_ITEM_DDB_TABLE: !Ref GalleryItemDDBTable
 
-  DeleteAlbumFunction:
+  DeleteAlbumFromDynamoFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: ../state_machine/lambda_functions/delete_album
+      CodeUri: ../state_machine/lambda_functions/delete_album_from_dynamo
       Description: "Lambda function that deletes album from DynamoDB"
       Role: !GetAtt BackendProcessingLambdaRole.Arn
       Environment:
@@ -463,15 +472,27 @@ Resources:
         Variables:
           GALLERY_ITEM_DDB_TABLE: !Ref GalleryItemDDBTable
 
-  DeleteImageFunction:
+  DeleteImageFromDynamoFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: ../state_machine/lambda_functions/delete_image
-      Description: "Lambda function that deletes image from DynamoDB"
+      CodeUri: ../state_machine/lambda_functions/delete_image_from_dynamo
+      Description: "Lambda function that deletes image entry from DynamoDB"
       Role: !GetAtt BackendProcessingLambdaRole.Arn
       Environment:
         Variables:
           GALLERY_ITEM_DDB_TABLE: !Ref GalleryItemDDBTable
+
+  DeleteResizedImagesFromS3Function:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../state_machine/lambda_functions/delete_resized_images_from_s3
+      Description: "Lambda function that deletes resized versions of image from S3"
+      Role: !GetAtt BackendProcessingLambdaRole.Arn
+      Environment:
+        Variables:
+          IMAGE_S3_BUCKET: !Ref PhotoRepoS3Bucket
+          THUMBNAIL_IMAGE_S3_PREFIX: !Ref ThumbnailImageS3Prefix
+          LARGE_IMAGE_S3_PREFIX: !Ref LargeImageS3Prefix
 
   RekognitionFunction:
     Type: AWS::Serverless::Function
@@ -829,9 +850,10 @@ Resources:
             ExtractImageMetadataLambdaArn: !GetAtt ExtractImageMetadataFunction.Arn,
             TransformImageMetadataLambdaArn: !GetAtt TransformImageMetadataFunction.Arn,
             StoreAlbumLambdaArn: !GetAtt StoreAlbumFunction.Arn,
-            DeleteAlbumLambdaArn: !GetAtt DeleteAlbumFunction.Arn,
+            DeleteAlbumFromDynamoLambdaArn: !GetAtt DeleteAlbumFromDynamoFunction.Arn,
             StoreImageLambdaArn: !GetAtt StoreImageFunction.Arn,
-            DeleteImageLambdaArn: !GetAtt DeleteImageFunction.Arn,
+            DeleteImageFromDynamoLambdaArn: !GetAtt DeleteImageFromDynamoFunction.Arn,
+            DeleteResizedImagesFromS3LambdaArn: !GetAtt DeleteResizedImagesFromS3Function.Arn,
             RekognitionLambdaArn: !GetAtt RekognitionFunction.Arn,
             GenerateThumbnailImageLambdaArn: !GetAtt GenerateThumbnailImageFunction.Arn,
             GenerateLargeImageLambdaArn: !GetAtt GenerateLargeImageFunction.Arn,
