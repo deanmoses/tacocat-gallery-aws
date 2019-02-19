@@ -5,7 +5,7 @@ const NotFoundException = require("./NotFoundException.js");
 const AWS = require("aws-sdk");
 const s3 = new AWS.S3();
 
-const s3BucketName = process.env.IMAGE_S3_BUCKET; // S3 image bucket
+const s3BucketName = process.env.IMAGE_S3_BUCKET; // name of the S3 image bucket
 const originalImagePrefix = process.env.ORIGINAL_IMAGE_S3_PREFIX; // S3 key prefix under which to read the original image
 const thumbnailImagePrefix = process.env.THUMBNAIL_IMAGE_S3_PREFIX; // S3 key prefix under which to store resized image
 const edgeSize = process.env.THUMBNAIL_IMAGE_SIZE; // longest edge of the resized image, in pixels
