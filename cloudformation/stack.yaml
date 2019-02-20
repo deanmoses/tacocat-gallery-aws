@@ -75,6 +75,15 @@ Parameters:
 # easier to find.
 # -----------------------------------------------------------------------------
 Outputs:
+  CloudFrontDomainName:
+    Description: CloudFront domain that serves the gallery's images
+    Value:
+      Fn::GetAtt:
+        - GalleryCloudFrontDistribution
+        - DomainName
+  ApiUrl:
+    Description: URL of the gallery API endpoint
+    Value: !Sub "https://${GalleryApi}.execute-api.${AWS::Region}.amazonaws.com/${ApiStage}"
   S3PhotoRepoBucket:
     Description: S3 bucket containing the image repository
     Value:
@@ -155,16 +164,6 @@ Outputs:
     Description: AWS Cognito Identity Pool of users allowed to use the web app
     Value:
       Ref: TestClientIdentityPool
-  ApiUrl:
-    Description: URL of the gallery API endpoint
-    Value: !Join
-      - ""
-      - - https://
-        - !Ref GalleryApi
-        - ".execute-api."
-        - !Ref AWS::Region
-        - ".amazonaws.com/"
-        - !Ref ApiStage
 
 # -----------------------------------------------------------------------------
 # Configuration inheritable by all Lambda functions
