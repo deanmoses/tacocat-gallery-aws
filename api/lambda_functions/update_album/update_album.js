@@ -12,12 +12,7 @@ const getParentAndNameFromPath = require("./get_parent_and_name_from_path.js");
  *
  * @returns {} if success, throws exception if there's a problem with the input
  */
-async function getAlbum(
-	docClient,
-	tableName,
-	path,
-	attributesToUpdate
-) {
+async function getAlbum(docClient, tableName, path, attributesToUpdate) {
 	if (!path) {
 		throw new BadRequestException("Must specify album");
 	}
@@ -45,7 +40,7 @@ async function getAlbum(
 
 	UpdateExpression += ", updateDateTime = :updateDateTime";
 	ExpressionAttributeValues[":updateDateTime"] = Math.floor(
-		new Date().getTime() / 1000
+		new Date().toJSON()
 	);
 
 	const ddbparams = {

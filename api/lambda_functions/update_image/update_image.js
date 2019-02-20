@@ -12,12 +12,7 @@ const getParentAndNameFromPath = require("./get_parent_and_name_from_path.js");
  *
  * @returns {} if success, throws exception if there's a problem with the input
  */
-async function getImage(
-	docClient,
-	tableName,
-	path,
-	attributesToUpdate
-) {
+async function getImage(docClient, tableName, path, attributesToUpdate) {
 	if (!path) {
 		throw new BadRequestException("Must specify image");
 	}
@@ -44,9 +39,7 @@ async function getImage(
 	}
 
 	UpdateExpression += ", updateDateTime = :updateDateTime";
-	ExpressionAttributeValues[":updateDateTime"] = Math.floor(
-		new Date().getTime() / 1000
-	);
+	ExpressionAttributeValues[":updateDateTime"] = new Date().toJSON();
 
 	const ddbparams = {
 		TableName: tableName,

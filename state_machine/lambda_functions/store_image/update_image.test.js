@@ -4,7 +4,7 @@ const AWS_MOCK = require("aws-sdk-mock");
 const awsRegion = "us-west-2";
 const tableName = "NotRealImageTable";
 const imageId = "/not/a/real/image.jpg";
-const fileUploadTimeStamp = 100000;
+const fileUploadTimeStamp = "2001-12-31T23:59:59.999Z";
 const thumbnailS3key = "thumbnails/2001/12-31/ba-IMG_20160706_094820.jpg";
 const metadata = {
 	creationTime: "2016:07:06 09:48:21",

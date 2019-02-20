@@ -20,9 +20,10 @@ exports.handler = async event => {
 		event.s3Bucket,
 		event.s3Key
 	);
-	const fileUploadTimeStamp = Math.floor(
-		Date.parse(s3ObjectMetadata.LastModified) / 1000
-	);
+	const fileUploadTimeStamp = new Date(
+		Date.parse(s3ObjectMetadata.LastModified)
+	).toJSON();
+
 	const albumPath = getAlbumPathFromS3key(event.s3Key);
 	return createAlbum(docClient, tableName, albumPath, fileUploadTimeStamp);
 };

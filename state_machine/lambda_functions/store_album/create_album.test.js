@@ -3,7 +3,7 @@ const AWS = require("aws-sdk");
 const AWS_MOCK = require("aws-sdk-mock");
 const awsRegion = "us-west-2";
 const albumId = "/not/an/album";
-const fileUploadTimeStamp = 100000;
+const fileUploadTimeStamp = "2001-12-31T23:59:59.999Z";
 
 test("Create Album", async () => {
 	expect.assertions(2);

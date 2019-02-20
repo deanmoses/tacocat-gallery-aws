@@ -29,9 +29,9 @@ exports.handler = async event => {
 	);
 
 	// Convert last mod into a format that's acceptable to DynamoDB
-	const fileUploadTimeStamp = Math.floor(
-		Date.parse(s3ObjectMetadata.LastModified) / 1000
-	);
+	const fileUploadTimeStamp = new Date(
+		Date.parse(s3ObjectMetadata.LastModified)
+	).toJSON();
 
 	// Retrieve image entry from DynamoDB
 	const imageEntry = await retrieveImageFromDynamo(

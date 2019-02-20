@@ -97,9 +97,9 @@ function parseCoordinate(coordinate, coordinateDirection) {
 
 /**
  * @param {*} dateString of the format "YYYY:MM:DD HH:MM:SS"
- * @returns seconds since epoch
+ * @returns string of the ISO 8601 format "YYYY-MM-DDTHH:mm:ss.sssZ"
  */
 function parseExifDate(dateString) {
 	var b = dateString.split(/\D/); // Split on non-digit characters
-	return new Date(b[0], b[1] - 1, b[2], b[3], b[4], b[5]).getTime() / 1000;
+	return new Date(b[0], b[1] - 1, b[2], b[3], b[4], b[5]).toJSON();
 }
