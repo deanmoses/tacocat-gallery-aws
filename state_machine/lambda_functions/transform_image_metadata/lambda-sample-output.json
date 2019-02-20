@@ -1,25 +1,15 @@
 {
-  "creationTime": "2016:04:09 14:08:13",
-  "geo": {
-    "latitude": {
-      "D": 46,
-      "M": 49,
-      "S": 32.43,
-      "Direction": "N"
-    },
-    "longitude": {
-      "D": 121,
-      "M": 43,
-      "S": 41.88,
-      "Direction": "W"
-    }
-  },
-  "exifMake": "LGE",
-  "exifModel": "Nexus 5X",
-  "dimensions": {
-    "width": 4032,
-    "height": 3024
-  },
-  "fileSize": "1.354MB",
-  "format": "JPEG"
+	"creationTime": 1460236093,
+	"description": "Boys on a boat.",
+	"dimensions": { "height": 3024, "width": 4032 },
+	"exifMake": "LGE",
+	"exifModel": "Nexus 5X",
+	"fileSize": "1.354MB",
+	"format": "JPEG",
+	"title": "Boat Boat!",
+	"tags": ["trip", "austin", "texas", "lake", "boat"],
+	"geo": {
+		"latitude": { "D": 46, "Direction": "N", "M": 49, "S": 32.43 },
+		"longitude": { "D": 121, "Direction": "W", "M": 43, "S": 41.88 }
+	}
 }
