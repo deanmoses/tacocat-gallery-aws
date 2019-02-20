@@ -381,6 +381,7 @@ Resources:
               - Sid: "ManageGalleryItemDDBTable"
                 Effect: "Allow"
                 Action:
+                  - "dynamodb:GetItem"
                   - "dynamodb:UpdateItem"
                   - "dynamodb:PutItem"
                   - "dynamodb:DeleteItem"

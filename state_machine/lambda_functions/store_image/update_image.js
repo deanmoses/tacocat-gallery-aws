@@ -9,6 +9,7 @@ const getParentAndNameFromPath = require("./get_parent_and_name_from_path.js");
  * @param {*} docClient AWS DynamoDB DocumentClient
  * @param {*} tableName Name of the table in DynamoDB in which to store gallery items
  * @param {*} imagePath Path of the image like /2001/12-31/image.jpg
+ * @param {*} imageIsNew true if the image is not being re-uploaded
  * @param {*} fileUploadTimeStamp time the image was uploaded to S3
  * @param {*} thumbnailS3key S3 key of the thumbnail version of the image
  * @param {*} metadata EXIF and IPTC metadata extracted from the image
@@ -18,6 +19,7 @@ function updateImage(
 	docClient,
 	tableName,
 	imagePath,
+	imageIsNew,
 	fileUploadTimeStamp,
 	thumbnailS3key,
 	metadata,
@@ -38,16 +40,19 @@ function updateImage(
 	if (metadata.creationTime) {
 		UpdateExpression += ", itemDateTime = :itemDateTime";
 		ExpressionAttributeValues[":itemDateTime"] = metadata.creationTime;
-	}	
-
-	if (metadata.description) {
-		UpdateExpression += ", description = :description";
-		ExpressionAttributeValues[":description"] = metadata.description;
 	}
 
-	if (metadata.title) {
-		UpdateExpression += ", title = :title";
-		ExpressionAttributeValues[":title"] = metadata.title;
+	// Don't update these if this image is being re-uploaded
+	if (imageIsNew) {
+		if (metadata.title) {
+			UpdateExpression += ", title = :title";
+			ExpressionAttributeValues[":title"] = metadata.title;
+		}
+
+		if (metadata.description) {
+			UpdateExpression += ", description = :description";
+			ExpressionAttributeValues[":description"] = metadata.description;
+		}
 	}
 
 	if (metadata.tags) {
