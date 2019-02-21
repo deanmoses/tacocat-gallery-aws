@@ -261,18 +261,13 @@ Resources:
             S3OriginConfig:
               OriginAccessIdentity: !Sub "origin-access-identity/cloudfront/${DerivedImageBucketCloudFrontOriginAccessIdentity}"
         CacheBehaviors:
-          - PathPattern: original/*.jpg # CacheBehavior for original images
+          - PathPattern: !Sub "${OriginalImageS3Prefix}/*.jpg" # CacheBehavior for original images
             TargetOriginId: TacocatGalleryS3Origin
             Compress: true
             ViewerProtocolPolicy: redirect-to-https
             AllowedMethods:
               - GET
               - HEAD
-              - OPTIONS
-            CachedMethods:
-              - GET
-              - HEAD
-              - OPTIONS
             ForwardedValues:
               QueryString: "false"
               Cookies:
@@ -284,11 +279,6 @@ Resources:
           AllowedMethods:
             - GET
             - HEAD
-            - OPTIONS
-          CachedMethods:
-            - GET
-            - HEAD
-            - OPTIONS
           ForwardedValues:
             QueryString: "false"
             Cookies:
@@ -341,6 +331,7 @@ Resources:
   # Role for Gallery API
   GalleryApiRole:
     Type: "AWS::IAM::Role"
+    Path: "/Gallery/"
     Properties:
       Policies:
         - PolicyName: "InvokeGalleryApiLambdas"
@@ -382,6 +373,7 @@ Resources:
   # ---------------------------------------------------------------------------
   BackendProcessingLambdaRole:
     Type: "AWS::IAM::Role"
+    Path: "/Gallery/"
     Properties:
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
@@ -414,24 +406,16 @@ Resources:
                 Action:
                   - "s3:Get*"
                 Resource: !Sub "arn:aws:s3:::${PhotoRepoS3Bucket}/*"
-        - PolicyName: "WriteToPhotoRepoS3Bucket"
+        - PolicyName: "ModifyDerivedImageBucket"
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
-              - Sid: "WriteToPhotoRepoS3Bucket"
+              - Sid: "ModifyDerivedImageBucket"
                 Effect: "Allow"
                 Action:
                   - "s3:PutObject"
-                Resource: !Sub "arn:aws:s3:::${PhotoRepoS3Bucket}/*"
-        - PolicyName: "DeleteFromPhotoRepoS3Bucket"
-          PolicyDocument:
-            Version: "2012-10-17"
-            Statement:
-              - Sid: "DeleteFromPhotoRepoS3Bucket"
-                Effect: "Allow"
-                Action:
                   - "s3:DeleteObject"
-                Resource: !Sub "arn:aws:s3:::${PhotoRepoS3Bucket}/*"
+                Resource: !Sub "arn:aws:s3:::${DerivedImageBucket}/*"
         - PolicyName: "ManageGalleryItemDDBTable"
           PolicyDocument:
             Version: "2012-10-17"
@@ -548,7 +532,7 @@ Resources:
       Role: !GetAtt BackendProcessingLambdaRole.Arn
       Environment:
         Variables:
-          IMAGE_S3_BUCKET: !Ref PhotoRepoS3Bucket
+          DERIVED_IMAGE_BUCKET: !Ref DerivedImageBucket
           THUMBNAIL_IMAGE_S3_PREFIX: !Ref ThumbnailImageS3Prefix
           LARGE_IMAGE_S3_PREFIX: !Ref LargeImageS3Prefix
 
@@ -569,7 +553,7 @@ Resources:
       Role: !GetAtt BackendProcessingLambdaRole.Arn
       Environment:
         Variables:
-          IMAGE_S3_BUCKET: !Ref PhotoRepoS3Bucket
+          DERIVED_IMAGE_BUCKET: !Ref DerivedImageBucket
           THUMBNAIL_IMAGE_S3_PREFIX: !Ref ThumbnailImageS3Prefix
           THUMBNAIL_IMAGE_SIZE: !Ref ThumbnailImageSize
           THUMBNAIL_IMAGE_QUALITY: !Ref ThumbnailImageQuality
@@ -584,7 +568,7 @@ Resources:
       Role: !GetAtt BackendProcessingLambdaRole.Arn
       Environment:
         Variables:
-          IMAGE_S3_BUCKET: !Ref PhotoRepoS3Bucket
+          DERIVED_IMAGE_BUCKET: !Ref DerivedImageBucket
           LARGE_IMAGE_S3_PREFIX: !Ref LargeImageS3Prefix
           LARGE_IMAGE_SIZE: !Ref LargeImageSize
           LARGE_IMAGE_QUALITY: !Ref LargeImageQuality
@@ -622,6 +606,7 @@ Resources:
   # 2) read DynamoDB streams
   SearchIndexerFunctionRole:
     Type: "AWS::IAM::Role"
+    Path: "/Gallery/"
     Properties:
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
@@ -630,7 +615,6 @@ Resources:
             Principal:
               Service: "lambda.amazonaws.com"
             Action: "sts:AssumeRole"
-      Path: "/"
       Policies:
         - PolicyName: "SearchIndexerFunctionPolicy"
           PolicyDocument:
@@ -711,8 +695,9 @@ Resources:
       Environment:
         Variables:
           GALLERY_ITEM_DDB_TABLE: !Ref GalleryItemDDBTable
-          IMAGE_S3_BUCKET: !Ref PhotoRepoS3Bucket
+          ORIGINAL_IMAGE_BUCKET: !Ref PhotoRepoS3Bucket
           ORIGINAL_IMAGE_S3_PREFIX: !Ref OriginalImageS3Prefix
+          DERIVED_IMAGE_BUCKET: !Ref DerivedImageBucket
           THUMBNAIL_IMAGE_S3_PREFIX: !Ref ThumbnailImageS3Prefix
           THUMBNAIL_IMAGE_SIZE: !Ref ThumbnailImageSize
           THUMBNAIL_IMAGE_QUALITY: !Ref ThumbnailImageQuality
@@ -720,6 +705,7 @@ Resources:
   # Role for Lambdas used by the Gallery API that need read-only access to DynamoDB
   ApiGatewayLambdaReadOnlyRole:
     Type: "AWS::IAM::Role"
+    Path: "/Gallery/"
     Properties:
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
@@ -730,7 +716,6 @@ Resources:
                 - "lambda.amazonaws.com"
             Action:
               - "sts:AssumeRole"
-      Path: "/Gallery/"
       Policies:
         - PolicyName: "GalleryDynamoTableReadAccess"
           PolicyDocument:
@@ -748,6 +733,7 @@ Resources:
   # Role for Lambdas used by the Gallery API that need write access to DynamoDB
   ApiGatewayLambdaWriteRole:
     Type: "AWS::IAM::Role"
+    Path: "/Gallery/"
     Properties:
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
@@ -758,7 +744,6 @@ Resources:
                 - "lambda.amazonaws.com"
             Action:
               - "sts:AssumeRole"
-      Path: "/Gallery/"
       Policies:
         - PolicyName: "GalleryDynamoTableWriteAccess"
           PolicyDocument:
@@ -818,15 +803,15 @@ Resources:
                 Action:
                   - "s3:Get*"
                 Resource: !Sub "arn:aws:s3:::${PhotoRepoS3Bucket}/*"
-        - PolicyName: "WriteToPhotoRepoS3Bucket"
+        - PolicyName: "WriteToDerivedImageBucket"
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
-              - Sid: "WriteToPhotoRepoS3Bucket"
+              - Sid: "WriteToDerivedImageBucket"
                 Effect: "Allow"
                 Action:
                   - "s3:PutObject"
-                Resource: !Sub "arn:aws:s3:::${PhotoRepoS3Bucket}/*"
+                Resource: !Sub "arn:aws:s3:::${DerivedImageBucket}/*"
 
   # ---------------------------------------------------------------------------
   # Custom resources created with Lambda functions:
@@ -834,6 +819,7 @@ Resources:
   # ---------------------------------------------------------------------------
   CustomResourceHelperRole:
     Type: "AWS::IAM::Role"
+    Path: "/Gallery/"
     Properties:
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
@@ -844,7 +830,6 @@ Resources:
                 - "lambda.amazonaws.com"
             Action:
               - "sts:AssumeRole"
-      Path: "/Gallery/"
       Policies:
         - PolicyName: "LambdaWriteCWLogs"
           PolicyDocument:
@@ -920,6 +905,7 @@ Resources:
 
   StateMachineRole:
     Type: "AWS::IAM::Role"
+    Path: "/Gallery/"
     Properties:
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
@@ -929,7 +915,6 @@ Resources:
               Service: !Sub states.${AWS::Region}.amazonaws.com
             Action:
               - "sts:AssumeRole"
-      Path: "/Gallery/"
       Policies:
         - PolicyName: "InvokeLambda"
           PolicyDocument:
@@ -949,8 +934,18 @@ Resources:
   # function is used to proxy calls to Step Functions.
   # ---------------------------------------------------------------------------
 
+  DescribeExecutionFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Description: "Calls DescribeExecution on a state machine execution."
+      MemorySize: 1024
+      Timeout: 200
+      Role: !GetAtt DescribeExecutionFunctionRole.Arn
+      CodeUri: ../state_machine/lambda_functions/describe_state_machine_execution
+
   DescribeExecutionFunctionRole:
     Type: "AWS::IAM::Role"
+    Path: "/Gallery/"
     Properties:
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
@@ -961,7 +956,6 @@ Resources:
                 - "lambda.amazonaws.com"
             Action:
               - "sts:AssumeRole"
-      Path: "/Gallery/"
       Policies:
         - PolicyName: "LambdaWriteCWLogs"
           PolicyDocument:
@@ -983,14 +977,6 @@ Resources:
                 Action:
                   - "states:DescribeExecution"
                 Resource: "*"
-  DescribeExecutionFunction:
-    Properties:
-      Description: "Calls DescribeExecution on a state machine execution."
-      MemorySize: 1024
-      Timeout: 200
-      Role: !GetAtt DescribeExecutionFunctionRole.Arn
-      CodeUri: ../state_machine/lambda_functions/describe_state_machine_execution
-    Type: AWS::Serverless::Function
 
   # ---------------------------------------------------------------------------
   # Identity pool and role used by the test web app client
@@ -1012,6 +998,7 @@ Resources:
 
   TestClientIAMRole:
     Type: "AWS::IAM::Role"
+    Path: "/Gallery/"
     Properties:
       Policies:
         - PolicyName: "S3PhotoRepoBucketAccess"

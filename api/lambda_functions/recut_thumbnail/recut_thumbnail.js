@@ -7,9 +7,10 @@ const gm = require("gm").subClass({ imageMagick: true }); // Enable ImageMagick 
  * the thumbnail back in the same S3 bucket.
  *
  * @param {*} s3 AWS S3 client
- * @param {*} s3BucketName name of the S3 bucket in which both the full size images and the thumbnails are stored
- * @param {*} originalImagePrefix the prefix location of the original images in the AWS S3 bucket, such as "albums"
- * @param {*} thumbnailImagePrefix the prefix location of the thumbnail images in the AWS S3 bucket, such as "thumbnails"
+ * @param {*} s3BucketName name of the S3 bucket in which the original images are are stored
+ * @param {*} originalImagePrefix the S3 prefix of the original images, such as "albums"
+ * @param {*} derivedImageBucketName name of S3 bucket in which to store resized image
+ * @param {*} thumbnailImagePrefix the S3 prefix of the thumbnail images, such as "thumbnails"
  * @param {*} edgeSize longest edge of the thumbnail image, in pixels
  * @param {*} jpegQuality JPEG quality of the resized image
  * @param {*} imagePath path of image like /2001/12-31/image.jpg
@@ -22,6 +23,7 @@ async function recutThumbnail(
 	s3,
 	s3BucketName,
 	originalImagePrefix,
+	derivedImageBucketName,
 	thumbnailImagePrefix,
 	edgeSize,
 	jpegQuality,
@@ -72,7 +74,7 @@ async function recutThumbnail(
 	// Write the thumbnail to S3
 	await s3
 		.upload({
-			Bucket: s3BucketName,
+			Bucket: derivedImageBucketName,
 			Key: thumbnailImagePrefix + imagePath,
 			ContentType: "image/jpeg",
 			Body: buffer

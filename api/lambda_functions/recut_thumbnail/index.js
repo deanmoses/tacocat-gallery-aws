@@ -5,8 +5,9 @@ const NotFoundException = require("./NotFoundException.js");
 const AWS = require("aws-sdk");
 const s3 = new AWS.S3();
 
-const s3BucketName = process.env.IMAGE_S3_BUCKET; // name of the S3 image bucket
-const originalImagePrefix = process.env.ORIGINAL_IMAGE_S3_PREFIX; // S3 key prefix under which to read the original image
+const s3BucketName = process.env.ORIGINAL_IMAGE_BUCKET; // name of the S3 containing original image
+const originalImagePrefix = process.env.ORIGINAL_IMAGE_S3_PREFIX; // S3 key prefix under which to read original image
+const derivedImageBucketName = process.env.DERIVED_IMAGE_BUCKET; // name of S3 bucket in which to store resized image
 const thumbnailImagePrefix = process.env.THUMBNAIL_IMAGE_S3_PREFIX; // S3 key prefix under which to store resized image
 const edgeSize = process.env.THUMBNAIL_IMAGE_SIZE; // longest edge of the resized image, in pixels
 const jpegQuality = process.env.THUMBNAIL_IMAGE_QUALITY; // JPEG quality of the resized image
@@ -42,6 +43,7 @@ const dynamoDocClient = new AWS.DynamoDB.DocumentClient({
 exports.handler = async event => {
 	if (!s3BucketName) throw "Undefined s3BucketName";
 	if (!originalImagePrefix) throw "Undefined originalImagePrefix";
+	if (!derivedImageBucketName) throw "Undefined derivedImageBucketName";
 	if (!thumbnailImagePrefix) throw "Undefined thumbnailImagePrefix";
 	if (!edgeSize) throw "Undefined edgeSize";
 	if (!jpegQuality) throw "Undefined jpegQuality";
@@ -89,6 +91,7 @@ exports.handler = async event => {
 			s3,
 			s3BucketName,
 			originalImagePrefix,
+			derivedImageBucketName,
 			thumbnailImagePrefix,
 			edgeSize,
 			jpegQuality,

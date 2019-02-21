@@ -2,6 +2,7 @@ const gm = require("gm").subClass({ imageMagick: true }); // Enable ImageMagick 
 const AWS = require("aws-sdk");
 const s3 = new AWS.S3();
 
+const derivedImageBucketName = process.env.DERIVED_IMAGE_BUCKET; // name of S3 bucket in which to store resized image
 const largeImagePrefix = process.env.LARGE_IMAGE_S3_PREFIX; // S3 key prefix under which to store resized image
 const longestEdgeOfImage = process.env.LARGE_IMAGE_SIZE; // longest edge of the resized image, in pixels
 const jpegQuality = process.env.LARGE_IMAGE_QUALITY; // JPEG quality of the resized image
@@ -65,13 +66,13 @@ exports.handler = async event => {
 	const destinationKey = largeImagePrefix + "/" + event.objectID;
 	await s3
 		.upload({
-			Bucket: s3BucketName,
+			Bucket: derivedImageBucketName,
 			Key: destinationKey,
-			ContentType: "image/" + event.extractedMetadata.format.toLowerCase(),
+			ContentType: "image/jpeg",
 			Body: buffer
 		})
 		.promise();
 
 	// Return S3 location of the large version of the image
-	return { s3Bucket: s3BucketName, s3Key: destinationKey };
+	return { s3Bucket: derivedImageBucketName, s3Key: destinationKey };
 };

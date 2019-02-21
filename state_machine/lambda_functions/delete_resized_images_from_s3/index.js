@@ -1,7 +1,7 @@
 const AWS = require("aws-sdk");
 const deleteResizedImagesFromS3 = require("./delete_resized_images_from_s3.js");
 
-const s3BucketName = process.env.IMAGE_S3_BUCKET; // S3 image bucket
+const derivedImageBucketName = process.env.DERIVED_IMAGE_BUCKET; // name of S3 bucket in which to store resized image
 const thumbnailImagePrefix = process.env.THUMBNAIL_IMAGE_S3_PREFIX; // S3 key prefix under which the thumbnail versions of images are stored
 const largeImagePrefix = process.env.LARGE_IMAGE_S3_PREFIX; // S3 key prefix under which the large versions of images are stored
 
@@ -17,7 +17,7 @@ exports.handler = async event => {
 	// Delete resized versions of the image from S3
 	return await deleteResizedImagesFromS3(
 		s3,
-		s3BucketName,
+		derivedImageBucketName,
 		thumbnailImagePrefix,
 		largeImagePrefix,
 		event.objectID // image path

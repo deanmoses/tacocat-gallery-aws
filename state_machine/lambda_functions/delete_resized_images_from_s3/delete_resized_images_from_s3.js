@@ -2,7 +2,7 @@
  * Delete resized versions of an image from S3.
  *
  * @param {*} s3 AWS S3 client
- * @param {*} s3BucketName name of the S3 image bucket
+ * @param {*} s3BucketName name of the S3 bucket containing the derived images
  * @param {*} thumbnailImagePrefix the key prefix of the thumbnail version of images within the S3 bucket, such as "thumb"
  * @param {*} largeImagePrefix the key prefix of the large version of images within the S3 bucket, such as "large"
  * @param {*} imagePath path of image like /2001/12-31/image.jpg
