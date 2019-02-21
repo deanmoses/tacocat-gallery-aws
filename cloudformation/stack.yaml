@@ -1051,6 +1051,9 @@ Resources:
                 Resource:
                   - !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${GalleryApi}/${ApiStage}/PATCH/album"
                   - !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${GalleryApi}/${ApiStage}/PATCH/album/*"
+                  - !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${GalleryApi}/${ApiStage}/PATCH/image"
+                  - !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${GalleryApi}/${ApiStage}/PATCH/image/*"
+                  - !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${GalleryApi}/${ApiStage}/PATCH/thumb/*"    
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:
@@ -1063,3 +1066,36 @@ Resources:
             Action:
               - "sts:AssumeRole"
               - "sts:AssumeRoleWithWebIdentity"
+
+  # ---------------------------------------------------------------------------
+  # User groups
+  # ---------------------------------------------------------------------------
+
+  # User group for gallery administrators
+  GalleryAdminGroup:
+    Type: AWS::IAM::Group
+    Properties:
+      Path: "/Gallery/"
+      Policies:
+        - PolicyName: InvokeGalleryApi
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Sid: InvokeGalleryApi
+                Effect: Allow
+                Action:
+                  - "execute-api:Invoke"
+                Resource:
+                  - !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${GalleryApi}/${ApiStage}/PATCH/album/*"
+                  - !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${GalleryApi}/${ApiStage}/PATCH/image/*"
+                  - !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${GalleryApi}/${ApiStage}/PATCH/thumb/*"
+        - PolicyName: ManageOriginalImageBucket
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Sid: ManageOriginalImageBucket
+                Effect: Allow
+                Action:
+                  - "s3:Get*"
+                  - "s3:PutObject"
+                Resource: !Sub "arn:aws:s3:::${PhotoRepoS3Bucket}/*"
