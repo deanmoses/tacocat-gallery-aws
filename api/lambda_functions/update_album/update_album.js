@@ -39,9 +39,7 @@ async function getAlbum(docClient, tableName, path, attributesToUpdate) {
 	}
 
 	UpdateExpression += ", updateDateTime = :updateDateTime";
-	ExpressionAttributeValues[":updateDateTime"] = Math.floor(
-		new Date().toJSON()
-	);
+	ExpressionAttributeValues[":updateDateTime"] = new Date().toJSON();
 
 	const ddbparams = {
 		TableName: tableName,

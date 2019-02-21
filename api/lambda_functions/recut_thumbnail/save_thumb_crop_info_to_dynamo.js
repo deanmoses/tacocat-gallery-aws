@@ -33,9 +33,7 @@ async function saveThumbnailCropInfoToDynamo(
 	ExpressionAttributeValues[":thumbCrop"] = crop;
 
 	UpdateExpression += ", updateDateTime = :updateDateTime";
-	ExpressionAttributeValues[":updateDateTime"] = Math.floor(
-		new Date().toJSON()
-	);
+	ExpressionAttributeValues[":updateDateTime"] = new Date().toJSON();
 
 	const pathParts = getParentAndNameFromPath(path);
 
