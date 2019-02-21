@@ -199,7 +199,7 @@ Resources:
   # CloudFront
   # -----------------------------------------------------------------------------
 
-  # Allow CloudFront CDN to retrieve images from the S3 bucket
+  # Allow CloudFront CDN to retrieve original images from S3
   GalleryS3BucketCloudfrontReadPolicy:
     Type: "AWS::S3::BucketPolicy"
     Properties:
@@ -212,7 +212,7 @@ Resources:
             Principal:
               CanonicalUser: !GetAtt GalleryS3BucketCloudFrontOriginAccessIdentity.S3CanonicalUserId
 
-  # CloudFront identity of the S3 gallery bucket
+  # CloudFront identity of the original image bucket
   GalleryS3BucketCloudFrontOriginAccessIdentity:
     Type: "AWS::CloudFront::CloudFrontOriginAccessIdentity"
     Properties:
@@ -244,6 +244,7 @@ Resources:
     Type: AWS::CloudFront::Distribution
     DependsOn:
       - PhotoRepoS3Bucket
+      - DerivedImageBucket
     Properties:
       DistributionConfig:
         Comment: Serves Tacocat photo gallery images to end users
@@ -255,8 +256,29 @@ Resources:
             Id: TacocatGalleryS3Origin
             S3OriginConfig:
               OriginAccessIdentity: !Sub "origin-access-identity/cloudfront/${GalleryS3BucketCloudFrontOriginAccessIdentity}"
+          - DomainName: !GetAtt DerivedImageBucket.DomainName
+            Id: DerivedImageOrigin
+            S3OriginConfig:
+              OriginAccessIdentity: !Sub "origin-access-identity/cloudfront/${DerivedImageBucketCloudFrontOriginAccessIdentity}"
+        CacheBehaviors:
+          - PathPattern: original/*.jpg # CacheBehavior for original images
+            TargetOriginId: TacocatGalleryS3Origin
+            Compress: true
+            ViewerProtocolPolicy: redirect-to-https
+            AllowedMethods:
+              - GET
+              - HEAD
+              - OPTIONS
+            CachedMethods:
+              - GET
+              - HEAD
+              - OPTIONS
+            ForwardedValues:
+              QueryString: "false"
+              Cookies:
+                Forward: none
         DefaultCacheBehavior:
-          TargetOriginId: TacocatGalleryS3Origin
+          TargetOriginId: DerivedImageOrigin
           Compress: true
           ViewerProtocolPolicy: redirect-to-https
           AllowedMethods:
