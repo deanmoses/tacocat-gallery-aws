@@ -88,6 +88,10 @@ Outputs:
     Description: S3 bucket containing the image repository
     Value:
       Ref: "PhotoRepoS3Bucket"
+  DerivedImageS3Bucket:
+    Description: S3 bucket containing derived images, like thumbnails and web-sized versions
+    Value:
+      Ref: "DerivedImageBucket"
   DDBGalleryItemTable:
     Description: DynamoDB table containing gallery albums and images
     Value:
@@ -179,9 +183,21 @@ Globals:
 # Resources are the actual AWS systems that will be provisioned
 # -----------------------------------------------------------------------------
 Resources:
-  # S3 bucket containing the gallery's images
+  # -----------------------------------------------------------------------------
+  # S3
+  # -----------------------------------------------------------------------------
+
+  # S3 bucket containing the original source images
   PhotoRepoS3Bucket:
     Type: AWS::S3::Bucket
+
+  # S3 bucket containing derived images, like thumbnails and web-sized versions
+  DerivedImageBucket:
+    Type: AWS::S3::Bucket
+
+  # -----------------------------------------------------------------------------
+  # CloudFront
+  # -----------------------------------------------------------------------------
 
   # Allow CloudFront CDN to retrieve images from the S3 bucket
   GalleryS3BucketCloudfrontReadPolicy:
@@ -202,6 +218,26 @@ Resources:
     Properties:
       CloudFrontOriginAccessIdentityConfig:
         Comment: !Ref PhotoRepoS3Bucket
+
+  # Allow CloudFront CDN to retrieve derived images from S3
+  DerivedImageBucketCloudFrontReadPolicy:
+    Type: "AWS::S3::BucketPolicy"
+    Properties:
+      Bucket: !Ref DerivedImageBucket
+      PolicyDocument:
+        Statement:
+          - Action: "s3:GetObject"
+            Effect: Allow
+            Resource: !Sub "arn:aws:s3:::${DerivedImageBucket}/*"
+            Principal:
+              CanonicalUser: !GetAtt DerivedImageBucketCloudFrontOriginAccessIdentity.S3CanonicalUserId
+
+  # CloudFront identity of the derived image bucket
+  DerivedImageBucketCloudFrontOriginAccessIdentity:
+    Type: "AWS::CloudFront::CloudFrontOriginAccessIdentity"
+    Properties:
+      CloudFrontOriginAccessIdentityConfig:
+        Comment: !Ref DerivedImageBucket
 
   # CloudFront distribution that serves the images to users
   GalleryCloudFrontDistribution:
