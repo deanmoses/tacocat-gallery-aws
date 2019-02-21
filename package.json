@@ -1,33 +1,46 @@
 {
-  "name": "tacocat-gallery-aws",
-  "version": "1.0.0",
-  "description": "The AWS serverless back end infrastructure for the Tacocat image gallery",
-  "main": "index.js",
-  "scripts": {
-    "test": "jest",
-    "deploy": "cloudformation/deploy_stack.sh"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/deanmoses/tacocat-gallery-aws.git"
-  },
-  "author": "Dean Moses <moses@tacocat.com>",
-  "license": "Apache-2.0",
-  "bugs": {
-    "url": "https://github.com/deanmoses/tacocat-gallery-aws/issues"
-  },
-  "homepage": "https://github.com/deanmoses/tacocat-gallery-aws#readme",
-  "devDependencies": {
-    "aws-sdk": "^2.355.0",
-    "aws-sdk-mock": "^4.2.0",
-    "babel-eslint": "^10.0.1",
-    "eslint": "^5.8.0",
-    "eslint-config-standard": "^12.0.0",
-    "eslint-plugin-import": "^2.14.0",
-    "eslint-plugin-node": "^8.0.0",
-    "eslint-plugin-promise": "^4.0.1",
-    "eslint-plugin-standard": "^4.0.0",
-    "jest": "^23.6.0"
-  },
-  "dependencies": {}
+	"name": "tacocat-gallery-aws",
+	"version": "1.0.0",
+	"description": "The AWS serverless back end infrastructure for the Tacocat image gallery",
+	"main": "index.js",
+	"scripts": {
+		"test": "jest",
+		"deploy": "cloudformation/deploy_stack.sh",
+		"lint-staged": "lint-staged"
+	},
+	"lint-staged": {
+		"*.js": [
+			"eslint --fix",
+			"git add",
+			"jest --bail --findRelatedTests"
+		]
+	},
+	"pre-commit": [
+		"lint-staged"
+	],
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/deanmoses/tacocat-gallery-aws.git"
+	},
+	"author": "Dean Moses <moses@tacocat.com>",
+	"license": "Apache-2.0",
+	"bugs": {
+		"url": "https://github.com/deanmoses/tacocat-gallery-aws/issues"
+	},
+	"homepage": "https://github.com/deanmoses/tacocat-gallery-aws#readme",
+	"devDependencies": {
+		"aws-sdk": "^2.355.0",
+		"aws-sdk-mock": "^4.2.0",
+		"babel-eslint": "^10.0.1",
+		"eslint": "^5.8.0",
+		"eslint-config-standard": "^12.0.0",
+		"eslint-plugin-import": "^2.14.0",
+		"eslint-plugin-node": "^8.0.0",
+		"eslint-plugin-promise": "^4.0.1",
+		"eslint-plugin-standard": "^4.0.0",
+		"jest": "^23.6.0",
+		"lint-staged": "^8.1.4",
+		"pre-commit": "^1.2.2"
+	},
+	"dependencies": {}
 }
