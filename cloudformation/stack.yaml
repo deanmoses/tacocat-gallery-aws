@@ -331,8 +331,8 @@ Resources:
   # Role for Gallery API
   GalleryApiRole:
     Type: "AWS::IAM::Role"
-    Path: "/Gallery/"
     Properties:
+      Path: "/Gallery/"
       Policies:
         - PolicyName: "InvokeGalleryApiLambdas"
           PolicyDocument:
@@ -373,8 +373,8 @@ Resources:
   # ---------------------------------------------------------------------------
   BackendProcessingLambdaRole:
     Type: "AWS::IAM::Role"
-    Path: "/Gallery/"
     Properties:
+      Path: "/Gallery/"
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:
@@ -384,7 +384,6 @@ Resources:
                 - "lambda.amazonaws.com"
             Action:
               - "sts:AssumeRole"
-      Path: "/Gallery/"
       Policies:
         - PolicyName: "LambdaWriteCWLogs"
           PolicyDocument:
@@ -606,8 +605,8 @@ Resources:
   # 2) read DynamoDB streams
   SearchIndexerFunctionRole:
     Type: "AWS::IAM::Role"
-    Path: "/Gallery/"
     Properties:
+      Path: "/Gallery/"
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:
@@ -705,8 +704,8 @@ Resources:
   # Role for Lambdas used by the Gallery API that need read-only access to DynamoDB
   ApiGatewayLambdaReadOnlyRole:
     Type: "AWS::IAM::Role"
-    Path: "/Gallery/"
     Properties:
+      Path: "/Gallery/"
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:
@@ -733,8 +732,8 @@ Resources:
   # Role for Lambdas used by the Gallery API that need write access to DynamoDB
   ApiGatewayLambdaWriteRole:
     Type: "AWS::IAM::Role"
-    Path: "/Gallery/"
     Properties:
+      Path: "/Gallery/"
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:
@@ -761,6 +760,7 @@ Resources:
   ApiGatewayLambdaWriteDBAndPhotosRole:
     Type: "AWS::IAM::Role"
     Properties:
+      Path: "/Gallery/"
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:
@@ -770,7 +770,6 @@ Resources:
                 - "lambda.amazonaws.com"
             Action:
               - "sts:AssumeRole"
-      Path: "/Gallery/"
       Policies:
         - PolicyName: "GalleryDynamoTableWriteAccess"
           PolicyDocument:
@@ -819,8 +818,8 @@ Resources:
   # ---------------------------------------------------------------------------
   CustomResourceHelperRole:
     Type: "AWS::IAM::Role"
-    Path: "/Gallery/"
     Properties:
+      Path: "/Gallery/"
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:
@@ -905,8 +904,8 @@ Resources:
 
   StateMachineRole:
     Type: "AWS::IAM::Role"
-    Path: "/Gallery/"
     Properties:
+      Path: "/Gallery/"
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:
@@ -945,8 +944,8 @@ Resources:
 
   DescribeExecutionFunctionRole:
     Type: "AWS::IAM::Role"
-    Path: "/Gallery/"
     Properties:
+      Path: "/Gallery/"
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:
@@ -998,7 +997,6 @@ Resources:
 
   TestClientIAMRole:
     Type: "AWS::IAM::Role"
-    Path: "/Gallery/"
     Properties:
       Policies:
         - PolicyName: "S3PhotoRepoBucketAccess"
