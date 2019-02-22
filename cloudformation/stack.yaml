@@ -75,14 +75,11 @@ Parameters:
 # easier to find.
 # -----------------------------------------------------------------------------
 Outputs:
-  CloudFrontDomainName:
-    Description: CloudFront domain that serves the gallery's images
-    Value:
-      Fn::GetAtt:
-        - GalleryCloudFrontDistribution
-        - DomainName
+  CloudFrontUrl:
+    Description: URL of CloudFront CDN that serves the gallery's images
+    Value: !Sub "https://${GalleryCloudFrontDistribution.DomainName}"
   ApiUrl:
-    Description: URL of the gallery API endpoint
+    Description: URL of gallery API endpoint
     Value: !Sub "https://${GalleryApi}.execute-api.${AWS::Region}.amazonaws.com/${ApiStage}"
   S3PhotoRepoBucket:
     Description: S3 bucket containing the image repository
@@ -351,6 +348,8 @@ Resources:
     Type: "AWS::IAM::Role"
     Properties:
       Path: "/Gallery/"
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs
       Policies:
         - PolicyName: "InvokeGalleryApiLambdas"
           PolicyDocument:
@@ -746,6 +745,17 @@ Resources:
                 Resource:
                   - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${GalleryItemDDBTable}"
                   - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${GalleryItemDDBTable}/*"
+        - PolicyName: "LambdaWriteCWLogs"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Sid: "AllowLogging"
+                Effect: "Allow"
+                Action:
+                  - "logs:CreateLogGroup"
+                  - "logs:CreateLogStream"
+                  - "logs:PutLogEvents"
+                Resource: "*"
 
   # Role for Lambdas used by the Gallery API that need write access to DynamoDB
   ApiGatewayLambdaWriteRole:
@@ -773,6 +783,17 @@ Resources:
                 Resource:
                   - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${GalleryItemDDBTable}"
                   - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${GalleryItemDDBTable}/*"
+        - PolicyName: "LambdaWriteCWLogs"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Sid: "AllowLogging"
+                Effect: "Allow"
+                Action:
+                  - "logs:CreateLogGroup"
+                  - "logs:CreateLogStream"
+                  - "logs:PutLogEvents"
+                Resource: "*"
 
   # Role for Lambdas used by the Gallery API that need write access to DynamoDB *and* write access to the images in S3
   ApiGatewayLambdaWriteDBAndPhotosRole:
@@ -1071,7 +1092,7 @@ Resources:
                   - !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${GalleryApi}/${ApiStage}/PATCH/album/*"
                   - !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${GalleryApi}/${ApiStage}/PATCH/image"
                   - !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${GalleryApi}/${ApiStage}/PATCH/image/*"
-                  - !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${GalleryApi}/${ApiStage}/PATCH/thumb/*"    
+                  - !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${GalleryApi}/${ApiStage}/PATCH/thumb/*"
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:
@@ -1154,7 +1175,7 @@ Resources:
                 Effect: Allow
                 Action:
                   - "cloudformation:DescribeStacks"
-                Resource: '*'
+                Resource: "*"
 
   # User under which test code runs
   GalleryTestUser:

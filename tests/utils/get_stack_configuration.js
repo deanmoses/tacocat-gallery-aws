@@ -21,6 +21,7 @@ async function getStackConfiguration() {
 		secretKey: getOutputValue(s, "TestUserSecretKey"),
 		originalImageBucketName: getOutputValue(s, "S3PhotoRepoBucket"),
 		derivedImageBucketName: getOutputValue(s, "DerivedImageS3Bucket"),
+		cloudFrontUrl: getOutputValue(s, "CloudFrontUrl"),
 		apiUrl: getOutputValue(s, "ApiUrl"),
 		originalImagePrefix: getOutputValue(s, "OriginalImagePrefix"),
 		thumbnailImagePrefix: getOutputValue(s, "ThumbnailImagePrefix"),
