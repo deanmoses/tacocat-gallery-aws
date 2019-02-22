@@ -1,18 +1,20 @@
-const AWS = require('aws-sdk');
+const AWS = require("aws-sdk");
 const stepfunctions = new AWS.StepFunctions({
-    region: process.env.AWS_REGION
+	region: process.env.AWS_REGION
 });
-const util = require('util');
 
-exports.handler = (event, context, callback) => {
-    console.log("Reading input from event:\n", util.inspect(event, {depth: 5}));
-
-    var params = {
-        executionArn: event.executionArn
-    };
-    stepfunctions.describeExecution(params).promise().then(data => {
-        callback(null, data);
-    }).catch(err => {
-        callback(err);
-    })
-}
+/**
+ * Lambda function to be used by web apps to query status of a Step Function
+ * state machine execution.
+ *
+ * This Lambda function is necessary because the Step Functions API does not
+ * support CORS as of Aug 2018; thus this Lambda function is used to proxy
+ * calls to Step Functions.
+ */
+exports.handler = async event => {
+	return await stepfunctions
+		.describeExecution({
+			executionArn: event.executionArn
+		})
+		.promise();
+};
