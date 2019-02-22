@@ -24,15 +24,15 @@ Transform: "AWS::Serverless-2016-10-31"
 # -----------------------------------------------------------------------------
 Parameters:
   OriginalImageS3Prefix:
-    Description: The key prefix of the original images within the S3 bucket
+    Description: The key prefix of the original images within the S3 bucket, such as "albums"
     Type: String
     Default: albums
   ThumbnailImageS3Prefix:
-    Description: The key prefix of the thumbnail version of images within the S3 bucket
+    Description: The key prefix of the thumbnail version of images within the S3 bucket, such as "thumb"
     Type: String
     Default: thumb
   LargeImageS3Prefix:
-    Description: The key prefix of the large version of images within the S3 bucket
+    Description: The key prefix of the large version of images within the S3 bucket, such as "large"
     Type: String
     Default: large
   ThumbnailImageSize:
@@ -75,14 +75,11 @@ Parameters:
 # easier to find.
 # -----------------------------------------------------------------------------
 Outputs:
-  CloudFrontDomainName:
-    Description: CloudFront domain that serves the gallery's images
-    Value:
-      Fn::GetAtt:
-        - GalleryCloudFrontDistribution
-        - DomainName
+  CloudFrontUrl:
+    Description: URL of CloudFront CDN that serves the gallery's images
+    Value: !Sub "https://${GalleryCloudFrontDistribution.DomainName}"
   ApiUrl:
-    Description: URL of the gallery API endpoint
+    Description: URL of gallery API endpoint
     Value: !Sub "https://${GalleryApi}.execute-api.${AWS::Region}.amazonaws.com/${ApiStage}"
   S3PhotoRepoBucket:
     Description: S3 bucket containing the image repository
@@ -168,6 +165,24 @@ Outputs:
     Description: AWS Cognito Identity Pool of users allowed to use the web app
     Value:
       Ref: TestClientIdentityPool
+  TestUserName:
+    Description: Name of the test user
+    Value: !Ref GalleryTestUser
+  TestUserAccessKey:
+    Description: Access key for the test user
+    Value: !Ref GalleryTestUserAccessKey
+  TestUserSecretKey:
+    Description: Secret key for the test user
+    Value: !GetAtt GalleryTestUserAccessKey.SecretAccessKey
+  OriginalImagePrefix:
+    Description: The key prefix of the original images within the S3 bucket, such as "albums"
+    Value: !Ref OriginalImageS3Prefix
+  ThumbnailImagePrefix:
+    Description: The key prefix of the thumbnail version of images within the S3 bucket, such as "thumb"
+    Value: !Ref ThumbnailImageS3Prefix
+  LargeImagePrefix:
+    Description: The key prefix of the large version of images within the S3 bucket, such as "large"
+    Value: !Ref LargeImageS3Prefix
 
 # -----------------------------------------------------------------------------
 # Configuration inheritable by all Lambda functions
@@ -333,6 +348,8 @@ Resources:
     Type: "AWS::IAM::Role"
     Properties:
       Path: "/Gallery/"
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs
       Policies:
         - PolicyName: "InvokeGalleryApiLambdas"
           PolicyDocument:
@@ -728,6 +745,17 @@ Resources:
                 Resource:
                   - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${GalleryItemDDBTable}"
                   - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${GalleryItemDDBTable}/*"
+        - PolicyName: "LambdaWriteCWLogs"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Sid: "AllowLogging"
+                Effect: "Allow"
+                Action:
+                  - "logs:CreateLogGroup"
+                  - "logs:CreateLogStream"
+                  - "logs:PutLogEvents"
+                Resource: "*"
 
   # Role for Lambdas used by the Gallery API that need write access to DynamoDB
   ApiGatewayLambdaWriteRole:
@@ -755,6 +783,17 @@ Resources:
                 Resource:
                   - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${GalleryItemDDBTable}"
                   - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${GalleryItemDDBTable}/*"
+        - PolicyName: "LambdaWriteCWLogs"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Sid: "AllowLogging"
+                Effect: "Allow"
+                Action:
+                  - "logs:CreateLogGroup"
+                  - "logs:CreateLogStream"
+                  - "logs:PutLogEvents"
+                Resource: "*"
 
   # Role for Lambdas used by the Gallery API that need write access to DynamoDB *and* write access to the images in S3
   ApiGatewayLambdaWriteDBAndPhotosRole:
@@ -1051,6 +1090,9 @@ Resources:
                 Resource:
                   - !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${GalleryApi}/${ApiStage}/PATCH/album"
                   - !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${GalleryApi}/${ApiStage}/PATCH/album/*"
+                  - !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${GalleryApi}/${ApiStage}/PATCH/image"
+                  - !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${GalleryApi}/${ApiStage}/PATCH/image/*"
+                  - !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${GalleryApi}/${ApiStage}/PATCH/thumb/*"
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:
@@ -1063,3 +1105,89 @@ Resources:
             Action:
               - "sts:AssumeRole"
               - "sts:AssumeRoleWithWebIdentity"
+
+  # ---------------------------------------------------------------------------
+  # User groups
+  # ---------------------------------------------------------------------------
+
+  # User group for gallery administrators
+  GalleryAdminGroup:
+    Type: AWS::IAM::Group
+    Properties:
+      Path: "/Gallery/"
+      Policies:
+        - PolicyName: InvokeGalleryApi
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Sid: InvokeGalleryApi
+                Effect: Allow
+                Action:
+                  - "execute-api:Invoke"
+                Resource:
+                  - !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${GalleryApi}/${ApiStage}/PATCH/album/*"
+                  - !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${GalleryApi}/${ApiStage}/PATCH/image/*"
+                  - !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${GalleryApi}/${ApiStage}/PATCH/thumb/*"
+        - PolicyName: ManageOriginalImageBucket
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Sid: ManageOriginalImageBucket
+                Effect: Allow
+                Action:
+                  - "s3:Get*"
+                  - "s3:PutObject"
+                Resource: !Sub "arn:aws:s3:::${PhotoRepoS3Bucket}/*"
+
+  # User group for test code
+  GalleryTestGroup:
+    Type: AWS::IAM::Group
+    Properties:
+      Path: "/Gallery/"
+      Policies:
+        - PolicyName: InvokeGalleryApi
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Sid: InvokeGalleryApi
+                Effect: Allow
+                Action:
+                  - "execute-api:Invoke"
+                Resource:
+                  - !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${GalleryApi}/${ApiStage}/PATCH/album/*"
+                  - !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${GalleryApi}/${ApiStage}/PATCH/image/*"
+                  - !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${GalleryApi}/${ApiStage}/PATCH/thumb/*"
+        - PolicyName: ManageOriginalImageBucket
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Sid: ManageOriginalImageBucket
+                Effect: Allow
+                Action:
+                  - "s3:Get*"
+                  - "s3:PutObject"
+                Resource: !Sub "arn:aws:s3:::${PhotoRepoS3Bucket}/*"
+        - PolicyName: ListCloudFormationExports
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Sid: ManageOriginalImageBucket
+                Effect: Allow
+                Action:
+                  - "cloudformation:DescribeStacks"
+                Resource: "*"
+
+  # User under which test code runs
+  GalleryTestUser:
+    Type: AWS::IAM::User
+    Properties:
+      Path: "/Gallery/"
+      Groups:
+        - !Ref GalleryTestGroup
+
+  # Access key for test user
+  # The only place you can get the secret is in this template's outputs; you can't get the secret from the AWS console
+  GalleryTestUserAccessKey:
+    Type: AWS::IAM::AccessKey
+    Properties:
+      UserName: !Ref GalleryTestUser
