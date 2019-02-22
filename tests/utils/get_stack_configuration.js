@@ -25,14 +25,9 @@ async function getStackConfiguration() {
 		apiUrl: getOutputValue(s, "ApiUrl"),
 		originalImagePrefix: getOutputValue(s, "OriginalImagePrefix"),
 		thumbnailImagePrefix: getOutputValue(s, "ThumbnailImagePrefix"),
-		largeImagePrefix: getOutputValue(s, "LargeImagePrefix")
+		largeImagePrefix: getOutputValue(s, "LargeImagePrefix"),
+		stateMachineArn: getOutputValue(s, "StateMachineArn")
 	};
-
-	// console.log("Test User Key and Secret", stack.accessKey, stack.secretKey);
-	// console.log("API URL", stack.apiUrl);
-	// console.log("Original images", stack.originalImageBucketName, stack.originalImagePrefix);
-	// console.log("Thumbnail images", stack.derivedImageBucketName, stack.thumbnailImagePrefix);
-	// console.log("Large images", stack.derivedImageBucketName, stack.largeImagePrefix);
 
 	return stackInfo;
 }

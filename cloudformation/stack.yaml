@@ -183,6 +183,9 @@ Outputs:
   LargeImagePrefix:
     Description: The key prefix of the large version of images within the S3 bucket, such as "large"
     Value: !Ref LargeImageS3Prefix
+  StateMachineArn:
+    Description: ARN of the Step Functions State Machine that processes images, like cutting their thumbnails
+    Value: !Ref ImageProcStateMachine
 
 # -----------------------------------------------------------------------------
 # Configuration inheritable by all Lambda functions
@@ -1058,7 +1061,6 @@ Resources:
                 Resource:
                   - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${GalleryItemDDBTable}"
                   - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${GalleryItemDDBTable}/*"
-
         - PolicyName: "InvokeDescribeExecutionLambda"
           PolicyDocument:
             Version: "2012-10-17"
@@ -1137,9 +1139,10 @@ Resources:
                 Action:
                   - "s3:Get*"
                   - "s3:PutObject"
+                  - "s3:DeleteObject"
                 Resource: !Sub "arn:aws:s3:::${PhotoRepoS3Bucket}/*"
 
-  # User group for test code
+  # User group for integration test code, which needs access to pretty much everything
   GalleryTestGroup:
     Type: AWS::IAM::Group
     Properties:
@@ -1166,16 +1169,27 @@ Resources:
                 Action:
                   - "s3:Get*"
                   - "s3:PutObject"
+                  - "s3:DeleteObject"
                 Resource: !Sub "arn:aws:s3:::${PhotoRepoS3Bucket}/*"
-        - PolicyName: ListCloudFormationExports
+        - PolicyName: DescribeCloudFormationStacks
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
-              - Sid: ManageOriginalImageBucket
+              - Sid: DescribeCloudFormationStacks
                 Effect: Allow
                 Action:
                   - "cloudformation:DescribeStacks"
                 Resource: "*"
+        - PolicyName: ListStateMachineExecutions
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Sid: ListStateMachineExecutions
+                Effect: Allow
+                Action:
+                  - "states:ListExecutions"
+                Resource:
+                  - !Ref ImageProcStateMachine
 
   # User under which test code runs
   GalleryTestUser:
