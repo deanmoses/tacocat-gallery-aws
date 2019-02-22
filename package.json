@@ -5,15 +5,7 @@
 	"main": "index.js",
 	"scripts": {
 		"test": "jest",
-		"deploy": "cloudformation/deploy_stack.sh",
-		"lint-staged": "lint-staged"
-	},
-	"lint-staged": {
-		"*.js": [
-			"eslint --fix",
-			"git add",
-			"jest --bail --findRelatedTests"
-		]
+		"deploy": "cloudformation/deploy_stack.sh"
 	},
 	"repository": {
 		"type": "git",
