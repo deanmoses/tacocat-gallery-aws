@@ -15,9 +15,6 @@
 			"jest --bail --findRelatedTests"
 		]
 	},
-	"pre-commit": [
-		"lint-staged"
-	],
 	"repository": {
 		"type": "git",
 		"url": "git+https://github.com/deanmoses/tacocat-gallery-aws.git"
