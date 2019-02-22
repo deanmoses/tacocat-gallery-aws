@@ -60,9 +60,6 @@ typings/
 # next.js build output
 .next
 
-# Visual Studio Code IDE settings
-.vscode/settings.json
-
 # Processed cloudformation templates
 cloudformation/stack.provisional.yaml
 cloudformation/stack.final.yaml
