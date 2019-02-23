@@ -103,7 +103,7 @@ describe("End to end test", async () => {
 		}, 8000 /* timeout after this many millis.  The default is 5000ms */);
 
 		//
-		// I can't test that they're goine from CloudFront because it caches them
+		// I can't test that the images are gone from CloudFront because it caches them
 		//
 
 		test("Thumbnail version of image no longer in S3", async () => {
@@ -116,6 +116,24 @@ describe("End to end test", async () => {
 
 		test("API no longer returns image", async () => {
 			await expectImageToNotBeInApi();
+		});
+	});
+
+	/**
+	 * DELETE ALBUM
+	 */
+	describe("Delete album", async () => {
+		test("Delete album folder from S3", async () => {
+			await deleteAlbumFromS3(weekAlbum);
+		});
+
+		test("Step Function completes", async () => {
+			await sleep(5000);
+			await expectStateMachineToHaveCompletedSuccessfully();
+		}, 8000 /* timeout after this many millis.  The default is 5000ms */);
+
+		test("API no longer returns album", async () => {
+			await expectAlbumToNotBeInApi(weekAlbum);
 		});
 	});
 });
@@ -206,6 +224,18 @@ async function deleteImage(imagePathInCloud) {
 }
 
 /**
+ * Delete album from S3
+ */
+async function deleteAlbumFromS3(albumPathInCloud) {
+	await s3
+		.deleteObject({
+			Bucket: stack.originalImageBucketName,
+			Key: stack.originalImagePrefix + "/" + albumPathInCloud
+		})
+		.promise();
+}
+
+/**
  * Fail if state machine hasn't finished
  */
 async function expectStateMachineToHaveCompletedSuccessfully() {
@@ -254,6 +284,19 @@ async function expectAlbumToBeInApi(albumPath) {
 	expect(album.uploadDateTime.lastIndexOf("Z")).toBe(
 		album.uploadDateTime.length - 1
 	);
+}
+
+/**
+ * Fail if album *is* retrievable via API
+ */
+async function expectAlbumToNotBeInApi(albumPath) {
+	// Fetch album
+	const albumUrl = stack.apiUrl + "/album/" + albumPath;
+	const response = await fetch(albumUrl);
+
+	// Did I get a HTTP 404?
+	expect(response).toBeDefined();
+	expect(response.status).toBe(404);
 }
 
 /**
