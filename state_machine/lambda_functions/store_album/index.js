@@ -22,7 +22,7 @@ exports.handler = async event => {
 	);
 	const fileUploadTimeStamp = new Date(
 		Date.parse(s3ObjectMetadata.LastModified)
-	).toJSON();
+	).toISOString();
 
 	const albumPath = getAlbumPathFromS3key(event.s3Key);
 	return createAlbum(docClient, tableName, albumPath, fileUploadTimeStamp);

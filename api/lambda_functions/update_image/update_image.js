@@ -39,7 +39,7 @@ async function getImage(docClient, tableName, path, attributesToUpdate) {
 	}
 
 	UpdateExpression += ", updateDateTime = :updateDateTime";
-	ExpressionAttributeValues[":updateDateTime"] = new Date().toJSON();
+	ExpressionAttributeValues[":updateDateTime"] = new Date().toISOString();
 
 	const ddbparams = {
 		TableName: tableName,
