@@ -528,7 +528,6 @@ async function expectImageAttributesToNotMatch(attributesToNotMatch) {
 async function expectImageToBeInApi() {
 	const image = await fetchImage();
 	expect(image).toBeDefined();
-	console.log("image", image);
 	// Is date the expected format?
 	expect(isIso8601(image.updateDateTime)).toBeTruthy();
 	return image;
