@@ -1,4 +1,5 @@
 const AWS = require("./utils/configure_aws.js");
+const aws4 = require("aws4");
 const getStackConfiguration = require("./utils/get_stack_configuration.js");
 const fs = require("fs");
 const path = require("path");
@@ -56,6 +57,55 @@ describe("End to end test", async () => {
 
 		test("API returns album", async () => {
 			await expectAlbumToBeInApi(weekAlbum);
+		});
+	});
+
+	/**
+	 * UPDATE YEAR ALBUM
+	 */
+	describe("Update year album", async () => {
+		const albumPath = yearAlbum;
+		test("Update album title and description", async () => {
+			const albumAttributes = {
+				title: "Updated title " + generateRandomInt(),
+				description: "Updated description " + generateRandomInt()
+			};
+			await expectAlbumAttributesToNotMatch(albumPath, albumAttributes);
+			await updateAlbum(albumPath, albumAttributes);
+			await expectAlbumAttributesToMatch(albumPath, albumAttributes);
+		});
+		test("Update album title", async () => {
+			const albumAttributes = {
+				title: "Updated title v2 " + generateRandomInt()
+			};
+			await expectAlbumAttributesToNotMatch(albumPath, albumAttributes);
+			await updateAlbum(albumPath, albumAttributes);
+			await expectAlbumAttributesToMatch(albumPath, albumAttributes);
+		});
+	});
+
+	/**
+	 * UPDATE WEEK ALBUM
+	 */
+	describe("Update week album", async () => {
+		const albumPath = weekAlbum;
+		test("Update album title and description", async () => {
+			const albumAttributes = {
+				title: "Updated title " + generateRandomInt(),
+				description: "Updated description " + generateRandomInt()
+			};
+			await expectAlbumAttributesToNotMatch(albumPath, albumAttributes);
+			await updateAlbum(albumPath, albumAttributes);
+			await expectAlbumAttributesToMatch(albumPath, albumAttributes);
+		});
+
+		test("Update album title", async () => {
+			const albumAttributes = {
+				title: "Updated title v2 " + generateRandomInt()
+			};
+			await expectAlbumAttributesToNotMatch(albumPath, albumAttributes);
+			await updateAlbum(albumPath, albumAttributes);
+			await expectAlbumAttributesToMatch(albumPath, albumAttributes);
 		});
 	});
 
@@ -120,9 +170,9 @@ describe("End to end test", async () => {
 	});
 
 	/**
-	 * DELETE ALBUM
+	 * DELETE WEEK ALBUM
 	 */
-	describe("Delete album", async () => {
+	describe("Delete week album", async () => {
 		test("Delete album folder from S3", async () => {
 			await deleteAlbumFromS3(weekAlbum);
 		});
@@ -134,6 +184,24 @@ describe("End to end test", async () => {
 
 		test("API no longer returns album", async () => {
 			await expectAlbumToNotBeInApi(weekAlbum);
+		});
+	});
+
+	/**
+	 * DELETE YEAR ALBUM
+	 */
+	describe("Delete year album", async () => {
+		test("Delete album folder from S3", async () => {
+			await deleteAlbumFromS3(yearAlbum);
+		});
+
+		test("Step Function completes", async () => {
+			await sleep(5000);
+			await expectStateMachineToHaveCompletedSuccessfully();
+		}, 8000 /* timeout after this many millis.  The default is 5000ms */);
+
+		test("API no longer returns album", async () => {
+			await expectAlbumToNotBeInApi(yearAlbum);
 		});
 	});
 });
@@ -265,6 +333,123 @@ async function expectStateMachineToHaveCompletedSuccessfully() {
  * Fail if album isn't retrievable via API
  */
 async function expectAlbumToBeInApi(albumPath) {
+	await fetchAlbum(albumPath);
+}
+
+/**
+ * Fail if album *is* retrievable via API
+ */
+async function expectAlbumToNotBeInApi(albumPath) {
+	// Fetch album
+	const albumUrl = stack.apiUrl + "/album/" + albumPath;
+	const response = await fetch(albumUrl);
+
+	// Did I get a HTTP 404?
+	expect(response).toBeDefined();
+	expect(response.status).toBe(404);
+}
+
+/**
+ * Update album in DynamoDB
+ *
+ * @param {String} albumPath path of album like 2001/12-31/
+ * @param {Object} attributesToUpdate like {title: "x", description: "y"}
+ */
+async function updateAlbum(albumPath, attributesToUpdate) {
+	// Set up the fetch
+	const apiPath = "/prod/album/" + albumPath;
+	const albumUrl = "https://" + stack.apiDomain + apiPath;
+	const unsignedFetchParams = {
+		method: "PATCH",
+		headers: {
+			"Content-Type": "application/json",
+			Accept: "application/json"
+		},
+		path: apiPath,
+		host: stack.apiDomain,
+		body: JSON.stringify(attributesToUpdate)
+	};
+	// const credentials = {
+	// 	accessKeyId: "AKIAJA4C3QLYRWHNNBCA",
+	// 	secretAccessKey: "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"
+	// };
+
+	const credentials = {
+		accessKeyId: stack.accessKey,
+		secretAccessKey: stack.secretKey
+	};
+
+	const signedFetchParams = aws4.sign(unsignedFetchParams, credentials);
+	//const signedFetchParams = aws4.sign(unsignedFetchParams);
+
+	//  Do the fetch
+	const patchResponse = await fetch(albumUrl, signedFetchParams);
+
+	// Verify we actually got an album
+
+	expect(patchResponse).toBeDefined();
+
+	// if the API returned a 403 Not Authorized
+	if (patchResponse.status === 403) {
+		// print out debugging info about the request signing
+		/* eslint-disable no-console */
+		console.log("credentials", credentials);
+		console.log("unsigned options for " + albumUrl, unsignedFetchParams);
+		console.log("signed options for " + albumUrl, signedFetchParams);
+
+		// The API Gateway returns very helpful info in the body about what it was expecting
+		// the signed request's format to be
+		const body = await patchResponse.json();
+		console.log("patchResult", body);
+
+		// Print out what the actual request signing information was
+		var signer = new aws4.RequestSigner(unsignedFetchParams, credentials);
+		console.log("Actual Canonical String", signer.canonicalString());
+		console.log("Actual String-to-Sign", signer.stringToSign());
+		/* eslint-enable no-console */
+	}
+
+	expect(patchResponse.status).toBe(200);
+}
+
+/**
+ * Fail if any of the specified album attributes do not match exactly
+ *
+ * @param {String} albumPath path of album like 2001/12-31/
+ * @param {Object} attributesToMatch like {title: "x", description: "y"}
+ */
+async function expectAlbumAttributesToMatch(albumPath, attributesToMatch) {
+	const album = await fetchAlbum(albumPath);
+	for (const key in attributesToMatch) {
+		const expectedValue = attributesToMatch[key];
+		expect(album[key]).toBe(expectedValue);
+	}
+}
+
+/**
+ * Fail if any of the specified album attributes matches exactly
+ *
+ * @param {String} albumPath path of album like 2001/12-31/
+ * @param {Object} attributesToNotMatch like {title: "x", description: "y"}
+ */
+async function expectAlbumAttributesToNotMatch(
+	albumPath,
+	attributesToNotMatch
+) {
+	const album = await fetchAlbum(albumPath);
+	for (const key in attributesToNotMatch) {
+		const expectedValue = attributesToNotMatch[key];
+		expect(album[key]).not.toBe(expectedValue);
+	}
+}
+
+/**
+ * Fetch album via API
+ *
+ * @param {String} albumPath path of album like 2001/12-31/
+ * @returns album object
+ */
+async function fetchAlbum(albumPath) {
 	// Fetch album
 	const albumUrl = stack.apiUrl + "/album/" + albumPath;
 	const response = await fetch(albumUrl);
@@ -284,19 +469,8 @@ async function expectAlbumToBeInApi(albumPath) {
 	expect(album.uploadDateTime.lastIndexOf("Z")).toBe(
 		album.uploadDateTime.length - 1
 	);
-}
 
-/**
- * Fail if album *is* retrievable via API
- */
-async function expectAlbumToNotBeInApi(albumPath) {
-	// Fetch album
-	const albumUrl = stack.apiUrl + "/album/" + albumPath;
-	const response = await fetch(albumUrl);
-
-	// Did I get a HTTP 404?
-	expect(response).toBeDefined();
-	expect(response.status).toBe(404);
+	return album;
 }
 
 /**

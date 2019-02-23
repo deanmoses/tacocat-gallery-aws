@@ -1,10 +1,24 @@
 const AWS = require("./configure_aws.js");
 const cloudformation = new AWS.CloudFormation();
 
+// we will lazy fetch the stack info
+let stackInfo;
+
 /**
  * Return information like the S3 bucket names about the deployed stack
  */
 async function getStackConfiguration() {
+	if (!stackInfo) {
+		stackInfo = fetchStackInfo();
+	}
+	return stackInfo;
+}
+module.exports = getStackConfiguration;
+
+/**
+ * Return information like the S3 bucket names about the deployed stack
+ */
+async function fetchStackInfo() {
 	const describeStacks = await cloudformation
 		.describeStacks({ StackName: "TacocatGallery" })
 		.promise();
@@ -16,7 +30,7 @@ async function getStackConfiguration() {
 
 	const s = describeStacks.Stacks[0];
 
-	const stackInfo = {
+	let stackInfo = {
 		accessKey: getOutputValue(s, "TestUserAccessKey"),
 		secretKey: getOutputValue(s, "TestUserSecretKey"),
 		originalImageBucketName: getOutputValue(s, "S3PhotoRepoBucket"),
@@ -28,11 +42,12 @@ async function getStackConfiguration() {
 		largeImagePrefix: getOutputValue(s, "LargeImagePrefix"),
 		stateMachineArn: getOutputValue(s, "StateMachineArn")
 	};
+	stackInfo.apiDomain = stackInfo.apiUrl
+		.replace("https://", "")
+		.replace("/prod", "");
 
 	return stackInfo;
 }
-
-module.exports = getStackConfiguration;
 
 /**
  * Return the value of the specified stack output
