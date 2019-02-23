@@ -6,9 +6,19 @@
 	"configurations": [
 		{
 			"type": "node",
-			"name": "vscode-jest-tests",
+			"name": "jest-unit-tests",
 			"request": "launch",
+			"program": "${workspaceFolder}/node_modules/jest/bin/jest",
 			"args": ["--runInBand"],
+			"cwd": "${workspaceFolder}",
+			"console": "integratedTerminal",
+			"internalConsoleOptions": "neverOpen"
+		},
+		{
+			"type": "node",
+			"name": "jest-integration-tests",
+			"request": "launch",
+			"args": ["--runInBand", "--config=jest.config.integrations.js"],
 			"cwd": "${workspaceFolder}",
 			"console": "integratedTerminal",
 			"internalConsoleOptions": "neverOpen",
