@@ -88,6 +88,36 @@ describe("End to end test", async () => {
 			await expectImageToBeInApi();
 		});
 	});
+
+	/**
+	 * DELETE IMAGE
+	 */
+	describe("Delete image", async () => {
+		test("Delete image from S3", async () => {
+			await deleteImage(imagePath);
+		});
+
+		test("Step Function completes", async () => {
+			await sleep(5000);
+			await expectStateMachineToHaveCompletedSuccessfully();
+		}, 8000 /* timeout after this many millis.  The default is 5000ms */);
+
+		//
+		// I can't test that they're goine from CloudFront because it caches them
+		//
+
+		test("Thumbnail version of image no longer in S3", async () => {
+			await expectImageToNotBeInS3(stack.thumbnailImagePrefix);
+		});
+
+		test("Large version of image is no longer in S3", async () => {
+			await expectImageToNotBeInS3(stack.largeImagePrefix);
+		});
+
+		test("API no longer returns image", async () => {
+			await expectImageToNotBeInApi();
+		});
+	});
 });
 
 /**
@@ -167,7 +197,7 @@ async function uploadAndVerifyImage(imageNameOnDisk, imagePathInCloud) {
  * Delete image from S3
  */
 async function deleteImage(imagePathInCloud) {
-	return await s3
+	await s3
 		.deleteObject({
 			Bucket: stack.originalImageBucketName,
 			Key: stack.originalImagePrefix + "/" + imagePathInCloud
@@ -261,6 +291,40 @@ async function expectImageToBeInApi() {
 }
 
 /**
+ * Fail if image *is* retrievable via API
+ */
+async function expectImageToNotBeInApi() {
+	// Fetch album
+	const albumUrl = stack.apiUrl + "/album/" + weekAlbum;
+	const response = await fetch(albumUrl);
+
+	// Did I get a HTTP 200?
+	expect(response).toBeDefined();
+	expect(response.status).toBeDefined();
+	expect(response.status).toBe(200);
+
+	// Did I get the album I expected?
+	const body = await response.json();
+	expect(body.album).toBeDefined();
+	const album = body.album;
+
+	// Is date the expected format?  It should be ISO 8601, which ends in a Z.
+	expect(album.uploadDateTime).toBeDefined();
+	expect(album.uploadDateTime.lastIndexOf("Z")).toBe(
+		album.uploadDateTime.length - 1
+	);
+
+	// Does the album have a children array?
+	expect(Array.isArray(body.children)).toBeTruthy();
+
+	// Is one of the children the image that was uploaded?
+	const foundChild = body.children.find(child => {
+		return child.itemName === imageNameInCloud;
+	});
+	expect(foundChild).toBeUndefined();
+}
+
+/**
  * Fail if image isn't retrievable via CloudFront
  */
 async function expectImageToBeInCloudFront(imagePrefix) {
@@ -271,7 +335,27 @@ async function expectImageToBeInCloudFront(imagePrefix) {
 }
 
 /**
- * Wait for the # of milliseconds
+ * Fail if image *is* retrievable via S3
+ */
+async function expectImageToNotBeInS3(imagePrefix) {
+	const headParams = {
+		Bucket: stack.derivedImageBucketName,
+		Key: imagePrefix + "/" + imagePath
+	};
+	try {
+		await s3.headObject(headParams).promise();
+		throw "This delete should not have succeeded";
+	} catch (headErr) {
+		if (headErr.code === "Forbidden") {
+			return; // this is expected
+		} else {
+			throw headErr;
+		}
+	}
+}
+
+/**
+ * Wait for the specified # of milliseconds
  * @param {*} ms
  */
 function sleep(ms) {
