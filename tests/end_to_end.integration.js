@@ -28,7 +28,7 @@ describe("End to end test", async () => {
 	 */
 	describe("Create year album", async () => {
 		test("Create album in S3", async () => {
-			await createAndVerifyAlbum(yearAlbum);
+			await createAlbum(yearAlbum);
 		});
 
 		test("Step Function completes", async () => {
@@ -46,7 +46,7 @@ describe("End to end test", async () => {
 	 */
 	describe("Create week album", async () => {
 		test("Create album in S3", async () => {
-			await createAndVerifyAlbum(weekAlbum);
+			await createAlbum(weekAlbum);
 		});
 
 		test("Step Function completes", async () => {
@@ -163,8 +163,8 @@ afterAll(async () => {
 });
 
 /**
- * Get info about of the deployed CloudFormation stack, such as the name of the
- * S3 bucket to upload images
+ * Get info about the deployed CloudFormation stack,
+ * such as the name of the S3 bucket to upload images.
  */
 async function getStack() {
 	stack = await getStackConfiguration();
@@ -178,9 +178,9 @@ async function getStack() {
 }
 
 /**
- * Create album in S3 and verify it was successful
+ * Create album in S3
  */
-async function createAndVerifyAlbum(albumPathInCloud) {
+async function createAlbum(albumPathInCloud) {
 	const createParams = {
 		Bucket: stack.originalImageBucketName,
 		Key: stack.originalImagePrefix + "/" + albumPathInCloud
@@ -193,7 +193,7 @@ async function createAndVerifyAlbum(albumPathInCloud) {
 }
 
 /**
- * Upload image to S3 and verify it was successful
+ * Upload image to S3
  */
 async function uploadAndVerifyImage(imageNameOnDisk, imagePathInCloud) {
 	const imagePathOnDisk = path.join(__dirname, imageNameOnDisk);
@@ -407,6 +407,9 @@ function sleep(ms) {
 	});
 }
 
+/**
+ * Generate a random integer suitable for making unique filenames
+ */
 function generateRandomInt() {
 	return Math.floor(Math.random() * 100000);
 }
