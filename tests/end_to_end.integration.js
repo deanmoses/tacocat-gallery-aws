@@ -64,7 +64,7 @@ describe("End to end test", async () => {
 	 */
 	describe("Create image", async () => {
 		test("Upload image to S3", async () => {
-			await uploadAndVerifyImage("test_image_1.jpg", imagePath);
+			await uploadAndVerifyImage("test_data/test_image_1.jpg", imagePath);
 		});
 
 		test("Step Function completed successfully", async () => {
@@ -152,6 +152,7 @@ async function uploadAndVerifyImage(imageNameOnDisk, imagePathInCloud) {
 	const uploadParams = {
 		Bucket: stack.originalImageBucketName,
 		Key: stack.originalImagePrefix + "/" + imagePathInCloud,
+		ContentType: "image/jpeg",
 		Body: fs.createReadStream(imagePathOnDisk)
 	};
 	const uploadResult = await s3.upload(uploadParams).promise();
@@ -230,7 +231,7 @@ async function expectAlbumToBeInApi(albumPath) {
  */
 async function expectImageToBeInApi() {
 	// Fetch album
-	const albumUrl = stack.apiUrl + "/album/2001/01-31/";
+	const albumUrl = stack.apiUrl + "/album/" + weekAlbum;
 	const response = await fetch(albumUrl);
 
 	// Did I get a HTTP 200?
@@ -249,15 +250,21 @@ async function expectImageToBeInApi() {
 		album.uploadDateTime.length - 1
 	);
 
-	// Does the album have children?
-	expect(Array.isArray(album.children)).toBeTruthy();
+	// Does the album have a children array?
+	expect(Array.isArray(body.children)).toBeTruthy();
+
+	// Is one of the children the image that was uploaded?
+	const foundChild = body.children.find(child => {
+		return child.itemName === imageNameInCloud;
+	});
+	expect(foundChild).toBeDefined();
 }
 
 /**
  * Fail if image isn't retrievable via CloudFront
  */
 async function expectImageToBeInCloudFront(imagePrefix) {
-	const imageUrl = stack.cloudFrontUrl + "/" + imagePrefix + imagePath;
+	const imageUrl = stack.cloudFrontUrl + "/" + imagePrefix + "/" + imagePath;
 	const headResult = await fetch(imageUrl, { method: "HEAD" });
 	expect(headResult).toBeDefined();
 	expect(headResult.status).toBe(200);
