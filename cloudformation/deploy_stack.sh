@@ -25,7 +25,7 @@ package='aws cloudformation package --template-file cloudformation/stack.provisi
 #
 # Take the twice-processed template and use it to deploy the stack
 #
-deploy='aws cloudformation deploy --template-file cloudformation/stack.final.yaml --stack-name TacocatGallery --capabilities CAPABILITY_IAM'
+deploy='aws cloudformation deploy --template-file cloudformation/stack.final.yaml --stack-name TacocatGallery --capabilities CAPABILITY_IAM --s3-bucket cloudformationdeploysource'
 
 #
 # Execute each of the above commands, and go on to the next one if it succeeds
