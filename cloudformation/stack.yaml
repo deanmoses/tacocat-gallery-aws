@@ -354,12 +354,12 @@ Resources:
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs
       Policies:
-        - PolicyName: "InvokeGalleryApiLambdas"
+        - PolicyName: InvokeGalleryApiLambdas
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
-              - Sid: "InvokeGalleryApiLambdas"
-                Effect: "Allow"
+              - Sid: InvokeGalleryApiLambdas
+                Effect: Allow
                 Action:
                   - "lambda:InvokeFunction"
                 Resource:
@@ -372,15 +372,13 @@ Resources:
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:
-          - Effect: "Allow"
+          - Effect: Allow
             Principal:
               Service:
                 - "apigateway.amazonaws.com"
-              Federated:
-                - "cognito-identity.amazonaws.com" # not using this yet
+                - "lambda.amazonaws.com"
             Action:
               - "sts:AssumeRole"
-              - "sts:AssumeRoleWithWebIdentity" # not using this yet
 
   # ---------------------------------------------------------------------------
   # IAM role used by all the Lambda functions that executes the image processing
@@ -398,70 +396,70 @@ Resources:
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:
-          - Effect: "Allow"
+          - Effect: Allow
             Principal:
               Service:
                 - "lambda.amazonaws.com"
             Action:
               - "sts:AssumeRole"
       Policies:
-        - PolicyName: "LambdaWriteCWLogs"
+        - PolicyName: LambdaWriteCWLogs
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
-              - Sid: "AllowLogging"
-                Effect: "Allow"
+              - Sid: AllowLogging
+                Effect: Allow
                 Action:
                   - "logs:CreateLogGroup"
                   - "logs:CreateLogStream"
                   - "logs:PutLogEvents"
                 Resource: "*"
-        - PolicyName: "ReadFromPhotoRepoS3Bucket"
+        - PolicyName: ReadFromPhotoRepoS3Bucket
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
-              - Sid: "ReadFromPhotoRepoS3Bucket"
-                Effect: "Allow"
+              - Sid: ReadFromPhotoRepoS3Bucket
+                Effect: Allow
                 Action:
                   - "s3:Get*"
                 Resource: !Sub "arn:aws:s3:::${PhotoRepoS3Bucket}/*"
-        - PolicyName: "ModifyDerivedImageBucket"
+        - PolicyName: ModifyDerivedImageBucket
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
-              - Sid: "ModifyDerivedImageBucket"
-                Effect: "Allow"
+              - Sid: ModifyDerivedImageBucket
+                Effect: Allow
                 Action:
                   - "s3:PutObject"
                   - "s3:DeleteObject"
                 Resource: !Sub "arn:aws:s3:::${DerivedImageBucket}/*"
-        - PolicyName: "ManageGalleryItemDDBTable"
+        - PolicyName: ManageGalleryItemDDBTable
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
-              - Sid: "ManageGalleryItemDDBTable"
-                Effect: "Allow"
+              - Sid: ManageGalleryItemDDBTable
+                Effect: Allow
                 Action:
                   - "dynamodb:GetItem"
                   - "dynamodb:UpdateItem"
                   - "dynamodb:PutItem"
                   - "dynamodb:DeleteItem"
                 Resource: !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${GalleryItemDDBTable}"
-        - PolicyName: "RekognitionDetectLabels"
+        - PolicyName: RekognitionDetectLabels
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
-              - Sid: "RekognitionDetectLabels"
-                Effect: "Allow"
+              - Sid: RekognitionDetectLabels
+                Effect: Allow
                 Action:
                   - "rekognition:DetectLabels"
                 Resource: "*"
-        - PolicyName: "StepFunctionStartExecution"
+        - PolicyName: StepFunctionStartExecution
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
-              - Sid: "StepFunctionStartExecution"
-                Effect: "Allow"
+              - Sid: StepFunctionStartExecution
+                Effect: Allow
                 Action:
                   - "states:StartExecution"
                 Resource: "*"
@@ -630,7 +628,7 @@ Resources:
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:
-          - Effect: "Allow"
+          - Effect: Allow
             Principal:
               Service: "lambda.amazonaws.com"
             Action: "sts:AssumeRole"
@@ -639,13 +637,13 @@ Resources:
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
-              - Effect: "Allow"
+              - Effect: Allow
                 Action:
                   - logs:CreateLogGroup
                   - logs:CreateLogStream
                   - logs:PutLogEvents
                 Resource: "arn:aws:logs:*:*:*"
-              - Effect: "Allow"
+              - Effect: Allow
                 Action:
                   - dynamodb:DescribeStream
                   - dynamodb:GetRecords
@@ -729,7 +727,7 @@ Resources:
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:
-          - Effect: "Allow"
+          - Effect: Allow
             Principal:
               Service:
                 - "lambda.amazonaws.com"
@@ -741,7 +739,7 @@ Resources:
             Version: "2012-10-17"
             Statement:
               - Sid: "GalleryDynamoTableReadAccess"
-                Effect: "Allow"
+                Effect: Allow
                 Action:
                   - "dynamodb:GetItem"
                   - "dynamodb:Query"
@@ -753,7 +751,7 @@ Resources:
             Version: "2012-10-17"
             Statement:
               - Sid: "AllowLogging"
-                Effect: "Allow"
+                Effect: Allow
                 Action:
                   - "logs:CreateLogGroup"
                   - "logs:CreateLogStream"
@@ -768,7 +766,7 @@ Resources:
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:
-          - Effect: "Allow"
+          - Effect: Allow
             Principal:
               Service:
                 - "lambda.amazonaws.com"
@@ -780,7 +778,7 @@ Resources:
             Version: "2012-10-17"
             Statement:
               - Sid: "GalleryDynamoTableWriteAccess"
-                Effect: "Allow"
+                Effect: Allow
                 Action:
                   - "dynamodb:UpdateItem"
                 Resource:
@@ -791,7 +789,7 @@ Resources:
             Version: "2012-10-17"
             Statement:
               - Sid: "AllowLogging"
-                Effect: "Allow"
+                Effect: Allow
                 Action:
                   - "logs:CreateLogGroup"
                   - "logs:CreateLogStream"
@@ -806,7 +804,7 @@ Resources:
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:
-          - Effect: "Allow"
+          - Effect: Allow
             Principal:
               Service:
                 - "lambda.amazonaws.com"
@@ -818,7 +816,7 @@ Resources:
             Version: "2012-10-17"
             Statement:
               - Sid: "GalleryDynamoTableWriteAccess"
-                Effect: "Allow"
+                Effect: Allow
                 Action:
                   - "dynamodb:UpdateItem"
                 Resource:
@@ -829,7 +827,7 @@ Resources:
             Version: "2012-10-17"
             Statement:
               - Sid: "AllowLogging"
-                Effect: "Allow"
+                Effect: Allow
                 Action:
                   - "logs:CreateLogGroup"
                   - "logs:CreateLogStream"
@@ -840,7 +838,7 @@ Resources:
             Version: "2012-10-17"
             Statement:
               - Sid: "ReadFromPhotoRepoS3Bucket"
-                Effect: "Allow"
+                Effect: Allow
                 Action:
                   - "s3:Get*"
                 Resource: !Sub "arn:aws:s3:::${PhotoRepoS3Bucket}/*"
@@ -849,7 +847,7 @@ Resources:
             Version: "2012-10-17"
             Statement:
               - Sid: "WriteToDerivedImageBucket"
-                Effect: "Allow"
+                Effect: Allow
                 Action:
                   - "s3:PutObject"
                 Resource: !Sub "arn:aws:s3:::${DerivedImageBucket}/*"
@@ -865,7 +863,7 @@ Resources:
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:
-          - Effect: "Allow"
+          - Effect: Allow
             Principal:
               Service:
                 - "lambda.amazonaws.com"
@@ -877,7 +875,7 @@ Resources:
             Version: "2012-10-17"
             Statement:
               - Sid: "AllowLogging"
-                Effect: "Allow"
+                Effect: Allow
                 Action:
                   - "logs:CreateLogGroup"
                   - "logs:CreateLogStream"
@@ -888,12 +886,12 @@ Resources:
             Version: "2012-10-17"
             Statement:
               - Sid: "PutS3EventNofication"
-                Effect: "Allow"
+                Effect: Allow
                 Action:
                   - "s3:PutBucketNotification"
                 Resource: !Sub "arn:aws:s3:::${PhotoRepoS3Bucket}"
               - Sid: "AddPermissionToLambda"
-                Effect: "Allow"
+                Effect: Allow
                 Action:
                   - "lambda:AddPermission"
                 Resource: "*"
@@ -951,7 +949,7 @@ Resources:
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:
-          - Effect: "Allow"
+          - Effect: Allow
             Principal:
               Service: !Sub states.${AWS::Region}.amazonaws.com
             Action:
@@ -962,7 +960,7 @@ Resources:
             Version: "2012-10-17"
             Statement:
               - Sid: "InvokeLambda"
-                Effect: "Allow"
+                Effect: Allow
                 Action:
                   - "lambda:InvokeFunction"
                 Resource: "*"
@@ -991,7 +989,7 @@ Resources:
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:
-          - Effect: "Allow"
+          - Effect: Allow
             Principal:
               Service:
                 - "lambda.amazonaws.com"
@@ -1003,7 +1001,7 @@ Resources:
             Version: "2012-10-17"
             Statement:
               - Sid: "AllowLogging"
-                Effect: "Allow"
+                Effect: Allow
                 Action:
                   - "logs:CreateLogGroup"
                   - "logs:CreateLogStream"
@@ -1014,7 +1012,7 @@ Resources:
             Version: "2012-10-17"
             Statement:
               - Sid: "DescribeStepFunction"
-                Effect: "Allow"
+                Effect: Allow
                 Action:
                   - "states:DescribeExecution"
                 Resource: "*"
@@ -1046,7 +1044,7 @@ Resources:
             Version: "2012-10-17"
             Statement:
               - Sid: "S3ReadWrite"
-                Effect: "Allow"
+                Effect: Allow
                 Action:
                   - "s3:*"
                 Resource: !Sub "arn:aws:s3:::${PhotoRepoS3Bucket}/*"
@@ -1055,7 +1053,7 @@ Resources:
             Version: "2012-10-17"
             Statement:
               - Sid: "DynamoTableAccess"
-                Effect: "Allow"
+                Effect: Allow
                 Action:
                   - "dynamodb:*"
                 Resource:
@@ -1066,7 +1064,7 @@ Resources:
             Version: "2012-10-17"
             Statement:
               - Sid: "InvokeDescribeExecutionLambda"
-                Effect: "Allow"
+                Effect: Allow
                 Action:
                   - "lambda:InvokeFunction"
                 Resource:
@@ -1076,7 +1074,7 @@ Resources:
             Version: "2012-10-17"
             Statement:
               - Sid: "InvokeGetAlbumLambda"
-                Effect: "Allow"
+                Effect: Allow
                 Action:
                   - "lambda:InvokeFunction"
                 Resource:
@@ -1086,7 +1084,7 @@ Resources:
             Version: "2012-10-17"
             Statement:
               - Sid: "InvokeGetAlbumLambda"
-                Effect: "Allow"
+                Effect: Allow
                 Action:
                   - "execute-api:Invoke"
                 Resource:
@@ -1098,7 +1096,7 @@ Resources:
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:
-          - Effect: "Allow"
+          - Effect: Allow
             Principal:
               Service:
                 - "apigateway.amazonaws.com"
