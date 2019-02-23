@@ -338,7 +338,7 @@ Resources:
       StageName: !Ref ApiStage
       Variables:
         Region: !Ref AWS::Region
-        Role: !Ref GalleryApiRole
+        Role: !Sub "Gallery/${GalleryApiRole}"
         ClientRole: !Ref TestClientIAMRole
         GetAlbumFunctionName: !Ref GetAlbumFunction
         GetLatestAlbumFunctionName: !Ref GetLatestAlbumFunction
@@ -351,8 +351,6 @@ Resources:
     Type: "AWS::IAM::Role"
     Properties:
       Path: "/Gallery/"
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs
       Policies:
         - PolicyName: InvokeGalleryApiLambdas
           PolicyDocument:
@@ -366,9 +364,9 @@ Resources:
                   - !Sub "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${DescribeExecutionFunction}"
                   - !Sub "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${GetAlbumFunction}"
                   - !Sub "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${GetLatestAlbumFunction}"
+                  - !Sub "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${RecutThumbnailFunction}"
                   - !Sub "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${UpdateAlbumFunction}"
                   - !Sub "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${UpdateImageFunction}"
-                  - !Sub "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${RecutThumbnailFunction}"
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:
@@ -376,7 +374,6 @@ Resources:
             Principal:
               Service:
                 - "apigateway.amazonaws.com"
-                - "lambda.amazonaws.com"
             Action:
               - "sts:AssumeRole"
 
