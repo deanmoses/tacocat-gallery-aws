@@ -15,11 +15,17 @@
 		{
 			"type": "npm",
 			"script": "integration_readwrite_test",
+			"presentation": {
+				"clear": true
+			},
 			"problemMatcher": []
 		},
 		{
 			"type": "npm",
 			"script": "integration_readonly_test",
+			"presentation": {
+				"clear": true
+			},
 			"problemMatcher": []
 		}
 	]
