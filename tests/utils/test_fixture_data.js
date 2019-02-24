@@ -10,6 +10,6 @@ let fixture = {
 };
 fixture.yearAlbumPath = fixture.year + "/";
 fixture.weekAlbumPath = fixture.yearAlbumPath + fixture.week + "/";
-fixture.imagePath = fixture.weekAlbumPath + "/" + fixture.image;
+fixture.imagePath = fixture.weekAlbumPath + fixture.image;
 
 module.exports = fixture;

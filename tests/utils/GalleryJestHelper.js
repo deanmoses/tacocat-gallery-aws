@@ -17,6 +17,16 @@ class GalleryJestHelper {
 	}
 
 	/**
+	 * Fail if image isn't in API
+	 */
+	async expectImageToBeInApi() {
+		const image = await this.api.fetchImage();
+		expect(image).toBeDefined();
+		// Is date the expected format?
+		expect(this.isIso8601(image.updateDateTime)).toBeTruthy();
+	}
+
+	/**
 	 * Fail if album isn't in API
 	 */
 	async expectAlbumToBeInApi(albumPath) {
@@ -26,8 +36,6 @@ class GalleryJestHelper {
 
 		// Is date the expected format?
 		expect(this.isIso8601(albumResponse.album.updateDateTime)).toBeTruthy();
-
-		return albumResponse;
 	}
 
 	/**

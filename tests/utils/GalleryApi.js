@@ -13,6 +13,30 @@ class GalleryApi {
 	}
 
 	/**
+	 * Fetch image in via API
+	 *
+	 * @returns image object, or undefined if image not found in the album
+	 */
+	async fetchImage(albumPath, imageName) {
+		const albumResponse = await this.fetchExistingAlbum(albumPath);
+		expect(Array.isArray(albumResponse.children)).toBeTruthy();
+		return this.findImage(albumResponse.children, imageName);
+	}
+
+	/**
+	 * Find image in array of images
+	 *
+	 * @param {Array} children array of an album's child images as returned from API
+	 * @param {*} imageName like "image.jpg"
+	 * @returns the named image in the array of children, or undefined if not found
+	 */
+	findImage(children, imageName) {
+		return children.find(child => {
+			return child.itemName === imageName;
+		});
+	}
+
+	/**
 	 * Fetch album, failing if album doesn't exist
 	 *
 	 * @param {String} albumPath path of album like 2001/12-31/
