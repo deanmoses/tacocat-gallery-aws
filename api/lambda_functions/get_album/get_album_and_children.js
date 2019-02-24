@@ -13,18 +13,21 @@ const getPrevItem = require("./get_prev_item.js");
 async function getAlbumAndChildren(docClient, tableName, path) {
 	if (path.lastIndexOf("/", 0) !== 0) path = "/" + path; // make sure albumId starts with a "/"
 
-	const album = await getAlbum(docClient, tableName, path);
-	if (!album) return null; // TODO: throw exception
-	const children = await getChildren(docClient, tableName, path);
-	const nextAlbum = await getNextItem(docClient, tableName, path);
-	const prevAlbum = await getPrevItem(docClient, tableName, path);
+	let response = {};
 
-	return {
-		album: album,
-		children: children,
-		next: nextAlbum,
-		prev: prevAlbum
-	};
+	if (path === "/") {
+		response.album = {
+			title: "Dean, Lucie, Felix and Milo Moses"
+		};
+	} else {
+		response.album = await getAlbum(docClient, tableName, path);
+		if (!response.album) return null; // TODO: throw exception
+		response.nextAlbum = await getNextItem(docClient, tableName, path);
+		response.prevAlbum = await getPrevItem(docClient, tableName, path);
+	}
+	response.children = await getChildren(docClient, tableName, path);
+
+	return response;
 }
 
 module.exports = getAlbumAndChildren;

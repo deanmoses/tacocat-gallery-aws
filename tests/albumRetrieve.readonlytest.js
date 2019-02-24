@@ -11,10 +11,11 @@
 
 const getStackConfiguration = require("./utils/get_stack_configuration.js");
 const GalleryJestHelper = require("./utils/GalleryJestHelper.js");
+const GalleryApi = require("./utils/GalleryApi.js");
 const fixture = require("./utils/test_fixture_data.js");
 
 // beforeAll will set these
-let stack, galleryJestHelper;
+let stack, galleryJestHelper, galleryApi;
 
 /**
  * RETREIVE ALBUMS VIA API
@@ -26,8 +27,15 @@ describe("Retrieve albums via API", async () => {
 	beforeAll(async () => {
 		stack = await getStackConfiguration();
 		galleryJestHelper = new GalleryJestHelper(stack);
+		galleryApi = new GalleryApi(stack);
 	});
 
+	test("Root album", async () => {
+		const albumResponse = await galleryApi.fetchExistingAlbum("");
+		expect(albumResponse.album.title).toBe("Dean, Lucie, Felix and Milo Moses");
+		expect(albumResponse.children.length).toBeGreaterThanOrEqual(1);
+		// TODO: find the fixture year album in the children
+	});
 	test("Nonexistent year album", async () => {
 		await galleryJestHelper.expectAlbumToNotBeInApi("/1899");
 	});
