@@ -1,3 +1,14 @@
+//
+// An end to end integration test that:
+//  - creates albums & images
+//  - modifies albums & images
+//  - deletes albums & images
+//
+// This shouldn't be run on every file change because it invokes StepFunctions,
+// and in January 2019 I ran this so much it nearly tapped out my AWS Free Tier
+// of StepFunction executions.
+//
+
 const AWS = require("./utils/configure_aws.js");
 const aws4 = require("aws4");
 const getStackConfiguration = require("./utils/get_stack_configuration.js");

@@ -14,7 +14,12 @@
 		},
 		{
 			"type": "npm",
-			"script": "integration_test",
+			"script": "integration_readwrite_test",
+			"problemMatcher": []
+		},
+		{
+			"type": "npm",
+			"script": "integration_readonly_test",
 			"problemMatcher": []
 		}
 	]
