@@ -110,7 +110,32 @@ class GalleryJestHelper {
 	}
 
 	/**
-	 * @returns true if string is a ISO 8601 format date, which ends in a Z.
+	 * Expect week itemName like "12-31"
+	 * @param {String} weekItemName
+	 */
+	static expectValidWeekItemName(weekItemName) {
+		expect(weekItemName).toMatch(/^\d\d-\d\d$/);
+	}
+
+	/**
+	 * Expect year album path like "/2001/"?
+	 * @param {String} yearPath
+	 */
+	static expectValidYearPath(yearPath) {
+		expect(yearPath).toMatch(/^\/\d\d\d\d\/$/);
+	}
+
+	/**
+	 * Expect string in ISO 8601 format date like "2001-12-31T23:59:59.999Z"
+	 * @param {String} d date string
+	 */
+	static expectValidDate(d) {
+		expect(d).toBeDefined();
+		expect(d).toMatch(/\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d.\d\d\dZ/);
+	}
+
+	/**
+	 * @returns true if string is a ISO 8601 format date like "2001-12-31T23:59:59Z"
 	 */
 	static isIso8601(d) {
 		return !!d && d.length > 0 && d.lastIndexOf("Z") === d.length - 1;
