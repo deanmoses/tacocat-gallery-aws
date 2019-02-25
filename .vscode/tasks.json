@@ -6,6 +6,9 @@
 		{
 			"type": "npm",
 			"script": "deploy",
+			"presentation": {
+				"clear": true
+			},
 			"problemMatcher": [],
 			"group": {
 				"kind": "build",
