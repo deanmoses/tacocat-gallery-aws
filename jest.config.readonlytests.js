@@ -11,6 +11,5 @@
 const config = require("./jest.config.js");
 
 config.testRegex = "readonlytest\\.js$"; // foo.readonlytest.js instead of foo.test.js
-config.bail = true; // stop running tests after the first failure
 
 module.exports = config;

@@ -17,7 +17,7 @@ async function getLatestItemInAlbum(docClient, tableName, path) {
 			":parentPath": path
 		},
 		ProjectionExpression:
-			"itemName,itemDateTime,uploadDateTime,title,description",
+			"itemName,itemDateTime,updateDateTime,title,description",
 		Limit: 1, // # of results to return
 		ScanIndexForward: false // sort results in descending order, i.e., newest first
 	};

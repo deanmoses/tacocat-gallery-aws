@@ -5,14 +5,14 @@ const awsRegion = "us-west-2";
 const tableName = "NotARealTableName";
 
 test("Get Album", async () => {
-	expect.assertions(3);
+	expect.assertions(2);
 
 	const albumPath = "/not/a/real/album";
-	const uploadTimeStamp = 1541787209;
+	const updateDateTime = 1541787209;
 
 	// Mock out the AWS method
 	const mockResponse = {
-		Items: [{ albumID: albumPath, uploadTimeStamp: uploadTimeStamp }]
+		Items: [{ albumID: albumPath, updateDateTime: updateDateTime }]
 	};
 	AWS_MOCK.mock("DynamoDB.DocumentClient", "query", mockResponse);
 
@@ -22,9 +22,9 @@ test("Get Album", async () => {
 	});
 
 	const result = await getLatestAlbum(docClient, tableName);
-	expect(result).toBeDefined();
-	expect(result.albumID).toBe(albumPath);
-	expect(result.uploadTimeStamp).toBe(uploadTimeStamp);
+	const album = result.album;
+	expect(album).toBeDefined();
+	expect(updateDateTime).toBe(updateDateTime);
 	AWS_MOCK.restore("DynamoDB.DocumentClient");
 });
 

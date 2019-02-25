@@ -23,7 +23,7 @@ class GalleryJestHelper {
 		const image = await this.api.fetchImage();
 		expect(image).toBeDefined();
 		// Is date the expected format?
-		expect(this.isIso8601(image.updateDateTime)).toBeTruthy();
+		expect(GalleryJestHelper.isIso8601(image.updateDateTime)).toBeTruthy();
 	}
 
 	/**
@@ -35,7 +35,9 @@ class GalleryJestHelper {
 		expect(albumResponse.album).toBeDefined();
 
 		// Is date the expected format?
-		expect(this.isIso8601(albumResponse.album.updateDateTime)).toBeTruthy();
+		expect(
+			GalleryJestHelper.isIso8601(albumResponse.album.updateDateTime)
+		).toBeTruthy();
 	}
 
 	/**
@@ -46,9 +48,71 @@ class GalleryJestHelper {
 	}
 
 	/**
+	 * Expect it to be a valid array
+	 * @param {Array} arr
+	 */
+	static expectValidArray(arr) {
+		expect(arr).toBeDefined();
+		expect(Array.isArray(arr)).toBeTruthy();
+	}
+
+	/**
+	 * Expect child album to exist in array of images and albums
+	 *
+	 * @param {Array} children array of an album's child images as returned from API
+	 * @param {*} albumName like "2001" or "12-31": not this is NOT a path
+	 * @returns the named album, or undefined if not found
+	 */
+	static expectAlbumToExist(children, albumName) {
+		const album = GalleryApi.findImage(children, albumName);
+		GalleryJestHelper.expectValidAlbum(album);
+	}
+
+	/**
+	 * Expect image to exist in array of images and albums
+	 *
+	 * @param {Array} children array of an album's child images and albums as returned from API
+	 * @param {*} imageName like "image.jpg"
+	 * @returns the named image, or undefined if not found
+	 */
+	static expectImageToExist(children, imageName) {
+		const image = GalleryApi.findImage(children, imageName);
+		GalleryJestHelper.expectValidImage(image);
+	}
+
+	/**
+	 * Expect album to be valid
+	 *
+	 * @param {Object} album as returned from API
+	 */
+	static expectValidAlbum(album) {
+		GalleryJestHelper.expectValidItem(album);
+	}
+
+	/**
+	 * Expect image to be valid
+	 *
+	 * @param {Object} image as returned from API
+	 */
+	static expectValidImage(image) {
+		GalleryJestHelper.expectValidItem(image);
+	}
+
+	/**
+	 * Expect album or image to be valid
+	 *
+	 * @param {Object} item album or image item as returned from API
+	 */
+	static expectValidItem(item) {
+		expect(item).toBeDefined();
+		expect(item.updateDateTime).toBeDefined();
+		expect(GalleryJestHelper.isIso8601(item.updateDateTime)).toBeTruthy();
+	}
+
+	/**
 	 * @returns true if string is a ISO 8601 format date, which ends in a Z.
 	 */
-	isIso8601(d) {
+	static isIso8601(d) {
 		return !!d && d.length > 0 && d.lastIndexOf("Z") === d.length - 1;
 	}
 }

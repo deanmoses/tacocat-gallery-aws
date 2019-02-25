@@ -12,10 +12,11 @@
 const getStackConfiguration = require("./utils/get_stack_configuration.js");
 const GalleryJestHelper = require("./utils/GalleryJestHelper.js");
 const GalleryApi = require("./utils/GalleryApi.js");
-const fixture = require("./utils/test_fixture_data.js");
+const FixtureHelper = require("./utils/FixtureHelper.js");
+const fixture = require("./utils/fixture_data.js");
 
 // beforeAll will set these
-let stack, galleryJestHelper, galleryApi;
+let stack, galleryJestHelper, galleryApi, fix;
 
 /**
  * RETREIVE ALBUMS VIA API
@@ -28,13 +29,19 @@ describe("Retrieve albums via API", async () => {
 		stack = await getStackConfiguration();
 		galleryJestHelper = new GalleryJestHelper(stack);
 		galleryApi = new GalleryApi(stack);
+		fix = new FixtureHelper(fixture);
 	});
 
 	test("Root album", async () => {
 		const albumResponse = await galleryApi.fetchExistingAlbum("");
 		expect(albumResponse.album.title).toBe("Dean, Lucie, Felix and Milo Moses");
-		expect(albumResponse.children.length).toBeGreaterThanOrEqual(1);
-		// TODO: find the fixture year album in the children
+
+		// Do I have the expected child year albums?
+		const children = albumResponse.children;
+		GalleryJestHelper.expectValidArray(children);
+		GalleryJestHelper.expectAlbumToExist(children, fixture.current.year);
+		GalleryJestHelper.expectAlbumToExist(children, fixture.prev.year);
+		GalleryJestHelper.expectAlbumToExist(children, fixture.next.year);
 	});
 	test("Nonexistent year album", async () => {
 		await galleryJestHelper.expectAlbumToNotBeInApi("/1899");
@@ -44,11 +51,13 @@ describe("Retrieve albums via API", async () => {
 		await galleryJestHelper.expectAlbumToNotBeInApi("/1899/02-01");
 	});
 
-	test("Year album exists: " + fixture.yearAlbumPath, async () => {
-		await galleryJestHelper.expectAlbumToBeInApi(fixture.yearAlbumPath);
+	test("Year album exists", async () => {
+		if (!fix) throw "No fix!";
+		await galleryJestHelper.expectAlbumToBeInApi(fix.getYearPath());
 	});
 
-	test("Week album exists: " + fixture.weekAlbumPath, async () => {
-		await galleryJestHelper.expectAlbumToBeInApi(fixture.weekAlbumPath);
+	test("Week album exists", async () => {
+		if (!fix) throw "No fix!";
+		await galleryJestHelper.expectAlbumToBeInApi(fix.getWeekPath());
 	});
 });

@@ -12,37 +12,30 @@
 const getStackConfiguration = require("./utils/get_stack_configuration.js");
 const GalleryJestHelper = require("./utils/GalleryJestHelper.js");
 const GalleryApi = require("./utils/GalleryApi.js");
-const FixtureHelper = require("./utils/FixtureHelper.js");
-const fixture = require("./utils/fixture_data.js");
 
 // beforeAll will set these
-let stack, galleryApi, fix;
+let stack, galleryApi;
 
 /**
- * RETREIVE IMAGES VIA API
+ * RETREIVE LATEST ALBUM VIA API
  */
-describe("Retrieve images via API", async () => {
+describe("Retrieve latest album via API", async () => {
 	/**
 	 * Get information about the CloudFormation stack
 	 */
 	beforeAll(async () => {
 		stack = await getStackConfiguration();
 		galleryApi = new GalleryApi(stack);
-		fix = new FixtureHelper(fixture);
 	});
-	test("Image exists: " + fixture.imagePath, async () => {
-		const image = await galleryApi.fetchImage(
-			fix.getWeekPath(),
-			fix.getImage()
-		);
-		expect(image).toBeDefined();
+	test("Retrieve latest album", async () => {
+		const albumResponse = await galleryApi.fetchLatestAlbum();
+		const album = albumResponse.album;
+		expect(album).toBeDefined();
 
 		// Is date the expected format?
-		expect(GalleryJestHelper.isIso8601(image.updateDateTime)).toBeTruthy();
+		expect(GalleryJestHelper.isIso8601(album.updateDateTime)).toBeTruthy();
 
-		// Is there a title?
-		expect(image.title).toBeDefined();
-		expect(typeof image.title).toBe("string");
-		expect(image.title.length).toBeGreaterThan(0);
+		// Is the album's name a valid week album format, NN-NN, like 12-31?
+		expect(album.itemName).toMatch(/^\d\d-\d\d$/);
 	});
 });

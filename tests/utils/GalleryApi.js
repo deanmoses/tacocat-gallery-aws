@@ -6,7 +6,6 @@ const fetch = require("node-fetch");
 class GalleryApi {
 	/**
 	 * @param {Object} stack something like {apiUrl: "", ...}
-	 * @param {String} apiDomain domain of API like n67w5g5qe1.execute-api.us-west-2.amazonaws.com
 	 */
 	constructor(stack) {
 		this.stack = stack;
@@ -20,19 +19,41 @@ class GalleryApi {
 	async fetchImage(albumPath, imageName) {
 		const albumResponse = await this.fetchExistingAlbum(albumPath);
 		expect(Array.isArray(albumResponse.children)).toBeTruthy();
-		return this.findImage(albumResponse.children, imageName);
+		return GalleryApi.findImage(albumResponse.children, imageName);
 	}
 
 	/**
-	 * Find image in array of images
+	 * Find image in array of images and albums
 	 *
 	 * @param {Array} children array of an album's child images as returned from API
 	 * @param {*} imageName like "image.jpg"
 	 * @returns the named image in the array of children, or undefined if not found
 	 */
-	findImage(children, imageName) {
+	static findImage(children, imageName) {
+		return GalleryApi.findChild(children, imageName);
+	}
+
+	/**
+	 * Find child album in array of images and albums
+	 *
+	 * @param {Array} children array of an album's child images as returned from API
+	 * @param {*} imageName like "image.jpg"
+	 * @returns the named image in the array of children, or undefined if not found
+	 */
+	static findAlbum(children, imageName) {
+		return GalleryApi.findChild(children, imageName);
+	}
+
+	/**
+	 * Find child in array of images and albums
+	 *
+	 * @param {Array} children array of an album's child images as returned from API
+	 * @param {*} childName like "image.jpg"
+	 * @returns the named image in the array of children, or undefined if not found
+	 */
+	static findChild(children, childName) {
 		return children.find(child => {
-			return child.itemName === imageName;
+			return child.itemName === childName;
 		});
 	}
 
@@ -50,7 +71,7 @@ class GalleryApi {
 		expect(response.status).toBeDefined();
 		expect(response.status).toBe(200);
 
-		// Return response as JSON
+		// Fetch body and return entire response as JSON
 		return await response.json();
 	}
 
@@ -66,7 +87,7 @@ class GalleryApi {
 		expect(response).toBeDefined();
 		expect(response.status).toBe(404);
 
-		// Return response as JSON
+		// Fetch body and return entire response as JSON
 		return await response.json();
 	}
 
@@ -79,6 +100,24 @@ class GalleryApi {
 		const albumUrl = this.stack.apiUrl + "/album/" + albumPath;
 		const response = await fetch(albumUrl);
 		return response;
+	}
+
+	/**
+	 * Fetch latest album
+	 *
+	 * @returns album object of format {album: Object, children: object}
+	 */
+	async fetchLatestAlbum() {
+		const albumUrl = this.stack.apiUrl + "/latest-album";
+		const response = await fetch(albumUrl);
+
+		// Did I get a HTTP 200?
+		expect(response).toBeDefined();
+		expect(response.status).toBeDefined();
+		expect(response.status).toBe(200);
+
+		// Fetch body and return entire response as JSON
+		return await response.json();
 	}
 }
 module.exports = GalleryApi;
