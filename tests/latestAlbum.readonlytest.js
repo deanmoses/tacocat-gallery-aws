@@ -32,10 +32,13 @@ describe("Retrieve latest album via API", async () => {
 		const album = albumResponse.album;
 		expect(album).toBeDefined();
 
+		// Is album name a valid week album like "12-31"?
+		expect(album.itemName).toMatch(/^\d\d-\d\d$/);
+
+		// Is album parentPath a valid year album like "/2001/"?
+		expect(album.parentPath).toMatch(/^\/\d\d\d\d\/$/);
+
 		// Is date the expected format?
 		expect(GalleryJestHelper.isIso8601(album.updateDateTime)).toBeTruthy();
-
-		// Is the album's name a valid week album format, NN-NN, like 12-31?
-		expect(album.itemName).toMatch(/^\d\d-\d\d$/);
 	});
 });
