@@ -16,7 +16,10 @@ async function getAlbumAndChildren(docClient, tableName, path) {
 	let response = {};
 
 	if (path === "/") {
+		// Root album isn't in DynamoDB
 		response.album = {
+			itemName: "/",
+			parentPath: "",
 			title: "Dean, Lucie, Felix and Milo Moses"
 		};
 	} else {

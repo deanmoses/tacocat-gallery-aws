@@ -1,4 +1,5 @@
 const fetch = require("node-fetch");
+const GalleryApiUtils = require("./GalleryApiUtils.js");
 
 /**
  * Class to simplify working with the Gallery REST API
@@ -19,42 +20,7 @@ class GalleryApi {
 	async fetchImage(albumPath, imageName) {
 		const albumResponse = await this.fetchExistingAlbum(albumPath);
 		expect(Array.isArray(albumResponse.children)).toBeTruthy();
-		return GalleryApi.findImage(albumResponse.children, imageName);
-	}
-
-	/**
-	 * Find image in array of images and albums
-	 *
-	 * @param {Array} children array of an album's child images as returned from API
-	 * @param {*} imageName like "image.jpg"
-	 * @returns the named image in the array of children, or undefined if not found
-	 */
-	static findImage(children, imageName) {
-		return GalleryApi.findChild(children, imageName);
-	}
-
-	/**
-	 * Find child album in array of images and albums
-	 *
-	 * @param {Array} children array of an album's child images as returned from API
-	 * @param {*} imageName like "image.jpg"
-	 * @returns the named image in the array of children, or undefined if not found
-	 */
-	static findAlbum(children, imageName) {
-		return GalleryApi.findChild(children, imageName);
-	}
-
-	/**
-	 * Find child in array of images and albums
-	 *
-	 * @param {Array} children array of an album's child images as returned from API
-	 * @param {*} childName like "image.jpg"
-	 * @returns the named image in the array of children, or undefined if not found
-	 */
-	static findChild(children, childName) {
-		return children.find(child => {
-			return child.itemName === childName;
-		});
+		return GalleryApiUtils.findImage(albumResponse.children, imageName);
 	}
 
 	/**
@@ -98,8 +64,7 @@ class GalleryApi {
 	 */
 	async fetchAlbum(albumPath) {
 		const albumUrl = this.stack.apiUrl + "/album/" + albumPath;
-		const response = await fetch(albumUrl);
-		return response;
+		return await fetch(albumUrl);
 	}
 
 	/**

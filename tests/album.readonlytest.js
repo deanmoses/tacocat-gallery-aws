@@ -10,13 +10,14 @@
 //
 
 const getStackConfiguration = require("./utils/get_stack_configuration.js");
-const GalleryJestHelper = require("./utils/GalleryJestHelper.js");
 const GalleryApi = require("./utils/GalleryApi.js");
+const GalleryApiJestHelper = require("./utils/GalleryApiJestHelper.js");
+const JestUtils = require("./utils/JestUtils.js");
 const FixtureHelper = require("./utils/FixtureHelper.js");
 const fixture = require("./utils/fixture_data.js");
 
 // beforeAll will set these
-let stack, galleryJestHelper, galleryApi, fix;
+let stack, galleryApiJestHelper, galleryApi, fix;
 
 /**
  * RETREIVE ALBUMS VIA API
@@ -27,37 +28,42 @@ describe("Retrieve albums via API", async () => {
 	 */
 	beforeAll(async () => {
 		stack = await getStackConfiguration();
-		galleryJestHelper = new GalleryJestHelper(stack);
+		galleryApiJestHelper = new GalleryApiJestHelper(stack);
 		galleryApi = new GalleryApi(stack);
 		fix = new FixtureHelper(fixture);
 	});
 
 	test("Root album", async () => {
 		const albumResponse = await galleryApi.fetchExistingAlbum("");
-		expect(albumResponse.album.title).toBe("Dean, Lucie, Felix and Milo Moses");
+
+		// Is root album of the expected format?
+		const album = albumResponse.album;
+		expect(album.title).toBe("Dean, Lucie, Felix and Milo Moses");
+		expect(album.itemName).toBe("/");
+		expect(album.parentPath).toBe("");
 
 		// Do I have the expected child year albums?
 		const children = albumResponse.children;
-		GalleryJestHelper.expectValidArray(children);
-		GalleryJestHelper.expectAlbumToExist(children, fixture.current.year);
-		GalleryJestHelper.expectAlbumToExist(children, fixture.prev.year);
-		GalleryJestHelper.expectAlbumToExist(children, fixture.next.year);
+		JestUtils.expectValidArray(children);
+		JestUtils.expectAlbumToExist(children, fixture.current.year);
+		JestUtils.expectAlbumToExist(children, fixture.prev.year);
+		JestUtils.expectAlbumToExist(children, fixture.next.year);
 	});
 	test("Nonexistent year album", async () => {
-		await galleryJestHelper.expectAlbumToNotBeInApi("/1899");
+		await galleryApiJestHelper.expectAlbumToNotBeInApi("/1899");
 	});
 
 	test("Nonexistent week album", async () => {
-		await galleryJestHelper.expectAlbumToNotBeInApi("/1899/02-01");
+		await galleryApiJestHelper.expectAlbumToNotBeInApi("/1899/02-01");
 	});
 
 	test("Year album exists", async () => {
 		if (!fix) throw "No fix!";
-		await galleryJestHelper.expectAlbumToBeInApi(fix.getYearPath());
+		await galleryApiJestHelper.expectAlbumToBeInApi(fix.getYearPath());
 	});
 
 	test("Week album exists", async () => {
 		if (!fix) throw "No fix!";
-		await galleryJestHelper.expectAlbumToBeInApi(fix.getWeekPath());
+		await galleryApiJestHelper.expectAlbumToBeInApi(fix.getWeekPath());
 	});
 });

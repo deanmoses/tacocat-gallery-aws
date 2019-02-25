@@ -1,13 +1,53 @@
 const getAlbumAndChildren = require("./get_album_and_children.js");
 const AWS = require("aws-sdk");
 const AWS_MOCK = require("aws-sdk-mock");
+
 const awsRegion = "us-west-2";
-const albumTableName = "NotARealTableName";
-const imageTableName = "NotARealTableName";
-const albumId = "/not/a/real/album";
+const tableName = "NotARealTableName";
+
+test("Get root album", async () => {
+	expect.assertions(10);
+
+	const albumPath = "";
+
+	// Mock out the AWS 'query' method.  Used to return both the child images and the child albums
+	const mockQueryResponse = {
+		Items: mockItems,
+		Count: 3,
+		ScannedCount: 3
+	};
+	AWS_MOCK.mock("DynamoDB.DocumentClient", "query", mockQueryResponse);
+
+	// Create the AWS service *after* the service method has been mocked
+	const docClient = new AWS.DynamoDB.DocumentClient({
+		region: awsRegion
+	});
+
+	const result = await getAlbumAndChildren(docClient, tableName, albumPath);
+	expect(result).toBeDefined();
+
+	const album = result.album;
+	expect(album).toBeDefined();
+	expect(album.title).toBe("Dean, Lucie, Felix and Milo Moses");
+	expect(album.itemName).toBe("/");
+	expect(album.parentPath).toBe("");
+
+	const children = result.children;
+	expect(children).toBeDefined();
+
+	expect(children[0]).toBeDefined();
+	expect(children[0].ItemName).toBe("cross_country5.jpg");
+
+	expect(children[1]).toBeDefined();
+	expect(children[1].ItemName).toBe("cross_country6.jpg");
+
+	AWS_MOCK.restore("DynamoDB.DocumentClient");
+});
 
 test("Get Images in Album", async () => {
-	expect.assertions(8);
+	expect.assertions(6);
+
+	const albumId = "/not/a/real/album";
 
 	// Mock out the AWS 'get' method
 	const mockGetResponse = {
@@ -28,21 +68,14 @@ test("Get Images in Album", async () => {
 		region: awsRegion
 	});
 
-	const result = await getAlbumAndChildren(
-		docClient,
-		albumTableName,
-		imageTableName,
-		albumId
-	);
+	const result = await getAlbumAndChildren(docClient, tableName, albumId);
 	expect(result).toBeDefined();
 
 	expect(result.children).toBeDefined();
 
-	expect(result.children).toBeDefined();
 	expect(result.children[0]).toBeDefined();
 	expect(result.children[0].ItemName).toBe("cross_country5.jpg");
 
-	expect(result.children).toBeDefined();
 	expect(result.children[1]).toBeDefined();
 	expect(result.children[1].ItemName).toBe("cross_country6.jpg");
 

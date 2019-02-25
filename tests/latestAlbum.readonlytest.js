@@ -10,7 +10,7 @@
 //
 
 const getStackConfiguration = require("./utils/get_stack_configuration.js");
-const GalleryJestHelper = require("./utils/GalleryJestHelper.js");
+const JestUtils = require("./utils/JestUtils.js");
 const GalleryApi = require("./utils/GalleryApi.js");
 
 // beforeAll will set these
@@ -33,12 +33,12 @@ describe("Retrieve latest album via API", async () => {
 		expect(album).toBeDefined();
 
 		// Is album itemName a valid week album like "12-31"?
-		GalleryJestHelper.expectValidWeekItemName(album.itemName);
+		JestUtils.expectValidWeekItemName(album.itemName);
 
 		// Is album parentPath a valid year album like "/2001/"?
-		GalleryJestHelper.expectValidYearPath(album.parentPath);
+		JestUtils.expectValidYearPath(album.parentPath);
 
 		// Is date the expected format?
-		GalleryJestHelper.expectValidDate(album.updateDateTime);
+		JestUtils.expectValidDate(album.updateDateTime);
 	});
 });

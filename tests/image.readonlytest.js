@@ -10,8 +10,8 @@
 //
 
 const getStackConfiguration = require("./utils/get_stack_configuration.js");
-const GalleryJestHelper = require("./utils/GalleryJestHelper.js");
 const GalleryApi = require("./utils/GalleryApi.js");
+const JestUtils = require("./utils/JestUtils.js");
 const FixtureHelper = require("./utils/FixtureHelper.js");
 const fixture = require("./utils/fixture_data.js");
 
@@ -35,10 +35,7 @@ describe("Retrieve images via API", async () => {
 			fix.getWeekPath(),
 			fix.getImage()
 		);
-		expect(image).toBeDefined();
-
-		// Is date the expected format?
-		expect(GalleryJestHelper.isIso8601(image.updateDateTime)).toBeTruthy();
+		JestUtils.expectValidImage(image);
 
 		// Is there a title?
 		expect(image.title).toBeDefined();

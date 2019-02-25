@@ -13,7 +13,8 @@ async function getChildren(docClient, tableName, path) {
 		ExpressionAttributeValues: {
 			":parentPath": path
 		},
-		ProjectionExpression: "itemName,itemType,title,description,updateDateTime,dimensions"
+		ProjectionExpression:
+			"itemName,parentPath,itemType,title,description,updateDateTime,dimensions"
 	};
 	const results = await docClient.query(ddbparams).promise();
 	return results.Items;

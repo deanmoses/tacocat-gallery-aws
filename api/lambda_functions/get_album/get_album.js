@@ -15,7 +15,7 @@ async function getAlbum(docClient, tableName, path) {
 			parentPath: pathParts.parent,
 			itemName: pathParts.name
 		},
-		ProjectionExpression: "title,description,updateDateTime"
+		ProjectionExpression: "title,itemName,parentPath,description,updateDateTime"
 	};
 	const result = await docClient.get(ddbparams).promise();
 	return result.Item;
