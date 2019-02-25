@@ -17,7 +17,7 @@ const FixtureHelper = require("./utils/FixtureHelper.js");
 const fixture = require("./utils/fixture_data.js");
 
 // beforeAll will set these
-let stack, galleryApiJestHelper, galleryApi, fix;
+let stack, galleryApiJestHelper, api, fix;
 
 /**
  * RETREIVE ALBUMS VIA API
@@ -29,12 +29,12 @@ describe("Retrieve albums via API", async () => {
 	beforeAll(async () => {
 		stack = await getStackConfiguration();
 		galleryApiJestHelper = new GalleryApiJestHelper(stack);
-		galleryApi = new GalleryApi(stack);
+		api = new GalleryApi(stack);
 		fix = new FixtureHelper(fixture);
 	});
 
 	test("Root album", async () => {
-		const albumResponse = await galleryApi.fetchExistingAlbum("");
+		const albumResponse = await api.fetchExistingAlbum("");
 
 		// Is root album of the expected format?
 		const album = albumResponse.album;
@@ -58,12 +58,13 @@ describe("Retrieve albums via API", async () => {
 	});
 
 	test("Year album exists", async () => {
-		if (!fix) throw "No fix!";
-		await galleryApiJestHelper.expectAlbumToBeInApi(fix.getYearPath());
+		const albumResponse = await api.fetchExistingAlbum(fix.getYearPath());
+		JestUtils.expectValidAlbum(albumResponse.album);
+		JestUtils.expectValidNextPrevAlbum(albumResponse.nextAlbum);
+		JestUtils.expectValidNextPrevAlbum(albumResponse.prevAlbum);
 	});
 
 	test("Week album exists", async () => {
-		if (!fix) throw "No fix!";
 		await galleryApiJestHelper.expectAlbumToBeInApi(fix.getWeekPath());
 	});
 });

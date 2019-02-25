@@ -24,7 +24,8 @@ async function getNextItem(docClient, tableName, path) {
 		ExpressionAttributeValues: {
 			":parentPath": pathParts.parent
 		},
-		ProjectionExpression: "itemName,itemDateTime,title,description",
+		ProjectionExpression:
+			"itemName,parentPath,updateDateTime,title,description",
 		//ScanIndexForward: false, // sort results in descending order, i.e., newest first
 		Limit: 1 // # of results to return
 	};

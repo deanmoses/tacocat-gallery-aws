@@ -53,9 +53,20 @@ class JestUtils {
 	 */
 	static expectValidItem(item) {
 		expect(item).toBeDefined();
-		expect(item.itemName).toBeDefined();
-		expect(typeof item.itemName).toBe("string");
+		JestUtils.expectNonEmptyString(item.itemName);
+		JestUtils.expectNonEmptyString(item.parentPath);
 		JestUtils.expectValidDate(item.updateDateTime);
+	}
+
+	/**
+	 * Expect valid next/prev album
+	 *
+	 * @param {Object} item next or prev item as passed by API
+	 */
+	static expectValidNextPrevAlbum(item) {
+		expect(item).toBeDefined();
+		JestUtils.expectNonEmptyString(item.itemName);
+		JestUtils.expectNonEmptyString(item.parentPath);
 	}
 
 	/**
@@ -90,6 +101,16 @@ class JestUtils {
 	static expectValidArray(arr) {
 		expect(arr).toBeDefined();
 		expect(Array.isArray(arr)).toBeTruthy();
+	}
+
+	/**
+	 * Expect it to be a non-empty string
+	 * @param {String} s
+	 */
+	static expectNonEmptyString(s) {
+		expect(s).toBeDefined();
+		expect(typeof s).toBe("string");
+		expect(s.length).toBeGreaterThan(0);
 	}
 }
 module.exports = JestUtils;
