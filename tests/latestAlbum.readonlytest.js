@@ -30,7 +30,8 @@ describe("Retrieve latest album via API", async () => {
 	test("Retrieve latest album", async () => {
 		const albumResponse = await galleryApi.fetchLatestAlbum();
 		const album = albumResponse.album;
-		expect(album).toBeDefined();
+
+		JestUtils.expectValidAlbum(album);
 
 		// Is album itemName a valid week album like "12-31"?
 		JestUtils.expectValidWeekItemName(album.itemName);

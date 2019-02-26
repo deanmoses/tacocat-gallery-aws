@@ -70,19 +70,27 @@ class JestUtils {
 	}
 
 	/**
-	 * Expect week itemName like "12-31"
-	 * @param {String} weekItemName
+	 * Expect year itemName like "2001"
+	 * @param {String} itemName
 	 */
-	static expectValidWeekItemName(weekItemName) {
-		expect(weekItemName).toMatch(/^\d\d-\d\d$/);
+	static expectValidYearItemName(itemName) {
+		expect(itemName).toMatch(/^\d\d\d\d$/);
+	}
+
+	/**
+	 * Expect week itemName like "12-31"
+	 * @param {String} itemName
+	 */
+	static expectValidWeekItemName(itemName) {
+		expect(itemName).toMatch(/^\d\d-\d\d$/);
 	}
 
 	/**
 	 * Expect year album path like "/2001/"?
-	 * @param {String} yearPath
+	 * @param {String} path
 	 */
-	static expectValidYearPath(yearPath) {
-		expect(yearPath).toMatch(/^\/\d\d\d\d\/$/);
+	static expectValidYearPath(path) {
+		expect(path).toMatch(/^\/\d\d\d\d\/$/);
 	}
 
 	/**
