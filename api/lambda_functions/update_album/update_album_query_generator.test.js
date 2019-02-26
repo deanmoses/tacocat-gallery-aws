@@ -98,6 +98,20 @@ test("Update thumbnail", async () => {
 	expect(q.ConditionExpression).toBe("attribute_exists (itemName)");
 });
 
+test.each([
+	"asdf",
+	"/2001/12-31/",
+	"/2001/12-31/image",
+	"2001/12-31/image.jpg",
+	"image.jpg"
+])("Bad thumb: %s", imagePath => {
+	expect(() => {
+		genQuery(tableName, albumPath, {
+			thumbnail: imagePath
+		});
+	}).toThrow(BadRequestException);
+});
+
 test("Update root album", async () => {
 	expect.assertions(2);
 	try {

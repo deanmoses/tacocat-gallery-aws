@@ -54,6 +54,10 @@ function generateUpdateAlbumQuery(tableName, path, attributesToUpdate) {
 		throw new BadRequestException("No attributes to update");
 	}
 
+	if (typeof attributesToUpdate.thumbnail !== "undefined") {
+		assertWellFormedImagePath(attributesToUpdate.thumbnail);
+	}
+
 	expr = addToExpr(expr, exprVals, "updateDateTime", new Date().toISOString());
 
 	const pathParts = getParentAndNameFromPath(path);
@@ -82,4 +86,13 @@ function addToExpr(expr, exprVals, name, value) {
 		exprVals[":" + name] = value;
 	}
 	return expr;
+}
+
+/**
+ *
+ */
+function assertWellFormedImagePath(imagePath) {
+	if (!imagePath.match(/\/\d\d\d\d\/\d\d-\d\d\/.*\..*/)) {
+		throw new BadRequestException("Malformed image path: " + imagePath);
+	}
 }
