@@ -1,5 +1,5 @@
 //
-// Configuration for *READ ONLY* integration Jest tests
+// Configuration for *UPDATE* integration Jest tests
 //
 // I'm separating out different types of integration tests that can be run independently:
 // 1) READ ONLY tests that require the existence of fixture data to already be there
@@ -15,6 +15,7 @@
 // import the unit test config; these tests will inherit from it
 const config = require("./jest.config.js");
 
-config.testRegex = "readonlytest\\.js$"; // foo.readonlytest.js instead of foo.test.js
+config.testRegex = "updatetest\\.js$"; // foo.updatetest.js instead of foo.test.js
+config.bail = true; // stop running tests after the first failure
 
 module.exports = config;

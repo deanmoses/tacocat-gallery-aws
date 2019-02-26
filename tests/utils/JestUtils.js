@@ -120,5 +120,12 @@ class JestUtils {
 		expect(typeof s).toBe("string");
 		expect(s.length).toBeGreaterThan(0);
 	}
+
+	/**
+	 * Generate a random integer suitable for making unique titles and paths and such
+	 */
+	static generateRandomInt() {
+		return Math.floor(Math.random() * 100000);
+	}
 }
 module.exports = JestUtils;

@@ -29,15 +29,10 @@ exports.handler = async event => {
 	const attributesToUpdate = JSON.parse(event.body);
 
 	try {
-		const album = await updateAlbum(
-			docClient,
-			tableName,
-			path,
-			attributesToUpdate
-		);
+		await updateAlbum(docClient, tableName, path, attributesToUpdate);
 		return {
 			statusCode: 200,
-			body: JSON.stringify(album),
+			body: JSON.stringify({ message: "Updated" }),
 			isBase64Encoded: false
 		};
 	} catch (e) {

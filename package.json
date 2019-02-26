@@ -6,6 +6,7 @@
 	"scripts": {
 		"test": "jest -c jest.config.js",
 		"integration_readonly_test": "jest -c jest.config.readonlytests.js",
+		"integration_update_test": "jest -c jest.config.updatetests.js",
 		"integration_readwrite_test": "jest -c jest.config.readwritetests.js",
 		"deploy": "cloudformation/deploy_stack.sh"
 	},
