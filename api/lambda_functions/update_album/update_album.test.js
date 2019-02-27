@@ -2,9 +2,11 @@ const updateAlbum = require("./update_album.js");
 const BadRequestException = require("./BadRequestException.js");
 const JestUtils = require("../../../tests/utils/JestUtils.js");
 
-const albumPath = "/2001/12-31";
+const albumPath = "/2001/12-31/";
 
-let ctx; // Execution context: stuff passed in to updateAlbum(ctx, ...) Created in beforeEach()
+// Execution context: stuff passed in to updateAlbum(ctx, ...)
+// Created in beforeEach()
+let ctx;
 
 //
 // TEST SETUP AND TEARDOWN
@@ -34,9 +36,11 @@ beforeEach(() => {
 
 describe("Update Album", () => {
 	test("title", async () => {
-		expect.assertions(12);
+		expect.assertions(13);
 		const newTitle = "New Title 1";
-		ctx.doUpdate = q => {
+		// mock out doUpdate()
+		const mockDoUpdate = jest.fn(q => {
+			// do some expects *inside* the mocked function
 			expect(q).toBeDefined();
 			expect(q.TableName).toBe(ctx.tableName);
 			expect(q.Key.parentPath).toBe("/2001/");
@@ -49,18 +53,22 @@ describe("Update Album", () => {
 			JestUtils.expectValidDate(q.ExpressionAttributeValues[":updateDateTime"]);
 			expect(q.ConditionExpression).toBe("attribute_exists (itemName)");
 			return {};
-		};
+		});
+		ctx.doUpdate = mockDoUpdate;
 		let result = await updateAlbum(ctx, albumPath, {
 			title: newTitle
 		});
+		expect(ctx.doUpdate).toBeCalledTimes(1);
 		expect(result).toBeDefined();
 		expect(Object.keys(result).length).toBe(0);
 	});
 
-	test("blank title", async () => {
-		expect.assertions(11);
+	test("blank title (unset title)", async () => {
+		expect.assertions(12);
 		const newTitle = "";
-		ctx.doUpdate = q => {
+		// mock out doUpdate()
+		const mockDoUpdate = jest.fn(q => {
+			// do some expects *inside* the mocked function
 			expect(q).toBeDefined();
 			expect(q.TableName).toBe(ctx.tableName);
 			expect(q.Key.parentPath).toBe("/2001/");
@@ -72,18 +80,22 @@ describe("Update Album", () => {
 			JestUtils.expectValidDate(q.ExpressionAttributeValues[":updateDateTime"]);
 			expect(q.ConditionExpression).toBe("attribute_exists (itemName)");
 			return {};
-		};
+		});
+		ctx.doUpdate = mockDoUpdate;
 		let result = await updateAlbum(ctx, albumPath, {
 			title: newTitle
 		});
+		expect(ctx.doUpdate).toBeCalledTimes(1);
 		expect(result).toBeDefined();
 		expect(Object.keys(result).length).toBe(0);
 	});
 
 	test("description", async () => {
-		expect.assertions(12);
+		expect.assertions(13);
 		const newDescription = "New Description 1";
-		ctx.doUpdate = q => {
+		// mock out doUpdate()
+		const mockDoUpdate = jest.fn(q => {
+			// do some expects *inside* the mocked function
 			expect(q).toBeDefined();
 			expect(q.TableName).toBe(ctx.tableName);
 			expect(q.Key.parentPath).toBe("/2001/");
@@ -96,18 +108,22 @@ describe("Update Album", () => {
 			JestUtils.expectValidDate(q.ExpressionAttributeValues[":updateDateTime"]);
 			expect(q.ConditionExpression).toBe("attribute_exists (itemName)");
 			return {};
-		};
+		});
+		ctx.doUpdate = mockDoUpdate;
 		let result = await updateAlbum(ctx, albumPath, {
 			description: newDescription
 		});
+		expect(ctx.doUpdate).toBeCalledTimes(1);
 		expect(result).toBeDefined();
 		expect(Object.keys(result).length).toBe(0);
 	});
 
-	test("blank description", async () => {
-		expect.assertions(11);
+	test("blank description (unset description)", async () => {
+		expect.assertions(12);
 		const newDescription = "";
-		ctx.doUpdate = q => {
+		// mock out doUpdate()
+		const mockDoUpdate = jest.fn(q => {
+			// do some expects *inside* the mocked function
 			expect(q).toBeDefined();
 			expect(q.TableName).toBe(ctx.tableName);
 			expect(q.Key.parentPath).toBe("/2001/");
@@ -119,19 +135,23 @@ describe("Update Album", () => {
 			JestUtils.expectValidDate(q.ExpressionAttributeValues[":updateDateTime"]);
 			expect(q.ConditionExpression).toBe("attribute_exists (itemName)");
 			return {};
-		};
+		});
+		ctx.doUpdate = mockDoUpdate;
 		let result = await updateAlbum(ctx, albumPath, {
 			description: newDescription
 		});
+		expect(ctx.doUpdate).toBeCalledTimes(1);
 		expect(result).toBeDefined();
 		expect(Object.keys(result).length).toBe(0);
 	});
 
 	test("title and description", async () => {
-		expect.assertions(13);
+		expect.assertions(14);
 		const newTitle = "New Title 2";
 		const newDescription = "New Description 2";
-		ctx.doUpdate = q => {
+		// mock out doUpdate()
+		const mockDoUpdate = jest.fn(q => {
+			// do some expects *inside* the mocked function
 			expect(q).toBeDefined();
 			expect(q.TableName).toBe(ctx.tableName);
 			expect(q.Key.parentPath).toBe("/2001/");
@@ -145,19 +165,23 @@ describe("Update Album", () => {
 			JestUtils.expectValidDate(q.ExpressionAttributeValues[":updateDateTime"]);
 			expect(q.ConditionExpression).toBe("attribute_exists (itemName)");
 			return {};
-		};
+		});
+		ctx.doUpdate = mockDoUpdate;
 		let result = await updateAlbum(ctx, albumPath, {
 			title: newTitle,
 			description: newDescription
 		});
+		expect(ctx.doUpdate).toBeCalledTimes(1);
 		expect(result).toBeDefined();
 		expect(Object.keys(result).length).toBe(0);
 	});
 
 	test("valid thumbnail", async () => {
-		expect.assertions(13);
+		expect.assertions(14);
 		const newThumbnail = "/2001/12-31/image.jpg";
-		ctx.doUpdate = q => {
+		// mock out doUpdate()
+		const mockDoUpdate = jest.fn(q => {
+			// do some expects *inside* the mocked function
 			expect(q).toBeDefined();
 			expect(q.TableName).toBe(ctx.tableName);
 			expect(q.Key.parentPath).toBe("/2001/");
@@ -170,10 +194,12 @@ describe("Update Album", () => {
 			JestUtils.expectValidDate(q.ExpressionAttributeValues[":updateDateTime"]);
 			expect(q.ConditionExpression).toBe("attribute_exists (itemName)");
 			return {};
-		};
+		});
+		ctx.doUpdate = mockDoUpdate;
 		let result = await updateAlbum(ctx, albumPath, {
 			thumbnail: newThumbnail
 		});
+		expect(ctx.doUpdate).toBeCalledTimes(1);
 		expect(result).toBeDefined();
 		expect(Object.keys(result).length).toBe(0);
 		// Ensure that updateImage() calls itemExists() to check on the existence of the thumbnail image
@@ -181,9 +207,11 @@ describe("Update Album", () => {
 	});
 
 	test("blank thumbnail (unset thumb)", async () => {
-		expect.assertions(12);
+		expect.assertions(13);
 		const newThumbnail = "";
-		ctx.doUpdate = q => {
+		// mock out doUpdate()
+		const mockDoUpdate = jest.fn(q => {
+			// do some expects *inside* the mocked function
 			expect(q).toBeDefined();
 			expect(q.TableName).toBe(ctx.tableName);
 			expect(q.Key.parentPath).toBe("/2001/");
@@ -195,10 +223,12 @@ describe("Update Album", () => {
 			JestUtils.expectValidDate(q.ExpressionAttributeValues[":updateDateTime"]);
 			expect(q.ConditionExpression).toBe("attribute_exists (itemName)");
 			return {};
-		};
+		});
+		ctx.doUpdate = mockDoUpdate;
 		let result = await updateAlbum(ctx, albumPath, {
 			thumbnail: newThumbnail
 		});
+		expect(ctx.doUpdate).toBeCalledTimes(1);
 		expect(result).toBeDefined();
 		expect(Object.keys(result).length).toBe(0);
 

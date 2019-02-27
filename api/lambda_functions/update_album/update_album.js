@@ -1,6 +1,6 @@
-const generateDynamoUpdateParams = require("./update_album_query_generator.js");
 const NotFoundException = require("./NotFoundException.js");
 const BadRequestException = require("./BadRequestException.js");
+const generateDynamoUpdateParams = require("./update_album_query_generator.js");
 
 /**
  * Update an album's attributes (like title and description) in DynamoDB
@@ -10,7 +10,7 @@ const BadRequestException = require("./BadRequestException.js");
  * @param {*} path Path of the album to update, like /2001/12-31/
  * @param {*} attributesToUpdate bag of attributes to update
  *
- * @returns {} if success, throws exception if there's a problem with the input
+ * @returns {Object} result from DynamoDB if success, throws exception if there's a problem with the input
  */
 async function updateAlbum(ctx, path, attributesToUpdate) {
 	const dynamoParams = generateDynamoUpdateParams(

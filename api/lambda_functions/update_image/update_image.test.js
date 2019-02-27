@@ -1,123 +1,233 @@
 const updateImage = require("./update_image.js");
 const BadRequestException = require("./BadRequestException.js");
-const AWS = require("aws-sdk");
-const AWS_MOCK = require("aws-sdk-mock");
-const awsRegion = "us-west-2";
-const tableName = "NotARealTableName";
+const JestUtils = require("../../../tests/utils/JestUtils.js");
 
-const imagePath = "/not/a/real/image";
+const imagePath = "/2001/12-31/image.jpg";
 
-let docClient; // AWS DynamoDB docClient.  Created in beforeEach()
+// Execution context: stuff passed in to updateImage(ctx, ...)
+// Created in beforeEach()
+let ctx;
 
 //
 // TEST SETUP AND TEARDOWN
 //
 
 beforeEach(() => {
-	// Mock out the AWS method
-	const mockResponse = {};
-	AWS_MOCK.mock("DynamoDB.DocumentClient", "update", mockResponse);
+	// Mock out an execution context to be passed into updateImage(ctx, ...)
+	ctx = {};
 
-	// Create the AWS service *after* the service method has been mocked
-	docClient = new AWS.DynamoDB.DocumentClient({
-		region: awsRegion
-	});
+	// Fake DynamoDB table name goes into execution context
+	ctx.tableName = "NotARealTableName";
 
-	return docClient;
-});
-
-afterEach(() => {
-	AWS_MOCK.restore("DynamoDB.DocumentClient");
+	// A mock doUpdate function goes into execution context
+	const mockDoUpdate = jest.fn();
+	mockDoUpdate.mockReturnValue({}); // Will return empty object {}
+	ctx.doUpdate = mockDoUpdate;
 });
 
 //
 // TESTS
 //
 
-test("Update Image title", async () => {
-	expect.assertions(2);
-	let result = await updateImage(docClient, tableName, imagePath, {
-		title: "New Title 1"
-	});
-	expect(result).toBeDefined();
-	expect(Object.keys(result).length === 0).toBeTruthy();
-});
-
-test("Update Image description", async () => {
-	expect.assertions(2);
-	let result = await updateImage(docClient, tableName, imagePath, {
-		description: "New Description 1"
-	});
-	expect(result).toBeDefined();
-	expect(Object.keys(result).length === 0).toBeTruthy();
-});
-
-test("Update Image title and description", async () => {
-	expect.assertions(2);
-	let result = await updateImage(docClient, tableName, imagePath, {
-		title: "New Title 2",
-		description: "New Description 2"
-	});
-	expect(result).toBeDefined();
-	expect(Object.keys(result).length === 0).toBeTruthy();
-});
-
-test("Update Image with empty data", async () => {
-	expect.assertions(1);
-	try {
-		let result = await updateImage(docClient, tableName, imagePath, {});
-		throw ("Was not expecting success.  Got: ", result);
-	} catch (e) {
-		expect(e).toBeInstanceOf(BadRequestException); // Expect this error
-	}
-});
-
-test("Update Image with null data", async () => {
-	expect.assertions(1);
-	try {
-		let result = await updateImage(docClient, tableName, imagePath, null);
-		throw ("Was not expecting success.  Got: ", result);
-	} catch (e) {
-		expect(e).toBeInstanceOf(BadRequestException); // Expect this error
-	}
-});
-
-test("Update Image with only bad data", async () => {
-	expect.assertions(2);
-	try {
-		let result = await updateImage(docClient, tableName, imagePath, {
-			noSuchAttribute: "some value"
+describe("Update Image", () => {
+	test("title", async () => {
+		expect.assertions(13);
+		const newTitle = "New Title 1";
+		// mock out doUpdate()
+		const mockDoUpdate = jest.fn(q => {
+			// do some expects *inside* the mocked function
+			expect(q).toBeDefined();
+			expect(q.TableName).toBe(ctx.tableName);
+			expect(q.Key.parentPath).toBe("/2001/12-31/");
+			expect(q.Key.itemName).toBe("image.jpg");
+			expect(q.UpdateExpression).toBe(
+				"SET title = :title, updateDateTime = :updateDateTime"
+			);
+			expect(Object.keys(q.ExpressionAttributeValues).length).toBe(2);
+			expect(q.ExpressionAttributeValues[":title"]).toBe(newTitle);
+			JestUtils.expectValidDate(q.ExpressionAttributeValues[":updateDateTime"]);
+			expect(q.ConditionExpression).toBe("attribute_exists (itemName)");
+			return {};
 		});
-		throw ("Was not expecting success.  Got: ", result);
-	} catch (e) {
-		expect(e).toBeInstanceOf(BadRequestException); // Expect this error
-		expect(e.message).toContain("noSuchAttribute");
-	}
-});
-
-test("Update Image with both real and bad data", async () => {
-	expect.assertions(2);
-	try {
-		let result = await updateImage(docClient, tableName, imagePath, {
-			title: "New Title 3",
-			noSuchAttribute: "some value"
+		ctx.doUpdate = mockDoUpdate;
+		let result = await updateImage(ctx, imagePath, {
+			title: newTitle
 		});
-		throw ("Was not expecting success.  Got: ", result);
-	} catch (e) {
-		expect(e).toBeInstanceOf(BadRequestException); // Expect this error
-		expect(e.message).toContain("noSuchAttribute");
-	}
-});
+		expect(ctx.doUpdate).toBeCalledTimes(1);
+		expect(result).toBeDefined();
+		expect(Object.keys(result).length).toBe(0);
+	});
 
-test("Missing image ID", async () => {
-	expect.assertions(2);
-	try {
-		let result = await updateImage(docClient, tableName, null /*no image*/, {
-			title: "New Title 3"
+	test("blank title (unset title)", async () => {
+		expect.assertions(12);
+		const newTitle = "";
+		// mock out doUpdate()
+		const mockDoUpdate = jest.fn(q => {
+			// do some expects *inside* the mocked function
+			expect(q).toBeDefined();
+			expect(q.TableName).toBe(ctx.tableName);
+			expect(q.Key.parentPath).toBe("/2001/12-31/");
+			expect(q.Key.itemName).toBe("image.jpg");
+			expect(q.UpdateExpression).toBe(
+				"SET updateDateTime = :updateDateTime REMOVE title"
+			);
+			expect(Object.keys(q.ExpressionAttributeValues).length).toBe(1);
+			JestUtils.expectValidDate(q.ExpressionAttributeValues[":updateDateTime"]);
+			expect(q.ConditionExpression).toBe("attribute_exists (itemName)");
+			return {};
 		});
-		throw ("Was not expecting success.  Got: ", result);
-	} catch (e) {
-		expect(e).toBeInstanceOf(BadRequestException); // Expect this error
-		expect(e.message).toContain("image");
-	}
+		ctx.doUpdate = mockDoUpdate;
+		let result = await updateImage(ctx, imagePath, {
+			title: newTitle
+		});
+		expect(ctx.doUpdate).toBeCalledTimes(1);
+		expect(result).toBeDefined();
+		expect(Object.keys(result).length).toBe(0);
+	});
+
+	test("description", async () => {
+		expect.assertions(13);
+		const newDescription = "New Description 1";
+		// mock out doUpdate()
+		const mockDoUpdate = jest.fn(q => {
+			// do some expects *inside* the mocked function
+			expect(q).toBeDefined();
+			expect(q.TableName).toBe(ctx.tableName);
+			expect(q.Key.parentPath).toBe("/2001/12-31/");
+			expect(q.Key.itemName).toBe("image.jpg");
+			expect(q.UpdateExpression).toBe(
+				"SET description = :description, updateDateTime = :updateDateTime"
+			);
+			expect(Object.keys(q.ExpressionAttributeValues).length).toBe(2);
+			expect(q.ExpressionAttributeValues[":description"]).toBe(newDescription);
+			JestUtils.expectValidDate(q.ExpressionAttributeValues[":updateDateTime"]);
+			expect(q.ConditionExpression).toBe("attribute_exists (itemName)");
+			return {};
+		});
+		ctx.doUpdate = mockDoUpdate;
+		let result = await updateImage(ctx, imagePath, {
+			description: newDescription
+		});
+		expect(ctx.doUpdate).toBeCalledTimes(1);
+		expect(result).toBeDefined();
+		expect(Object.keys(result).length).toBe(0);
+	});
+
+	test("blank description (unset description)", async () => {
+		expect.assertions(12);
+		const newDescription = "";
+		// mock out doUpdate()
+		const mockDoUpdate = jest.fn(q => {
+			// do some expects *inside* the mocked function
+			expect(q).toBeDefined();
+			expect(q.TableName).toBe(ctx.tableName);
+			expect(q.Key.parentPath).toBe("/2001/12-31/");
+			expect(q.Key.itemName).toBe("image.jpg");
+			expect(q.UpdateExpression).toBe(
+				"SET updateDateTime = :updateDateTime REMOVE description"
+			);
+			expect(Object.keys(q.ExpressionAttributeValues).length).toBe(1);
+			JestUtils.expectValidDate(q.ExpressionAttributeValues[":updateDateTime"]);
+			expect(q.ConditionExpression).toBe("attribute_exists (itemName)");
+			return {};
+		});
+		ctx.doUpdate = mockDoUpdate;
+		let result = await updateImage(ctx, imagePath, {
+			description: newDescription
+		});
+		expect(ctx.doUpdate).toBeCalledTimes(1);
+		expect(result).toBeDefined();
+		expect(Object.keys(result).length).toBe(0);
+	});
+
+	test("title and description", async () => {
+		expect.assertions(14);
+		const newTitle = "New Title 2";
+		const newDescription = "New Description 2";
+		// mock out doUpdate()
+		const mockDoUpdate = jest.fn(q => {
+			// do some expects *inside* the mocked function
+			expect(q).toBeDefined();
+			expect(q.TableName).toBe(ctx.tableName);
+			expect(q.Key.parentPath).toBe("/2001/12-31/");
+			expect(q.Key.itemName).toBe("image.jpg");
+			expect(q.UpdateExpression).toBe(
+				"SET title = :title, description = :description, updateDateTime = :updateDateTime"
+			);
+			expect(Object.keys(q.ExpressionAttributeValues).length).toBe(3);
+			expect(q.ExpressionAttributeValues[":title"]).toBe(newTitle);
+			expect(q.ExpressionAttributeValues[":description"]).toBe(newDescription);
+			JestUtils.expectValidDate(q.ExpressionAttributeValues[":updateDateTime"]);
+			expect(q.ConditionExpression).toBe("attribute_exists (itemName)");
+			return {};
+		});
+		ctx.doUpdate = mockDoUpdate;
+		let result = await updateImage(ctx, imagePath, {
+			title: newTitle,
+			description: newDescription
+		});
+		expect(ctx.doUpdate).toBeCalledTimes(1);
+		expect(result).toBeDefined();
+		expect(Object.keys(result).length).toBe(0);
+	});
+
+	test("empty data", async () => {
+		expect.assertions(1);
+		try {
+			let result = await updateImage(ctx, imagePath, {});
+			throw ("Was not expecting success.  Got: ", result);
+		} catch (e) {
+			expect(e).toBeInstanceOf(BadRequestException); // Expect this error
+		}
+	});
+
+	test("null data", async () => {
+		expect.assertions(1);
+		try {
+			let result = await updateImage(ctx, imagePath, null);
+			throw ("Was not expecting success.  Got: ", result);
+		} catch (e) {
+			expect(e).toBeInstanceOf(BadRequestException); // Expect this error
+		}
+	});
+
+	test("only bad data", async () => {
+		expect.assertions(2);
+		try {
+			let result = await updateImage(ctx, imagePath, {
+				noSuchAttribute: "some value"
+			});
+			throw ("Was not expecting success.  Got: ", result);
+		} catch (e) {
+			expect(e).toBeInstanceOf(BadRequestException); // Expect this error
+			expect(e.message).toContain("noSuchAttribute");
+		}
+	});
+
+	test("both real and bad data", async () => {
+		expect.assertions(2);
+		try {
+			let result = await updateImage(ctx, imagePath, {
+				title: "New Title 3",
+				noSuchAttribute: "some value"
+			});
+			throw ("Was not expecting success.  Got: ", result);
+		} catch (e) {
+			expect(e).toBeInstanceOf(BadRequestException); // Expect this error
+			expect(e.message).toContain("noSuchAttribute");
+		}
+	});
+
+	test("Missing imagePath", async () => {
+		expect.assertions(2);
+		try {
+			let result = await updateImage(ctx, null /*no image*/, {
+				title: "New Title 3"
+			});
+			throw ("Was not expecting success.  Got: ", result);
+		} catch (e) {
+			expect(e).toBeInstanceOf(BadRequestException); // Expect this error
+			expect(e.message).toContain("image");
+		}
+	});
 });

@@ -29,15 +29,22 @@ exports.handler = async event => {
 	const attributesToUpdate = JSON.parse(event.body);
 
 	try {
-		const image = await updateImage(
-			docClient,
-			tableName,
-			path,
-			attributesToUpdate
-		);
+		// Set up execution context
+		// This is everything that updateImage() needs in order to execute
+		// This is done to make updateImage() unit testable
+		let ctx = {};
+		ctx.tableName = tableName;
+		ctx.doUpdate = async dynamoParams => {
+			return docClient.update(dynamoParams).promise();
+		};
+
+		// Update the image
+		await updateImage(ctx, path, attributesToUpdate);
+
+		// Return success
 		return {
 			statusCode: 200,
-			body: JSON.stringify(image),
+			body: JSON.stringify({ message: "Updated" }),
 			isBase64Encoded: false
 		};
 	} catch (e) {

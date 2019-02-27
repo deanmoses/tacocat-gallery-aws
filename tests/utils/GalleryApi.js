@@ -19,7 +19,11 @@ class GalleryApi {
 	 *
 	 * @returns image object, or undefined if image not found in the album
 	 */
-	async fetchImage(albumPath, imageName) {
+	async fetchImage(imagePath) {
+		PathUtils.assertIsImagePath(imagePath);
+		const pathParts = PathUtils.getParentAndNameFromPath(imagePath);
+		const albumPath = pathParts.parent;
+		const imageName = pathParts.name;
 		const albumResponse = await this.fetchExistingAlbum(albumPath);
 		expect(Array.isArray(albumResponse.children)).toBeTruthy();
 		return GalleryApiUtils.findImage(albumResponse.children, imageName);
@@ -131,6 +135,8 @@ class GalleryApi {
 		//  Do the HTTP PATCH
 		const response = await fetch(albumUrl, signedFetchParams);
 
+		expect(response).toBeDefined();
+
 		// if the API returned a 403 Not Authorized
 		if (response.status === 403) {
 			// print out debugging info about the request signing
@@ -138,6 +144,65 @@ class GalleryApi {
 			console.log("credentials", credentials);
 			console.log("unsigned options for " + albumUrl, unsignedFetchParams);
 			console.log("signed options for " + albumUrl, signedFetchParams);
+
+			// The API Gateway returns very helpful info in the body about what it was expecting
+			// the signed request's format to be
+			const body = await response.json();
+			console.log("patchResult", body);
+
+			// Print out what the actual request signing information was
+			var signer = new aws4.RequestSigner(unsignedFetchParams, credentials);
+			console.log("Actual Canonical String", signer.canonicalString());
+			console.log("Actual String-to-Sign", signer.stringToSign());
+			/* eslint-enable no-console */
+		}
+
+		return response;
+	}
+
+	/**
+	 * Update image in DynamoDB
+	 *
+	 * @param {String} imagePath path of image like "/2001/12-31/image.jpg"
+	 * @param {Object} attributesToUpdate like {title: "x", description: "y"}
+	 * @returns response with body not yet resolved.  You have to do that yourself with response.json()
+	 */
+	async updateImage(imagePath, attributesToUpdate) {
+		PathUtils.assertIsImagePath(imagePath);
+
+		// Set up the HTTP PATCH with the AWS authentication headers
+		const apiPath = "/prod/image" + imagePath;
+		const imageUrl = "https://" + this.stack.apiDomain + apiPath;
+		const unsignedFetchParams = {
+			method: "PATCH",
+			headers: {
+				"Content-Type": "application/json",
+				Accept: "application/json"
+			},
+			path: apiPath,
+			host: this.stack.apiDomain,
+			body: JSON.stringify(attributesToUpdate)
+		};
+
+		const credentials = {
+			accessKeyId: this.stack.accessKey,
+			secretAccessKey: this.stack.secretKey
+		};
+
+		const signedFetchParams = aws4.sign(unsignedFetchParams, credentials);
+
+		//  Do the HTTP PATCH
+		const response = await fetch(imageUrl, signedFetchParams);
+
+		expect(response).toBeDefined();
+
+		// if the API returned a 403 Not Authorized
+		if (response.status === 403) {
+			// print out debugging info about the request signing
+			/* eslint-disable no-console */
+			console.log("credentials", credentials);
+			console.log("unsigned options for " + imageUrl, unsignedFetchParams);
+			console.log("signed options for " + imageUrl, signedFetchParams);
 
 			// The API Gateway returns very helpful info in the body about what it was expecting
 			// the signed request's format to be

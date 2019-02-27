@@ -35,8 +35,8 @@ exports.handler = async event => {
 		// This is done to make updateAlbum() unit testable
 		let ctx = {};
 		ctx.tableName = tableName;
-		ctx.itemExists = async thumbnailImagePath => {
-			return await itemExists(docClient, tableName, thumbnailImagePath);
+		ctx.itemExists = async itemPath => {
+			return await itemExists(docClient, tableName, itemPath);
 		};
 		ctx.doUpdate = async dynamoParams => {
 			return docClient.update(dynamoParams).promise();

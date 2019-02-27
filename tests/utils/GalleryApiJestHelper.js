@@ -43,15 +43,17 @@ class GalleryApiJestHelper {
 	/**
 	 * Expect success when updating album
 	 *
-	 * @param {String} albumPath path of album like "2001/12-31/"
+	 * @param {String} albumPath path of album like "/2001/12-31/"
 	 * @param {Object} attributesToUpdate like {title: "x", description: "y"}
 	 */
 	async expectUpdateAlbumSuccess(albumPath, attributesToUpdate) {
 		const response = await this.api.updateAlbum(albumPath, attributesToUpdate);
 
+		// Download the response body
+		const responseBody = await response.json();
+
 		// Verify update was a success
 		expect(response).toBeDefined();
-		const responseBody = await response.json();
 		if (response.status !== 200) {
 			// eslint-disable-next-line no-console
 			console.log("Update response body", responseBody);
@@ -63,20 +65,64 @@ class GalleryApiJestHelper {
 	/**
 	 * Expect a 404 Not Found attempting to update album
 	 *
-	 * @param {String} albumPath path of album like "2001/12-31/"
+	 * @param {String} albumPath path of album like "/2001/12-31/"
 	 * @param {Object} attributesToUpdate like {title: "x", description: "y"}
 	 */
 	async expectUpdateAlbumNotFound(albumPath, attributesToUpdate) {
 		const response = await this.api.updateAlbum(albumPath, attributesToUpdate);
 
-		// Verify update returned a 404 Not Found
+		// Download the response body
 		expect(response).toBeDefined();
+
+		// Verify update returned a 404 Not Found
 		const responseBody = await response.json();
 		if (response.status !== 404) {
 			// eslint-disable-next-line no-console
 			console.log("Update response body", responseBody);
 		}
+		expect(response.status).toBe(404);
+	}
 
+	/**
+	 * Expect success when updating image
+	 *
+	 * @param {String} imagePath path of image like "/2001/12-31/image.jpg"
+	 * @param {Object} attributesToUpdate like {title: "x", description: "y"}
+	 */
+	async expectUpdateImageSuccess(imagePath, attributesToUpdate) {
+		const response = await this.api.updateImage(imagePath, attributesToUpdate);
+		expect(response).toBeDefined();
+
+		// Download the response body
+		const responseBody = await response.json();
+
+		// If not 200, do some debugging
+		if (response.status !== 200) {
+			// eslint-disable-next-line no-console
+			console.log("Update response body", responseBody);
+		}
+		expect(response.status).toBe(200);
+		expect(responseBody.message).toBe("Updated");
+	}
+
+	/**
+	 * Expect a 404 Not Found attempting to update image
+	 *
+	 * @param {String} imagePath path of image like "/2001/12-31/image.jpg"
+	 * @param {Object} attributesToUpdate like {title: "x", description: "y"}
+	 */
+	async expectUpdateImageNotFound(imagePath, attributesToUpdate) {
+		const response = await this.api.updateImage(imagePath, attributesToUpdate);
+		expect(response).toBeDefined();
+
+		// Download the response body
+		const responseBody = await response.json();
+
+		// If not 404, do some debugging
+		if (response.status !== 404) {
+			// eslint-disable-next-line no-console
+			console.log("Update response body", responseBody);
+		}
 		expect(response.status).toBe(404);
 	}
 }

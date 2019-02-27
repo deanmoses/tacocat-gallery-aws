@@ -22,7 +22,7 @@ let stack, galleryApiJestHelper, api, fix;
 /**
  * UPDATE ALBUMS VIA API
  */
-describe.only("Update albums via API", async () => {
+describe("Update albums via API", async () => {
 	/**
 	 * Get information about the CloudFormation stack
 	 */

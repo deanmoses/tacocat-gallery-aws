@@ -2,24 +2,20 @@ const BadRequestException = require("./BadRequestException.js");
 const getParentAndNameFromPath = require("./get_parent_and_name_from_path.js");
 
 /**
- * Generate the query to update an album's attributes (like title and description) in DynamoDB
+ * Generate the query to update an image's attributes (like title and description) in DynamoDB
  *
  * @param {String} tableName Name of the table in DynamoDB containing gallery items
- * @param {String} albumPath Path of the album to update, like /2001/12-31/
+ * @param {String} imagePath Path of the image to update, like /2001/12-31/image.jpg
  * @param {Object} attributesToUpdate bag of attributes to update
  *
  * @returns {Object} query to execute, or throws exception if there's a problem with the input
  */
-function generateUpdateAlbumQuery(tableName, albumPath, attributesToUpdate) {
-	if (!albumPath) {
-		throw new BadRequestException("Must specify album");
+function generateUpdateImageQuery(tableName, imagePath, attributesToUpdate) {
+	if (!imagePath) {
+		throw new BadRequestException("Must specify image");
 	}
 
-	assertWellFormedAlbumPath(albumPath);
-
-	if (albumPath === "/") {
-		throw new BadRequestException("Cannot update root album");
-	}
+	assertWellFormedImagePath(imagePath);
 
 	if (!attributesToUpdate) {
 		throw new BadRequestException("No attributes to update");
@@ -31,8 +27,8 @@ function generateUpdateAlbumQuery(tableName, albumPath, attributesToUpdate) {
 		throw new BadRequestException("No attributes to update");
 	}
 
-	// These are the attributes it's valid to set on an album
-	const validKeys = new Set(["title", "description", "thumbnail"]);
+	// These are the attributes it's valid to set on an image
+	const validKeys = new Set(["title", "description"]);
 
 	// We'll be separating out the attributes to update from the attributes to
 	// remove.  Setting an attribute to blank ("") isn't allowed in DynamoDB;
@@ -55,11 +51,6 @@ function generateUpdateAlbumQuery(tableName, albumPath, attributesToUpdate) {
 			attributesToSet.add(keyToUpdate);
 		}
 	});
-
-	// Special validation for non-empty thumbnail
-	if (attributesToUpdate.thumbnail) {
-		assertWellFormedImagePath(attributesToUpdate.thumbnail);
-	}
 
 	//
 	// Build the Dynamo DB expression
@@ -92,7 +83,7 @@ function generateUpdateAlbumQuery(tableName, albumPath, attributesToUpdate) {
 		updateExpression += " " + removeExpr;
 	}
 
-	const pathParts = getParentAndNameFromPath(albumPath);
+	const pathParts = getParentAndNameFromPath(imagePath);
 
 	return {
 		TableName: tableName,
@@ -105,7 +96,7 @@ function generateUpdateAlbumQuery(tableName, albumPath, attributesToUpdate) {
 		ConditionExpression: "attribute_exists (itemName)"
 	};
 }
-module.exports = generateUpdateAlbumQuery;
+module.exports = generateUpdateImageQuery;
 
 /**
  * Add to DynamoDB SET expression
@@ -141,15 +132,6 @@ function addToRemoveExpr(expr, name) {
 	expr += " " + name;
 
 	return expr;
-}
-
-/**
- * Throw exception if it's not a well-formed album path
- */
-function assertWellFormedAlbumPath(albumPath) {
-	if (!albumPath.match(/^\/(\d\d\d\d\/(\d\d-\d\d\/)?)?$/)) {
-		throw new BadRequestException("Malformed album path: '" + albumPath + "'");
-	}
 }
 
 /**
