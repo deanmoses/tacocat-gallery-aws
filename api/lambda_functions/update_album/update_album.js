@@ -1,5 +1,7 @@
-const genQuery = require("./update_album_query_generator.js");
+const generateDynamoUpdateParams = require("./update_album_query_generator.js");
+const itemExists = require("./item_exists.js");
 const NotFoundException = require("./NotFoundException.js");
+const BadRequestException = require("./BadRequestException.js");
 
 /**
  * Update an album's attributes (like title and description) in DynamoDB
@@ -12,11 +14,23 @@ const NotFoundException = require("./NotFoundException.js");
  * @returns {} if success, throws exception if there's a problem with the input
  */
 async function updateAlbum(docClient, tableName, path, attributesToUpdate) {
-	const dynamoParams = genQuery(tableName, path, attributesToUpdate);
+	const dynamoParams = generateDynamoUpdateParams(
+		tableName,
+		path,
+		attributesToUpdate
+	);
+
+	// If thumbnail is one of the attributes to update
+	if (attributesToUpdate.thumbnail !== undefined) {
+		// Ensure thumbnail actually exists
+		const thumbPath = attributesToUpdate.thumbnail;
+		if (!(await itemExists(docClient, tableName, thumbPath))) {
+			throw new BadRequestException("Thumbnail not found: " + thumbPath);
+		}
+	}
 
 	try {
-		const result = await docClient.update(dynamoParams).promise();
-		return result;
+		return await docClient.update(dynamoParams).promise();
 	} catch (e) {
 		if (e.toString().indexOf("conditional") !== -1) {
 			throw new NotFoundException("Album not found: " + path);

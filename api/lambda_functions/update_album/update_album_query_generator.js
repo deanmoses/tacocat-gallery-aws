@@ -54,7 +54,7 @@ function generateUpdateAlbumQuery(tableName, path, attributesToUpdate) {
 		throw new BadRequestException("No attributes to update");
 	}
 
-	if (typeof attributesToUpdate.thumbnail !== "undefined") {
+	if (attributesToUpdate.thumbnail !== undefined) {
 		assertWellFormedImagePath(attributesToUpdate.thumbnail);
 	}
 
@@ -76,7 +76,7 @@ function generateUpdateAlbumQuery(tableName, path, attributesToUpdate) {
 module.exports = generateUpdateAlbumQuery;
 
 function addToExpr(expr, exprVals, name, value) {
-	if (typeof value !== "undefined") {
+	if (value !== undefined) {
 		if (expr.length === 0) {
 			expr = "SET";
 		} else {
