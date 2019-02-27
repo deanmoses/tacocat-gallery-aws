@@ -52,7 +52,7 @@ class FixtureHelper {
 	 */
 	getImagePath() {
 		const f = this.fixture.current;
-		return PathUtils.getImagePath(f.year, f.week, f.week);
+		return PathUtils.getImagePath(f.year, f.week, f.image);
 	}
 
 	getCurrentYearPath() {

@@ -41,75 +41,88 @@ describe.only("Update albums via API", async () => {
 	});
 
 	test("Nonexistent year album", async () => {
-		await galleryApiJestHelper.expectUpdateAlbumNotFound("/1899", {
+		await galleryApiJestHelper.expectUpdateAlbumNotFound("/1899/", {
 			title: "foo"
 		});
 	});
 
 	test("Nonexistent week album", async () => {
-		await galleryApiJestHelper.expectUpdateAlbumNotFound("/1899/02-01", {
+		await galleryApiJestHelper.expectUpdateAlbumNotFound("/1899/02-01/", {
 			title: "foo"
 		});
 	});
 
 	test("Existing year album", async () => {
-		const newTitle = "Updated Title " + JestUtils.generateRandomInt();
-		const newDescription =
-			"Updated Description " + JestUtils.generateRandomInt();
 		const albumPath = fix.getYearPath();
 
-		// Album title should NOT be new title yet
-		let response = await api.fetchExistingAlbum(albumPath);
-		expect(response.album.title).not.toBe(newTitle);
-		expect(response.album.description).not.toBe(newDescription);
-
-		// Update title
+		// Un-set title
 		await galleryApiJestHelper.expectUpdateAlbumSuccess(albumPath, {
-			title: newTitle,
-			description: newDescription
+			title: ""
 		});
 
-		// Album title should be new title now
+		// Album should not have title
+		let response = await api.fetchExistingAlbum(albumPath);
+		expect(response.album.title).toBeUndefined();
+
+		// Update title
+		const newTitle = "Title " + JestUtils.generateRandomInt();
+		await galleryApiJestHelper.expectUpdateAlbumSuccess(albumPath, {
+			title: newTitle
+		});
+
+		// Album title should be the new one
 		response = await api.fetchExistingAlbum(albumPath);
 		expect(response.album.title).toBe(newTitle);
-		expect(response.album.description).toBe(newDescription);
 	});
 
 	test("Existing week album", async () => {
-		const newTitle = "Updated Title " + JestUtils.generateRandomInt();
-		const newDescription =
-			"Updated Description " + JestUtils.generateRandomInt();
 		const albumPath = fix.getWeekPath();
 
-		// Album title should NOT be new title yet
-		let response = await api.fetchExistingAlbum(albumPath);
-		expect(response.album.title).not.toBe(newTitle);
-		expect(response.album.description).not.toBe(newDescription);
+		// Un-set title and description
+		await galleryApiJestHelper.expectUpdateAlbumSuccess(albumPath, {
+			title: "",
+			description: ""
+		});
 
-		// Update title
+		// Album should not have title or description
+		let response = await api.fetchExistingAlbum(albumPath);
+		expect(response.album.title).toBeUndefined();
+		expect(response.album.description).toBeUndefined();
+
+		// Update title and description
+		const newTitle = "Title " + JestUtils.generateRandomInt();
+		const newDescription = "Desc " + JestUtils.generateRandomInt();
 		await galleryApiJestHelper.expectUpdateAlbumSuccess(albumPath, {
 			title: newTitle,
 			description: newDescription
 		});
 
-		// Album title should be new title now
+		// Album title and description should be the new ones
 		response = await api.fetchExistingAlbum(albumPath);
 		expect(response.album.title).toBe(newTitle);
 		expect(response.album.description).toBe(newDescription);
 	});
 
-	test.only("Week thumbnail", async () => {
-		const newThumbnail =
-			"/2001/12-31/image_" + JestUtils.generateRandomInt() + ".jpg";
+	test("Week thumbnail", async () => {
 		const albumPath = fix.getWeekPath();
 
-		// Update thumb
+		// Un-set thumb
+		await galleryApiJestHelper.expectUpdateAlbumSuccess(albumPath, {
+			thumbnail: ""
+		});
+
+		// Album should not have thumbnail
+		let response = await api.fetchExistingAlbum(albumPath);
+		expect(response.album.thumbnail).toBeUndefined();
+
+		// Set new thumb
+		const newThumbnail = fix.getImagePath();
 		await galleryApiJestHelper.expectUpdateAlbumSuccess(albumPath, {
 			thumbnail: newThumbnail
 		});
 
-		// Album thumbnail should be new thumbnail now
-		const response = await api.fetchExistingAlbum(albumPath);
+		// Album thumbnail should be the new one
+		response = await api.fetchExistingAlbum(albumPath);
 		expect(response.album.thumbnail).toBe(newThumbnail);
 	});
 });

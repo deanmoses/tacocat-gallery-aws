@@ -1,123 +1,322 @@
 const updateAlbum = require("./update_album.js");
 const BadRequestException = require("./BadRequestException.js");
-const AWS = require("aws-sdk");
-const AWS_MOCK = require("aws-sdk-mock");
-const awsRegion = "us-west-2";
-const tableName = "NotARealTableName";
+const JestUtils = require("../../../tests/utils/JestUtils.js");
 
-const albumPath = "/not/a/real/album";
+const albumPath = "/2001/12-31";
 
-let docClient; // AWS DynamoDB docClient.  Created in beforeEach()
+let ctx; // Execution context: stuff passed in to updateAlbum(ctx, ...) Created in beforeEach()
 
 //
 // TEST SETUP AND TEARDOWN
 //
 
 beforeEach(() => {
-	// Mock out the AWS method
-	const mockResponse = {};
-	AWS_MOCK.mock("DynamoDB.DocumentClient", "update", mockResponse);
+	// Mock out an execution context to be passed into updateAlbum(ctx, ...)
+	ctx = {};
 
-	// Create the AWS service *after* the service method has been mocked
-	docClient = new AWS.DynamoDB.DocumentClient({
-		region: awsRegion
-	});
+	// Fake DynamoDB table name goes into execution context
+	ctx.tableName = "NotARealTableName";
 
-	return docClient;
-});
+	// A mock itemExists function goes into execution context
+	const mockItemExists = jest.fn();
+	mockItemExists.mockReturnValue(true); // Will return true, as in image exists
+	ctx.itemExists = mockItemExists;
 
-afterEach(() => {
-	AWS_MOCK.restore("DynamoDB.DocumentClient");
+	// A mock doUpdate function goes into execution context
+	const mockDoUpdate = jest.fn();
+	mockDoUpdate.mockReturnValue({}); // Will return empty object {}
+	ctx.doUpdate = mockDoUpdate;
 });
 
 //
 // TESTS
 //
 
-test("Update Album title", async () => {
-	expect.assertions(2);
-	let result = await updateAlbum(docClient, tableName, albumPath, {
-		title: "New Title 1"
-	});
-	expect(result).toBeDefined();
-	expect(Object.keys(result).length === 0).toBeTruthy();
-});
-
-test("Update Album description", async () => {
-	expect.assertions(2);
-	let result = await updateAlbum(docClient, tableName, albumPath, {
-		description: "New Description 1"
-	});
-	expect(result).toBeDefined();
-	expect(Object.keys(result).length === 0).toBeTruthy();
-});
-
-test("Update Album title and description", async () => {
-	expect.assertions(2);
-	let result = await updateAlbum(docClient, tableName, albumPath, {
-		title: "New Title 2",
-		description: "New Description 2"
-	});
-	expect(result).toBeDefined();
-	expect(Object.keys(result).length === 0).toBeTruthy();
-});
-
-test("Update Album with empty data", async () => {
-	expect.assertions(1);
-	try {
-		let result = await updateAlbum(docClient, tableName, albumPath, {});
-		throw ("Was not expecting success.  Got: ", result);
-	} catch (e) {
-		expect(e).toBeInstanceOf(BadRequestException); // Expect this error
-	}
-});
-
-test("Update Album with null data", async () => {
-	expect.assertions(1);
-	try {
-		let result = await updateAlbum(docClient, tableName, albumPath, null);
-		throw ("Was not expecting success.  Got: ", result);
-	} catch (e) {
-		expect(e).toBeInstanceOf(BadRequestException); // Expect this error
-	}
-});
-
-test("Update Album with only bad data", async () => {
-	expect.assertions(2);
-	try {
-		let result = await updateAlbum(docClient, tableName, albumPath, {
-			noSuchAttribute: "some value"
+describe("Update Album", () => {
+	test("title", async () => {
+		expect.assertions(12);
+		const newTitle = "New Title 1";
+		ctx.doUpdate = q => {
+			expect(q).toBeDefined();
+			expect(q.TableName).toBe(ctx.tableName);
+			expect(q.Key.parentPath).toBe("/2001/");
+			expect(q.Key.itemName).toBe("12-31");
+			expect(q.UpdateExpression).toBe(
+				"SET title = :title, updateDateTime = :updateDateTime"
+			);
+			expect(Object.keys(q.ExpressionAttributeValues).length).toBe(2);
+			expect(q.ExpressionAttributeValues[":title"]).toBe(newTitle);
+			JestUtils.expectValidDate(q.ExpressionAttributeValues[":updateDateTime"]);
+			expect(q.ConditionExpression).toBe("attribute_exists (itemName)");
+			return {};
+		};
+		let result = await updateAlbum(ctx, albumPath, {
+			title: newTitle
 		});
-		throw ("Was not expecting success.  Got: ", result);
-	} catch (e) {
-		expect(e).toBeInstanceOf(BadRequestException); // Expect this error
-		expect(e.message).toContain("noSuchAttribute");
-	}
-});
+		expect(result).toBeDefined();
+		expect(Object.keys(result).length).toBe(0);
+	});
 
-test("Update Album with both real and bad data", async () => {
-	expect.assertions(2);
-	try {
-		let result = await updateAlbum(docClient, tableName, albumPath, {
-			title: "New Title 3",
-			noSuchAttribute: "some value"
+	test("blank title", async () => {
+		expect.assertions(11);
+		const newTitle = "";
+		ctx.doUpdate = q => {
+			expect(q).toBeDefined();
+			expect(q.TableName).toBe(ctx.tableName);
+			expect(q.Key.parentPath).toBe("/2001/");
+			expect(q.Key.itemName).toBe("12-31");
+			expect(q.UpdateExpression).toBe(
+				"SET updateDateTime = :updateDateTime REMOVE title"
+			);
+			expect(Object.keys(q.ExpressionAttributeValues).length).toBe(1);
+			JestUtils.expectValidDate(q.ExpressionAttributeValues[":updateDateTime"]);
+			expect(q.ConditionExpression).toBe("attribute_exists (itemName)");
+			return {};
+		};
+		let result = await updateAlbum(ctx, albumPath, {
+			title: newTitle
 		});
-		throw ("Was not expecting success.  Got: ", result);
-	} catch (e) {
-		expect(e).toBeInstanceOf(BadRequestException); // Expect this error
-		expect(e.message).toContain("noSuchAttribute");
-	}
-});
+		expect(result).toBeDefined();
+		expect(Object.keys(result).length).toBe(0);
+	});
 
-test("Missing album ID", async () => {
-	expect.assertions(2);
-	try {
-		let result = await updateAlbum(docClient, tableName, null /*no album*/, {
-			title: "New Title 3"
+	test("description", async () => {
+		expect.assertions(12);
+		const newDescription = "New Description 1";
+		ctx.doUpdate = q => {
+			expect(q).toBeDefined();
+			expect(q.TableName).toBe(ctx.tableName);
+			expect(q.Key.parentPath).toBe("/2001/");
+			expect(q.Key.itemName).toBe("12-31");
+			expect(q.UpdateExpression).toBe(
+				"SET description = :description, updateDateTime = :updateDateTime"
+			);
+			expect(Object.keys(q.ExpressionAttributeValues).length).toBe(2);
+			expect(q.ExpressionAttributeValues[":description"]).toBe(newDescription);
+			JestUtils.expectValidDate(q.ExpressionAttributeValues[":updateDateTime"]);
+			expect(q.ConditionExpression).toBe("attribute_exists (itemName)");
+			return {};
+		};
+		let result = await updateAlbum(ctx, albumPath, {
+			description: newDescription
 		});
-		throw ("Was not expecting success.  Got: ", result);
-	} catch (e) {
-		expect(e).toBeInstanceOf(BadRequestException); // Expect this error
-		expect(e.message).toContain("album");
-	}
+		expect(result).toBeDefined();
+		expect(Object.keys(result).length).toBe(0);
+	});
+
+	test("blank description", async () => {
+		expect.assertions(11);
+		const newDescription = "";
+		ctx.doUpdate = q => {
+			expect(q).toBeDefined();
+			expect(q.TableName).toBe(ctx.tableName);
+			expect(q.Key.parentPath).toBe("/2001/");
+			expect(q.Key.itemName).toBe("12-31");
+			expect(q.UpdateExpression).toBe(
+				"SET updateDateTime = :updateDateTime REMOVE description"
+			);
+			expect(Object.keys(q.ExpressionAttributeValues).length).toBe(1);
+			JestUtils.expectValidDate(q.ExpressionAttributeValues[":updateDateTime"]);
+			expect(q.ConditionExpression).toBe("attribute_exists (itemName)");
+			return {};
+		};
+		let result = await updateAlbum(ctx, albumPath, {
+			description: newDescription
+		});
+		expect(result).toBeDefined();
+		expect(Object.keys(result).length).toBe(0);
+	});
+
+	test("title and description", async () => {
+		expect.assertions(13);
+		const newTitle = "New Title 2";
+		const newDescription = "New Description 2";
+		ctx.doUpdate = q => {
+			expect(q).toBeDefined();
+			expect(q.TableName).toBe(ctx.tableName);
+			expect(q.Key.parentPath).toBe("/2001/");
+			expect(q.Key.itemName).toBe("12-31");
+			expect(q.UpdateExpression).toBe(
+				"SET title = :title, description = :description, updateDateTime = :updateDateTime"
+			);
+			expect(Object.keys(q.ExpressionAttributeValues).length).toBe(3);
+			expect(q.ExpressionAttributeValues[":title"]).toBe(newTitle);
+			expect(q.ExpressionAttributeValues[":description"]).toBe(newDescription);
+			JestUtils.expectValidDate(q.ExpressionAttributeValues[":updateDateTime"]);
+			expect(q.ConditionExpression).toBe("attribute_exists (itemName)");
+			return {};
+		};
+		let result = await updateAlbum(ctx, albumPath, {
+			title: newTitle,
+			description: newDescription
+		});
+		expect(result).toBeDefined();
+		expect(Object.keys(result).length).toBe(0);
+	});
+
+	test("valid thumbnail", async () => {
+		expect.assertions(13);
+		const newThumbnail = "/2001/12-31/image.jpg";
+		ctx.doUpdate = q => {
+			expect(q).toBeDefined();
+			expect(q.TableName).toBe(ctx.tableName);
+			expect(q.Key.parentPath).toBe("/2001/");
+			expect(q.Key.itemName).toBe("12-31");
+			expect(q.UpdateExpression).toBe(
+				"SET thumbnail = :thumbnail, updateDateTime = :updateDateTime"
+			);
+			expect(Object.keys(q.ExpressionAttributeValues).length).toBe(2);
+			expect(q.ExpressionAttributeValues[":thumbnail"]).toBe(newThumbnail);
+			JestUtils.expectValidDate(q.ExpressionAttributeValues[":updateDateTime"]);
+			expect(q.ConditionExpression).toBe("attribute_exists (itemName)");
+			return {};
+		};
+		let result = await updateAlbum(ctx, albumPath, {
+			thumbnail: newThumbnail
+		});
+		expect(result).toBeDefined();
+		expect(Object.keys(result).length).toBe(0);
+		// Ensure that updateImage() calls itemExists() to check on the existence of the thumbnail image
+		expect(ctx.itemExists).toBeCalledTimes(1);
+	});
+
+	test("blank thumbnail (unset thumb)", async () => {
+		expect.assertions(12);
+		const newThumbnail = "";
+		ctx.doUpdate = q => {
+			expect(q).toBeDefined();
+			expect(q.TableName).toBe(ctx.tableName);
+			expect(q.Key.parentPath).toBe("/2001/");
+			expect(q.Key.itemName).toBe("12-31");
+			expect(q.UpdateExpression).toBe(
+				"SET updateDateTime = :updateDateTime REMOVE thumbnail"
+			);
+			expect(Object.keys(q.ExpressionAttributeValues).length).toBe(1);
+			JestUtils.expectValidDate(q.ExpressionAttributeValues[":updateDateTime"]);
+			expect(q.ConditionExpression).toBe("attribute_exists (itemName)");
+			return {};
+		};
+		let result = await updateAlbum(ctx, albumPath, {
+			thumbnail: newThumbnail
+		});
+		expect(result).toBeDefined();
+		expect(Object.keys(result).length).toBe(0);
+
+		// When thumbnail is being set to blank, updateImage() should not call
+		// itemExists() to check if the blank thumbnail exists
+		expect(ctx.itemExists).toBeCalledTimes(0);
+	});
+
+	test("nonexistent thumbnail", async () => {
+		expect.assertions(1);
+		const newThumbnail = "/2001/12-31/image.jpg";
+		ctx.itemExists = async () => {
+			return false;
+		};
+		try {
+			let result = await updateAlbum(ctx, albumPath, {
+				thumbnail: newThumbnail
+			});
+			throw ("Was not expecting success.  Got: ", result);
+		} catch (e) {
+			expect(e).toBeInstanceOf(BadRequestException); // Expect this error
+		}
+	});
+
+	test.each([
+		"asdf",
+		"/2001/12-31/",
+		"/2001/12-31/image",
+		"2001/12-31/image.jpg",
+		"//2001/12-31/image.jpg",
+		"image.jpg"
+	])("Malformed thumbnail image path: '%s'", async newThumbnail => {
+		expect.assertions(2);
+		try {
+			let result = await updateAlbum(ctx, albumPath, {
+				thumbnail: newThumbnail
+			});
+			throw ("Was not expecting success.  Got: ", result);
+		} catch (e) {
+			expect(e).toBeInstanceOf(BadRequestException); // Expect this error
+			expect(e.message).toMatch(/Malformed/);
+		}
+	});
+
+	test("root album", async () => {
+		expect.assertions(2);
+		try {
+			let q = await updateAlbum(ctx, "/", {
+				title: "New Title"
+			});
+			throw ("Was not expecting success.  Got: ", q);
+		} catch (e) {
+			expect(e).toBeInstanceOf(BadRequestException); // Expect this error
+			expect(e.message).toMatch(/root/);
+		}
+	});
+
+	test("empty data", async () => {
+		expect.assertions(2);
+		const attributesToUpdate = {};
+		try {
+			let result = await updateAlbum(ctx, albumPath, attributesToUpdate);
+			throw ("Was not expecting success.  Got: ", result);
+		} catch (e) {
+			expect(e).toBeInstanceOf(BadRequestException); // Expect this error
+			expect(e.message).toMatch(/No attributes/);
+		}
+	});
+
+	test("null data", async () => {
+		expect.assertions(2);
+		const attributesToUpdate = null;
+		try {
+			let result = await updateAlbum(ctx, albumPath, attributesToUpdate);
+			throw ("Was not expecting success.  Got: ", result);
+		} catch (e) {
+			expect(e).toBeInstanceOf(BadRequestException); // Expect this error
+			expect(e.message).toMatch(/No attributes/);
+		}
+	});
+
+	test("only bad data", async () => {
+		expect.assertions(2);
+		try {
+			let result = await updateAlbum(ctx, albumPath, {
+				noSuchAttribute: "some value"
+			});
+			throw ("Was not expecting success.  Got: ", result);
+		} catch (e) {
+			expect(e).toBeInstanceOf(BadRequestException); // Expect this error
+			expect(e.message).toContain("noSuchAttribute");
+		}
+	});
+
+	test("both real and bad data", async () => {
+		expect.assertions(2);
+		try {
+			let result = await updateAlbum(ctx, albumPath, {
+				title: "New Title 3",
+				noSuchAttribute: "some value"
+			});
+			throw ("Was not expecting success.  Got: ", result);
+		} catch (e) {
+			expect(e).toBeInstanceOf(BadRequestException); // Expect this error
+			expect(e.message).toContain("noSuchAttribute");
+		}
+	});
+
+	test("Missing albumPath", async () => {
+		expect.assertions(2);
+		try {
+			let result = await updateAlbum(ctx, null /*no album*/, {
+				title: "New Title 3"
+			});
+			throw ("Was not expecting success.  Got: ", result);
+		} catch (e) {
+			expect(e).toBeInstanceOf(BadRequestException); // Expect this error
+			expect(e.message).toContain("album");
+		}
+	});
 });

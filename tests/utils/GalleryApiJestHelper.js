@@ -51,9 +51,12 @@ class GalleryApiJestHelper {
 
 		// Verify update was a success
 		expect(response).toBeDefined();
-		expect(response.status).toBe(200);
-
 		const responseBody = await response.json();
+		if (response.status !== 200) {
+			// eslint-disable-next-line no-console
+			console.log("Update response body", responseBody);
+		}
+		expect(response.status).toBe(200);
 		expect(responseBody.message).toBe("Updated");
 	}
 
@@ -68,6 +71,12 @@ class GalleryApiJestHelper {
 
 		// Verify update returned a 404 Not Found
 		expect(response).toBeDefined();
+		const responseBody = await response.json();
+		if (response.status !== 404) {
+			// eslint-disable-next-line no-console
+			console.log("Update response body", responseBody);
+		}
+
 		expect(response.status).toBe(404);
 	}
 }

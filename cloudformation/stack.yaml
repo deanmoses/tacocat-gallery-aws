@@ -777,6 +777,7 @@ Resources:
               - Sid: "GalleryDynamoTableWriteAccess"
                 Effect: Allow
                 Action:
+                  - "dynamodb:GetItem"
                   - "dynamodb:UpdateItem"
                 Resource:
                   - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${GalleryItemDDBTable}"

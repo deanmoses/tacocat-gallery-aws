@@ -1,5 +1,6 @@
 const AWS = require("aws-sdk");
 const updateAlbum = require("./update_album.js");
+const itemExists = require("./item_exists.js");
 const NotFoundException = require("./NotFoundException.js");
 const BadRequestException = require("./BadRequestException.js");
 
@@ -29,7 +30,22 @@ exports.handler = async event => {
 	const attributesToUpdate = JSON.parse(event.body);
 
 	try {
-		await updateAlbum(docClient, tableName, path, attributesToUpdate);
+		// Set up execution context
+		// This is everything that updateAlbum() needs in order to execute
+		// This is done to make updateAlbum() unit testable
+		let ctx = {};
+		ctx.tableName = tableName;
+		ctx.itemExists = async thumbnailImagePath => {
+			return await itemExists(docClient, tableName, thumbnailImagePath);
+		};
+		ctx.doUpdate = async dynamoParams => {
+			return docClient.update(dynamoParams).promise();
+		};
+
+		// Update the album
+		await updateAlbum(ctx, path, attributesToUpdate);
+
+		// Return success
 		return {
 			statusCode: 200,
 			body: JSON.stringify({ message: "Updated" }),

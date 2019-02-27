@@ -1,5 +1,6 @@
 const fetch = require("node-fetch");
 const GalleryApiUtils = require("./GalleryApiUtils.js");
+const PathUtils = require("./PathUtils.js");
 const aws4 = require("aws4");
 
 /**
@@ -32,14 +33,18 @@ class GalleryApi {
 	 */
 	async fetchExistingAlbum(albumPath) {
 		const response = await this.fetchAlbum(albumPath);
-
-		// Did I get a HTTP 200?
 		expect(response).toBeDefined();
 		expect(response.status).toBeDefined();
+		const responseBody = await response.json();
+		if (response.status !== 200) {
+			// eslint-disable-next-line no-console
+			console.log(
+				"Fetch album (" + albumPath + ") response body",
+				responseBody
+			);
+		}
 		expect(response.status).toBe(200);
-
-		// Fetch body and return entire response as JSON
-		return await response.json();
+		return responseBody;
 	}
 
 	/**
@@ -49,13 +54,17 @@ class GalleryApi {
 	 */
 	async fetchNonexistentAlbum(albumPath) {
 		const response = await this.fetchAlbum(albumPath);
-
-		// Did I get a HTTP 404?
 		expect(response).toBeDefined();
+		const responseBody = await response.json();
+		if (response.status !== 404) {
+			// eslint-disable-next-line no-console
+			console.log(
+				"Fetch album (" + albumPath + ") response body",
+				responseBody
+			);
+		}
 		expect(response.status).toBe(404);
-
-		// Fetch body and return entire response as JSON
-		return await response.json();
+		return responseBody;
 	}
 
 	/**
@@ -74,26 +83,32 @@ class GalleryApi {
 	 */
 	async fetchLatestAlbum() {
 		const response = await fetch(this.latestAlbumUrl());
-
-		// Did I get a HTTP 200?
 		expect(response).toBeDefined();
 		expect(response.status).toBeDefined();
+		const responseBody = await response.json();
+		if (response.status !== 200) {
+			// eslint-disable-next-line no-console
+			console.log(
+				"Fetch latest album (" + this.latestAlbumUrl() + ") response body",
+				responseBody
+			);
+		}
 		expect(response.status).toBe(200);
-
-		// Fetch body and return entire response as JSON
-		return await response.json();
+		return responseBody;
 	}
 
 	/**
 	 * Update album
 	 *
-	 * @param {String} albumPath path of album like "2001/12-31/"
+	 * @param {String} albumPath path of album like "/2001/12-31/"
 	 * @param {Object} attributesToUpdate like {title: "x", description: "y"}
 	 * @returns response with body not yet resolved.  You have to do that yourself with response.json()
 	 */
 	async updateAlbum(albumPath, attributesToUpdate) {
+		PathUtils.assertIsAlbumPath(albumPath);
+
 		// Set up the HTTP PATCH with the AWS authentication headers
-		const apiPath = "/prod/album/" + albumPath;
+		const apiPath = "/prod/album" + albumPath;
 		const albumUrl = "https://" + this.stack.apiDomain + apiPath;
 		const unsignedFetchParams = {
 			method: "PATCH",
@@ -146,7 +161,8 @@ class GalleryApi {
 	 * @returns {String} fully qualified URL to the REST API album endpoint
 	 */
 	albumUrl(albumPath) {
-		return this.stack.apiUrl + "/album/" + albumPath;
+		PathUtils.assertIsAlbumPath(albumPath);
+		return this.stack.apiUrl + "/album" + albumPath;
 	}
 
 	/**
