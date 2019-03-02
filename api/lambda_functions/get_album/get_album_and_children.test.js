@@ -36,10 +36,10 @@ test("Get root album", async () => {
 	expect(children).toBeDefined();
 
 	expect(children[0]).toBeDefined();
-	expect(children[0].ItemName).toBe("cross_country5.jpg");
+	expect(children[0].itemName).toBe("cross_country5.jpg");
 
 	expect(children[1]).toBeDefined();
-	expect(children[1].ItemName).toBe("cross_country6.jpg");
+	expect(children[1].itemName).toBe("cross_country6.jpg");
 
 	AWS_MOCK.restore("DynamoDB.DocumentClient");
 });
@@ -51,7 +51,11 @@ test("Get Images in Album", async () => {
 
 	// Mock out the AWS 'get' method
 	const mockGetResponse = {
-		Item: { albumID: "/2001", uploadTimeStamp: 1541787209 }
+		Item: {
+			itemName: "12-31",
+			parentPath: "/2001/",
+			updatedOn: "2001-12-31T23:59:59.999Z"
+		}
 	};
 	AWS_MOCK.mock("DynamoDB.DocumentClient", "get", mockGetResponse);
 
@@ -68,44 +72,30 @@ test("Get Images in Album", async () => {
 		region: awsRegion
 	});
 
-	const result = await getAlbumAndChildren(docClient, tableName, albumId);
-	expect(result).toBeDefined();
+	const albumResponse = await getAlbumAndChildren(
+		docClient,
+		tableName,
+		albumId
+	);
+	expect(albumResponse).toBeDefined();
 
-	expect(result.children).toBeDefined();
+	expect(albumResponse.children).toBeDefined();
 
-	expect(result.children[0]).toBeDefined();
-	expect(result.children[0].ItemName).toBe("cross_country5.jpg");
+	expect(albumResponse.children[0]).toBeDefined();
+	expect(albumResponse.children[0].itemName).toBe("cross_country5.jpg");
 
-	expect(result.children[1]).toBeDefined();
-	expect(result.children[1].ItemName).toBe("cross_country6.jpg");
+	expect(albumResponse.children[1]).toBeDefined();
+	expect(albumResponse.children[1].itemName).toBe("cross_country6.jpg");
 
 	AWS_MOCK.restore("DynamoDB.DocumentClient");
 });
 
 const mockItems = [
 	{
-		fileSize: "2.803MB",
-		ItemName: "cross_country5.jpg",
-		ItemType: "media",
-		imageFormat: "JPEG",
-		creationTime: "2018:11:03 16:25:41",
+		itemName: "cross_country5.jpg",
+		parentPath: "/2001/12-31",
+		updatedOn: "2018:11:03 16:25:41",
 		dimensions: { width: 4032, height: 3024 },
-		uploadTime: 1541788980,
-		exifMake: "Apple",
-		exifModel: "iPhone 6s",
-		thumbnail: [
-			[Object],
-			[Object],
-			[Object],
-			[Object],
-			[Object],
-			[Object],
-			[Object],
-			[Object],
-			[Object],
-			[Object]
-		],
-		albumID: "/2001/12-31",
 		tags: [
 			"Person",
 			"Human",
@@ -120,27 +110,10 @@ const mockItems = [
 		]
 	},
 	{
-		fileSize: "1.845MB",
-		ItemName: "cross_country6.jpg",
-		imageFormat: "JPEG",
-		creationTime: "2018:11:03 16:26:04",
+		itemName: "cross_country6.jpg",
+		parentPath: "/2001/12-31",
+		updatedOn: "2018:11:03 16:25:41",
 		dimensions: { width: 4032, height: 3024 },
-		uploadTime: 1541788981,
-		exifMake: "Apple",
-		exifModel: "iPhone 6s",
-		thumbnail: [
-			[Object],
-			[Object],
-			[Object],
-			[Object],
-			[Object],
-			[Object],
-			[Object],
-			[Object],
-			[Object],
-			[Object]
-		],
-		albumID: "/2001/12-31",
 		tags: [
 			"Person",
 			"Clothing",
@@ -155,26 +128,10 @@ const mockItems = [
 		]
 	},
 	{
-		fileSize: "4.29MB",
 		imageID: "2001/12-31/cross_country7.jpg",
-		imageFormat: "JPEG",
-		creationTime: "2018:11:03 16:47:56",
+		parentPath: "/2001/12-31",
+		updatedOn: "2018:11:03 16:25:41",
 		dimensions: { width: 4032, height: 3024 },
-		uploadTime: 1541788981,
-		exifMake: "Apple",
-		exifModel: "iPhone 6s",
-		thumbnail: [
-			[Object],
-			[Object],
-			[Object],
-			[Object],
-			[Object],
-			[Object],
-			[Object],
-			[Object],
-			[Object]
-		],
-		albumID: "/2001/12-31",
 		tags: [
 			"Person",
 			"Human",
