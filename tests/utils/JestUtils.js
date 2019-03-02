@@ -1,4 +1,9 @@
 const GalleryApiUtils = require("./GalleryApiUtils.js");
+const PathUtils = require("./PathUtils.js");
+const schemas = require("./gallery_schema.js");
+const { matchers } = require("jest-json-schema");
+
+expect.extend(matchers); // add JSON schema matcher to Jest expect statement
 
 /**
  * Static class with static functions to help with Jest testing
@@ -29,12 +34,25 @@ class JestUtils {
 	}
 
 	/**
+	 * Expect valid album response of format {album: {}, children: []}
+	 *
+	 * Does not work for the root gallery, which has a different shape
+	 *
+	 * @param {Object} albumResponse as returned from API
+	 */
+	static expectValidAlbumResponse(albumResponse) {
+		expect(albumResponse).toMatchSchema(schemas.albumResponseSchema);
+	}
+
+	/**
 	 * Expect album to be valid
+	 *
+	 * Does not work for the root gallery, which has a different shape
 	 *
 	 * @param {Object} album as returned from API
 	 */
 	static expectValidAlbum(album) {
-		JestUtils.expectValidItem(album);
+		expect(album).toMatchSchema(schemas.albumSchema);
 	}
 
 	/**
@@ -43,54 +61,48 @@ class JestUtils {
 	 * @param {Object} image as returned from API
 	 */
 	static expectValidImage(image) {
-		JestUtils.expectValidItem(image);
+		expect(image).toMatchSchema(schemas.imageSchema);
 	}
 
 	/**
-	 * Expect album or image to be valid
+	 * Expect valid next/prev album item
 	 *
-	 * @param {Object} item album or image item as returned from API
+	 * @param {Object} prevNextAlbum next or prev album item as passed by API
 	 */
-	static expectValidItem(item) {
-		expect(item).toBeDefined();
-		JestUtils.expectNonEmptyString(item.itemName);
-		JestUtils.expectNonEmptyString(item.parentPath);
-		JestUtils.expectValidDate(item.updateDateTime);
+	static expectValidPrevNextAlbum(prevNextAlbum) {
+		expect(prevNextAlbum).toMatchSchema(schemas.prevNextAlbumSchema);
 	}
 
 	/**
-	 * Expect valid next/prev album
-	 *
-	 * @param {Object} item next or prev item as passed by API
-	 */
-	static expectValidNextPrevAlbum(item) {
-		expect(item).toBeDefined();
-		JestUtils.expectNonEmptyString(item.itemName);
-		JestUtils.expectNonEmptyString(item.parentPath);
-	}
-
-	/**
-	 * Expect year itemName like "2001"
+	 * Expect year album itemName like "2001"
 	 * @param {String} itemName
 	 */
-	static expectValidYearItemName(itemName) {
-		expect(itemName).toMatch(/^\d\d\d\d$/);
+	static expectValidYearAlbumName(itemName) {
+		expect(itemName).toMatchSchema(schemas.yearAlbumNameSchema);
 	}
 
 	/**
-	 * Expect week itemName like "12-31"
+	 * Expect week album itemName like "12-31"
 	 * @param {String} itemName
 	 */
-	static expectValidWeekItemName(itemName) {
-		expect(itemName).toMatch(/^\d\d-\d\d$/);
+	static expectValidWeekAlbumName(itemName) {
+		expect(itemName).toMatchSchema(schemas.weekAlbumNameSchema);
 	}
 
 	/**
-	 * Expect year album path like "/2001/"?
+	 * Expect year album path like "/2001/"
 	 * @param {String} path
 	 */
-	static expectValidYearPath(path) {
-		expect(path).toMatch(/^\/\d\d\d\d\/$/);
+	static expectValidYearAlbumPath(path) {
+		expect(path).toMatchSchema(schemas.yearAlbumPathSchema);
+	}
+
+	/**
+	 * Expect week album path like "/2001/12-31/"
+	 * @param {String} path
+	 */
+	static expectValidWeekAlbumPath(path) {
+		expect(path).toMatchSchema(schemas.weekAlbumPathSchema);
 	}
 
 	/**
@@ -99,7 +111,7 @@ class JestUtils {
 	 */
 	static expectValidDate(d) {
 		expect(d).toBeDefined();
-		expect(d).toMatch(/\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d.\d\d\dZ/);
+		expect(d).toMatch(PathUtils.getDateRegex());
 	}
 
 	/**
