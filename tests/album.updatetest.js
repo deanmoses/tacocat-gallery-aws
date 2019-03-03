@@ -41,13 +41,13 @@ describe("Update albums via API", async () => {
 	});
 
 	test("Nonexistent year album", async () => {
-		await galleryApiJestHelper.expectUpdateAlbumNotFound("/1899/", {
+		await galleryApiJestHelper.expectUpdateAlbumNotFound("/1899", {
 			title: "foo"
 		});
 	});
 
 	test("Nonexistent week album", async () => {
-		await galleryApiJestHelper.expectUpdateAlbumNotFound("/1899/02-01/", {
+		await galleryApiJestHelper.expectUpdateAlbumNotFound("/1899/02-01", {
 			title: "foo"
 		});
 	});
