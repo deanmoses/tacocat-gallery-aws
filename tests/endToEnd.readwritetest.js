@@ -10,29 +10,34 @@
 //
 
 const AWS = require("./utils/configure_aws.js");
-const aws4 = require("aws4");
 const getStackConfiguration = require("./utils/get_stack_configuration.js");
-const fs = require("fs");
-const path = require("path");
+const GalleryS3 = require("./utils/GalleryS3.js");
+const GalleryApiJestHelper = require("./utils/GalleryApiJestHelper.js");
 const fetch = require("node-fetch");
 const s3 = new AWS.S3();
 const stepfunctions = new AWS.StepFunctions();
-
-// information about the deployed CloudFormation stack
-let stack;
+const path = require("path");
 
 // path to image in S3 and CloudFront
-const yearAlbum = "1901/";
-const weekAlbum = yearAlbum + "01-31/";
+const yearAlbum = "/1901";
+const weekAlbum = yearAlbum + "/01-31";
 const imageNameInCloud = "test_image_" + generateRandomInt() + ".jpg";
-const imagePath = weekAlbum + imageNameInCloud;
+const imagePath = weekAlbum + "/" + imageNameInCloud;
+
+// beforeAll will set these
+let stack, galleryApiJestHelper, galleryS3;
 
 /**
  * End to end integration test
  */
 describe("End to end test", async () => {
-	test("Get CloudFormation stack config", async () => {
-		await getStack();
+	/**
+	 * Get information about the CloudFormation stack
+	 */
+	beforeAll(async () => {
+		stack = await getStackConfiguration();
+		galleryApiJestHelper = new GalleryApiJestHelper(stack);
+		galleryS3 = new GalleryS3(stack);
 	});
 
 	/**
@@ -40,11 +45,11 @@ describe("End to end test", async () => {
 	 */
 	describe("Create year album", async () => {
 		test("Album does not exist", async () => {
-			await expectAlbumToNotBeInApi(yearAlbum);
+			await galleryApiJestHelper.expectAlbumToNotBeInApi(yearAlbum);
 		});
 
 		test("Create album in S3", async () => {
-			await createAlbum(yearAlbum);
+			await galleryS3.createAlbum(yearAlbum);
 		});
 
 		test("Step Function completes", async () => {
@@ -53,7 +58,7 @@ describe("End to end test", async () => {
 		}, 8000 /* timeout after this many millis.  The default is 5000ms */);
 
 		test("API returns album", async () => {
-			await expectAlbumToBeInApi(yearAlbum);
+			await galleryApiJestHelper.expectAlbumToBeInApi(yearAlbum);
 		});
 	});
 
@@ -67,17 +72,29 @@ describe("End to end test", async () => {
 				title: "Updated title " + generateRandomInt(),
 				description: "Updated description " + generateRandomInt()
 			};
-			await expectAlbumAttributesToNotMatch(albumPath, albumAttributes);
-			await updateAlbum(albumPath, albumAttributes);
-			await expectAlbumAttributesToMatch(albumPath, albumAttributes);
+			await galleryApiJestHelper.expectAlbumAttributesToNotMatch(
+				albumPath,
+				albumAttributes
+			);
+			await galleryApiJestHelper.updateAlbum(albumPath, albumAttributes);
+			await galleryApiJestHelper.expectAlbumAttributesToMatch(
+				albumPath,
+				albumAttributes
+			);
 		});
 		test("Update album title", async () => {
 			const albumAttributes = {
 				title: "Updated title v2 " + generateRandomInt()
 			};
-			await expectAlbumAttributesToNotMatch(albumPath, albumAttributes);
-			await updateAlbum(albumPath, albumAttributes);
-			await expectAlbumAttributesToMatch(albumPath, albumAttributes);
+			await galleryApiJestHelper.expectAlbumAttributesToNotMatch(
+				albumPath,
+				albumAttributes
+			);
+			await galleryApiJestHelper.updateAlbum(albumPath, albumAttributes);
+			await galleryApiJestHelper.expectAlbumAttributesToMatch(
+				albumPath,
+				albumAttributes
+			);
 		});
 	});
 
@@ -86,11 +103,11 @@ describe("End to end test", async () => {
 	 */
 	describe("Create week album", async () => {
 		test("Album does not exist", async () => {
-			await expectAlbumToNotBeInApi(weekAlbum);
+			await galleryApiJestHelper.expectAlbumToNotBeInApi(weekAlbum);
 		});
 
 		test("Create album in S3", async () => {
-			await createAlbum(weekAlbum);
+			await galleryS3.createAlbum(weekAlbum);
 		});
 
 		test("Step Function completes", async () => {
@@ -99,7 +116,7 @@ describe("End to end test", async () => {
 		}, 8000 /* timeout after this many millis.  The default is 5000ms */);
 
 		test("API returns album", async () => {
-			await expectAlbumToBeInApi(weekAlbum);
+			await galleryApiJestHelper.expectAlbumToBeInApi(weekAlbum);
 		});
 	});
 
@@ -113,27 +130,45 @@ describe("End to end test", async () => {
 				title: "Updated title " + generateRandomInt(),
 				description: "Updated description " + generateRandomInt()
 			};
-			await expectAlbumAttributesToNotMatch(albumPath, albumAttributes);
-			await updateAlbum(albumPath, albumAttributes);
-			await expectAlbumAttributesToMatch(albumPath, albumAttributes);
+			await galleryApiJestHelper.expectAlbumAttributesToNotMatch(
+				albumPath,
+				albumAttributes
+			);
+			await galleryApiJestHelper.updateAlbum(albumPath, albumAttributes);
+			await galleryApiJestHelper.expectAlbumAttributesToMatch(
+				albumPath,
+				albumAttributes
+			);
 		});
 
 		test("Update album title", async () => {
 			const albumAttributes = {
 				title: "Updated title v2 " + generateRandomInt()
 			};
-			await expectAlbumAttributesToNotMatch(albumPath, albumAttributes);
-			await updateAlbum(albumPath, albumAttributes);
-			await expectAlbumAttributesToMatch(albumPath, albumAttributes);
+			await galleryApiJestHelper.expectAlbumAttributesToNotMatch(
+				albumPath,
+				albumAttributes
+			);
+			await galleryApiJestHelper.updateAlbum(albumPath, albumAttributes);
+			await galleryApiJestHelper.expectAlbumAttributesToMatch(
+				albumPath,
+				albumAttributes
+			);
 		});
 	});
 
 	/**
 	 * CREATE IMAGE
 	 */
-	describe("Create image", async () => {
-		test("Upload image to S3", async () => {
-			await uploadAndVerifyImage("test_data/test_image_1.jpg", imagePath);
+	describe.only("Create image", async () => {
+		test.only("Upload image to S3", async () => {
+			const imagePathOnDisk = path.join(
+				path.dirname(__dirname),
+				"tests",
+				"test_data",
+				"test_image_1.jpg"
+			);
+			await galleryS3.uploadImage(imagePathOnDisk, imagePath);
 		});
 
 		test("Step Function completed successfully", async () => {
@@ -154,7 +189,7 @@ describe("End to end test", async () => {
 		});
 
 		test("API returns image", async () => {
-			await expectImageToBeInApi();
+			await galleryApiJestHelper.expectImageToBeInApi(imagePath);
 		});
 	});
 
@@ -167,18 +202,22 @@ describe("End to end test", async () => {
 				title: "Updated title " + generateRandomInt(),
 				description: "Updated description " + generateRandomInt()
 			};
-			await expectImageAttributesToNotMatch(imageAttributes);
-			await updateImage(imagePath, imageAttributes);
-			await expectImageAttributesToMatch(imageAttributes);
+			await galleryApiJestHelper.expectImageAttributesToNotMatch(
+				imageAttributes
+			);
+			await galleryApiJestHelper.updateImage(imagePath, imageAttributes);
+			await galleryApiJestHelper.expectImageAttributesToMatch(imageAttributes);
 		});
 
 		test("Update image title", async () => {
 			const imageAttributes = {
 				title: "Updated title v2 " + generateRandomInt()
 			};
-			await expectImageAttributesToNotMatch(imageAttributes);
-			await updateImage(imagePath, imageAttributes);
-			await expectImageAttributesToMatch(imageAttributes);
+			await galleryApiJestHelper.expectImageAttributesToNotMatch(
+				imageAttributes
+			);
+			await galleryApiJestHelper.updateImage(imagePath, imageAttributes);
+			await galleryApiJestHelper.expectImageAttributesToMatch(imageAttributes);
 		});
 	});
 
@@ -187,7 +226,7 @@ describe("End to end test", async () => {
 	 */
 	describe("Delete image", async () => {
 		test("Delete image from S3", async () => {
-			await deleteImage(imagePath);
+			await galleryS3.deleteImage(imagePath);
 		});
 
 		test("Step Function completes", async () => {
@@ -200,15 +239,15 @@ describe("End to end test", async () => {
 		//
 
 		test("Thumbnail version of image no longer in S3", async () => {
-			await expectImageToNotBeInS3(stack.thumbnailImagePrefix);
+			expect(galleryS3.thumbnailExists(imagePath)).toBeFalsy();
 		});
 
 		test("Large version of image is no longer in S3", async () => {
-			await expectImageToNotBeInS3(stack.largeImagePrefix);
+			expect(galleryS3.largeVersionOfImageExists(imagePath)).toBeFalsy();
 		});
 
 		test("API no longer returns image", async () => {
-			await expectImageToNotBeInApi();
+			await galleryApiJestHelper.expectImageToNotBeInApi(imagePath);
 		});
 	});
 
@@ -217,7 +256,7 @@ describe("End to end test", async () => {
 	 */
 	describe("Delete week album", async () => {
 		test("Delete album folder from S3", async () => {
-			await deleteAlbumFromS3(weekAlbum);
+			await galleryS3.deleteAlbum(weekAlbum);
 		});
 
 		test("Step Function completes", async () => {
@@ -226,7 +265,7 @@ describe("End to end test", async () => {
 		}, 8000 /* timeout after this many millis.  The default is 5000ms */);
 
 		test("API no longer returns album", async () => {
-			await expectAlbumToNotBeInApi(weekAlbum);
+			await galleryApiJestHelper.expectAlbumToNotBeInApi(weekAlbum);
 		});
 	});
 
@@ -235,7 +274,7 @@ describe("End to end test", async () => {
 	 */
 	describe("Delete year album", async () => {
 		test("Delete album folder from S3", async () => {
-			await deleteAlbumFromS3(yearAlbum);
+			await galleryS3.deleteAlbum(yearAlbum);
 		});
 
 		test("Step Function completes", async () => {
@@ -244,7 +283,7 @@ describe("End to end test", async () => {
 		}, 8000 /* timeout after this many millis.  The default is 5000ms */);
 
 		test("API no longer returns album", async () => {
-			await expectAlbumToNotBeInApi(yearAlbum);
+			await galleryApiJestHelper.expectAlbumToNotBeInApi(yearAlbum);
 		});
 	});
 });
@@ -274,79 +313,6 @@ afterAll(async () => {
 });
 
 /**
- * Get info about the deployed CloudFormation stack,
- * such as the name of the S3 bucket to upload images.
- */
-async function getStack() {
-	stack = await getStackConfiguration();
-
-	// Verify we got valid info from CloudFormation
-	expect(stack.originalImagePrefix).toBe("albums");
-	expect(stack.thumbnailImagePrefix).toBe("thumb");
-	expect(stack.largeImagePrefix).toBe("large");
-	expect(stack.cloudFrontUrl).toContain("https://");
-	expect(stack.stateMachineArn).toContain("StateMachine");
-}
-
-/**
- * Create album in S3
- */
-async function createAlbum(albumPathInCloud) {
-	const createParams = {
-		Bucket: stack.originalImageBucketName,
-		Key: stack.originalImagePrefix + "/" + albumPathInCloud
-	};
-	const createResult = await s3.putObject(createParams).promise();
-
-	// Verify album was created successfully
-	expect(createResult).toBeDefined();
-	expect(createResult.ETag).toBeDefined();
-}
-
-/**
- * Upload image to S3
- */
-async function uploadAndVerifyImage(imageNameOnDisk, imagePathInCloud) {
-	const imagePathOnDisk = path.join(__dirname, imageNameOnDisk);
-	const uploadParams = {
-		Bucket: stack.originalImageBucketName,
-		Key: stack.originalImagePrefix + "/" + imagePathInCloud,
-		ContentType: "image/jpeg",
-		Body: fs.createReadStream(imagePathOnDisk)
-	};
-	const uploadResult = await s3.upload(uploadParams).promise();
-
-	// Verify image was uploaded successfully
-	expect(uploadResult).toBeDefined();
-	expect(uploadResult.Location).toBeDefined();
-	expect(uploadResult.Location).toContain(imagePathInCloud);
-}
-
-/**
- * Delete image from S3
- */
-async function deleteImage(imagePathInCloud) {
-	await s3
-		.deleteObject({
-			Bucket: stack.originalImageBucketName,
-			Key: stack.originalImagePrefix + "/" + imagePathInCloud
-		})
-		.promise();
-}
-
-/**
- * Delete album from S3
- */
-async function deleteAlbumFromS3(albumPathInCloud) {
-	await s3
-		.deleteObject({
-			Bucket: stack.originalImageBucketName,
-			Key: stack.originalImagePrefix + "/" + albumPathInCloud
-		})
-		.promise();
-}
-
-/**
  * Fail if state machine hasn't finished
  */
 async function expectStateMachineToHaveCompletedSuccessfully() {
@@ -373,297 +339,19 @@ async function expectStateMachineToHaveCompletedSuccessfully() {
 }
 
 /**
- * Fail if album isn't in API
- */
-async function expectAlbumToBeInApi(albumPath) {
-	const albumResponse = await fetchAlbum(albumPath);
-
-	expect(albumResponse.album).toBeDefined();
-
-	// Is date the expected format?
-	expect(isIso8601(albumResponse.album.updatedOn)).toBeTruthy();
-
-	return albumResponse;
-}
-
-/**
- * Fail if album *is* in API
- */
-async function expectAlbumToNotBeInApi(albumPath) {
-	// Fetch album
-	const albumUrl = stack.apiUrl + "/album/" + albumPath;
-	const response = await fetch(albumUrl);
-
-	// Did I get a HTTP 404?
-	expect(response).toBeDefined();
-	expect(response.status).toBe(404);
-}
-
-/**
- * Update album in DynamoDB
- *
- * @param {String} albumPath path of album like 2001/12-31/
- * @param {Object} attributesToUpdate like {title: "x", description: "y"}
- */
-async function updateAlbum(albumPath, attributesToUpdate) {
-	// Set up the patch
-	const apiPath = "/prod/album/" + albumPath;
-	const albumUrl = "https://" + stack.apiDomain + apiPath;
-	const unsignedFetchParams = {
-		method: "PATCH",
-		headers: {
-			"Content-Type": "application/json",
-			Accept: "application/json"
-		},
-		path: apiPath,
-		host: stack.apiDomain,
-		body: JSON.stringify(attributesToUpdate)
-	};
-
-	const credentials = {
-		accessKeyId: stack.accessKey,
-		secretAccessKey: stack.secretKey
-	};
-
-	const signedFetchParams = aws4.sign(unsignedFetchParams, credentials);
-
-	//  Do the fetch
-	const patchResponse = await fetch(albumUrl, signedFetchParams);
-
-	// Verify we actually got an album
-
-	expect(patchResponse).toBeDefined();
-
-	// if the API returned a 403 Not Authorized
-	if (patchResponse.status === 403) {
-		// print out debugging info about the request signing
-		/* eslint-disable no-console */
-		console.log("credentials", credentials);
-		console.log("unsigned options for " + albumUrl, unsignedFetchParams);
-		console.log("signed options for " + albumUrl, signedFetchParams);
-
-		// The API Gateway returns very helpful info in the body about what it was expecting
-		// the signed request's format to be
-		const body = await patchResponse.json();
-		console.log("patchResult", body);
-
-		// Print out what the actual request signing information was
-		var signer = new aws4.RequestSigner(unsignedFetchParams, credentials);
-		console.log("Actual Canonical String", signer.canonicalString());
-		console.log("Actual String-to-Sign", signer.stringToSign());
-		/* eslint-enable no-console */
-	}
-
-	expect(patchResponse.status).toBe(200);
-}
-
-/**
- * Fail if any attribute do not match exactly
- *
- * @param {String} albumPath path of album like 2001/12-31/
- * @param {Object} attributesToMatch like {title: "x", description: "y"}
- */
-async function expectAlbumAttributesToMatch(albumPath, attributesToMatch) {
-	const albumResponse = await fetchAlbum(albumPath);
-	for (const key in attributesToMatch) {
-		const expectedValue = attributesToMatch[key];
-		expect(albumResponse.album[key]).toBe(expectedValue);
-	}
-}
-
-/**
- * Fail if any attribute matches exactly
- *
- * @param {String} albumPath path of album like 2001/12-31/
- * @param {Object} attributesToNotMatch like {title: "x", description: "y"}
- */
-async function expectAlbumAttributesToNotMatch(
-	albumPath,
-	attributesToNotMatch
-) {
-	const albumResponse = await fetchAlbum(albumPath);
-	for (const key in attributesToNotMatch) {
-		const expectedValue = attributesToNotMatch[key];
-		expect(albumResponse.album[key]).not.toBe(expectedValue);
-	}
-}
-
-/**
- * Fetch album and its children via API
- *
- * @param {String} albumPath path of album like 2001/12-31/
- * @returns album object of format {album: Object, children: object}
- */
-async function fetchAlbum(albumPath) {
-	// Fetch album
-	const albumUrl = stack.apiUrl + "/album/" + albumPath;
-	const response = await fetch(albumUrl);
-
-	// Did I get a HTTP 200?
-	expect(response).toBeDefined();
-	expect(response.status).toBeDefined();
-	expect(response.status).toBe(200);
-
-	return await response.json();
-}
-
-/**
- * Fail if any attribute does not match exactly
- *
- * @param {Object} attributesToMatch like {title: "x", description: "y"}
- */
-async function expectImageAttributesToMatch(attributesToMatch) {
-	const image = await fetchImage();
-	for (const key in attributesToMatch) {
-		const expectedValue = attributesToMatch[key];
-		expect(image[key]).toBe(expectedValue);
-	}
-}
-
-/**
- * Fail if any attribute matches exactly
- *
- * @param {Object} attributesToNotMatch like {title: "x", description: "y"}
- */
-async function expectImageAttributesToNotMatch(attributesToNotMatch) {
-	const image = await expectImageToBeInApi();
-	for (const key in attributesToNotMatch) {
-		const expectedValue = attributesToNotMatch[key];
-		expect(image[key]).not.toBe(expectedValue);
-	}
-}
-
-/**
- * Fail if image isn't retrievable via API
- */
-async function expectImageToBeInApi() {
-	const image = await fetchImage();
-	expect(image).toBeDefined();
-	// Is date the expected format?
-	expect(isIso8601(image.updatedOn)).toBeTruthy();
-	return image;
-}
-
-/**
- * Fail if image *is* retrievable via API
- */
-async function expectImageToNotBeInApi() {
-	const image = await fetchImage();
-	expect(image).toBeUndefined();
-}
-
-/**
- * Fetch image in via API
- *
- * @returns image object, or undefined if image not in the album
- */
-async function fetchImage() {
-	const albumResponse = await expectAlbumToBeInApi(weekAlbum);
-
-	// Does the album have a children array?
-	expect(Array.isArray(albumResponse.children)).toBeTruthy();
-
-	// Find the image in the album's children
-	const foundChild = albumResponse.children.find(child => {
-		return child.itemName === imageNameInCloud;
-	});
-
-	return foundChild;
-}
-
-/**
  * Fail if image isn't retrievable via CloudFront
  */
 async function expectImageToBeInCloudFront(imagePrefix) {
 	const imageUrl = stack.cloudFrontUrl + "/" + imagePrefix + "/" + imagePath;
 	const headResult = await fetch(imageUrl, { method: "HEAD" });
 	expect(headResult).toBeDefined();
+	if (headResult.status !== 200) {
+		// eslint-disable-next-line no-console
+		console.log(
+			"Got " + headResult.status + " instead of 200 when hitting: " + imageUrl
+		);
+	}
 	expect(headResult.status).toBe(200);
-}
-
-/**
- * Fail if image *is* retrievable via S3
- */
-async function expectImageToNotBeInS3(imagePrefix) {
-	const headParams = {
-		Bucket: stack.derivedImageBucketName,
-		Key: imagePrefix + "/" + imagePath
-	};
-	try {
-		await s3.headObject(headParams).promise();
-		throw "This delete should not have succeeded";
-	} catch (headErr) {
-		if (headErr.code === "Forbidden") {
-			return; // this is expected
-		} else {
-			throw headErr;
-		}
-	}
-}
-
-/**
- * Update image in DynamoDB
- *
- * @param {String} imagePath path of image like 2001/12-31/image.jpg
- * @param {Object} attributesToUpdate like {title: "x", description: "y"}
- */
-async function updateImage(imagePath, attributesToUpdate) {
-	// Set up the patch
-	const apiPath = "/prod/image/" + imagePath;
-	const imageUrl = "https://" + stack.apiDomain + apiPath;
-	const unsignedFetchParams = {
-		method: "PATCH",
-		headers: {
-			"Content-Type": "application/json",
-			Accept: "application/json"
-		},
-		path: apiPath,
-		host: stack.apiDomain,
-		body: JSON.stringify(attributesToUpdate)
-	};
-
-	const credentials = {
-		accessKeyId: stack.accessKey,
-		secretAccessKey: stack.secretKey
-	};
-
-	const signedFetchParams = aws4.sign(unsignedFetchParams, credentials);
-
-	//  Do the fetch
-	const patchResponse = await fetch(imageUrl, signedFetchParams);
-
-	// Verify we actually got an image
-
-	expect(patchResponse).toBeDefined();
-
-	// if the API returned a 403 Not Authorized
-	if (patchResponse.status === 403) {
-		// print out debugging info about the request signing
-		/* eslint-disable no-console */
-		console.log("credentials", credentials);
-		console.log("unsigned options for " + imageUrl, unsignedFetchParams);
-		console.log("signed options for " + imageUrl, signedFetchParams);
-
-		// The API Gateway returns very helpful info in the body about what it was expecting
-		// the signed request's format to be
-		const body = await patchResponse.json();
-		console.log("patchResult", body);
-
-		// Print out what the actual request signing information was
-		var signer = new aws4.RequestSigner(unsignedFetchParams, credentials);
-		console.log("Actual Canonical String", signer.canonicalString());
-		console.log("Actual String-to-Sign", signer.stringToSign());
-		/* eslint-enable no-console */
-	}
-
-	expect(patchResponse.status).toBe(200);
-}
-
-/**
- * @returns true if string is a ISO 8601 format date, which ends in a Z.
- */
-function isIso8601(d) {
-	return !!d && d.length > 0 && d.lastIndexOf("Z") === d.length - 1;
 }
 
 /**

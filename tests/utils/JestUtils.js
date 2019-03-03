@@ -115,6 +115,34 @@ class JestUtils {
 	}
 
 	/**
+	 * Expect all the attributes to match
+	 * Fail if any attribute does not match exactly
+	 *
+	 * @param {Object} obj any javascript object
+	 * @param {Object} attributesToMatch like {title: "x", description: "y"}
+	 */
+	static expectAttributesToMatch(obj, attributesToMatch) {
+		for (const key in attributesToMatch) {
+			const expectedValue = attributesToMatch[key];
+			expect(obj[key]).toBe(expectedValue);
+		}
+	}
+
+	/**
+	 * Expect none of the attributes to match
+	 * Fail if any attribute matches exactly
+	 *
+	 * @param {Object} obj any javascript object
+	 * @param {Object} attributesToNotMatch like {title: "x", description: "y"}
+	 */
+	static expectAttributesToNotMatch(obj, attributesToNotMatch) {
+		for (const key in attributesToNotMatch) {
+			const expectedValue = attributesToNotMatch[key];
+			expect(obj[key]).not.toBe(expectedValue);
+		}
+	}
+
+	/**
 	 * Expect it to be a valid array
 	 * @param {Array} arr
 	 */
