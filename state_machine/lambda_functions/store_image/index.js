@@ -42,5 +42,6 @@ exports.handler = async event => {
 	ctx.doUpdate = async dynamoParams => {
 		return docClient.update(dynamoParams).promise();
 	};
-	return await updateImage(ctx, imagePath, imageIsNew, event.extractedMetadata);
+	await updateImage(ctx, imagePath, imageIsNew, event.extractedMetadata);
+	return "SUCCESS";
 };

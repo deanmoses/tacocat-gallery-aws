@@ -15,9 +15,10 @@ exports.handler = async event => {
 	if (!event.objectID) throw "Undefined event.objectID";
 
 	// Remove the image's entry from DynamoDB
-	return await deleteImageFromDynamo(
+	await deleteImageFromDynamo(
 		docClient,
 		tableName,
 		event.objectID // image path
 	);
+	return "SUCCESS";
 };
