@@ -173,6 +173,10 @@ const albumSchema = {
 		itemType: { type: "string", pattern: "album" },
 		title: { type: "string" },
 		description: { type: "string" },
+		thumbnail: {
+			type: "string",
+			pattern: PathUtils.getImagePathRegexString()
+		},
 		tags: tagsSchema
 	}
 };
