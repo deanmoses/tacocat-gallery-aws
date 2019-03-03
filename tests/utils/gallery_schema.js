@@ -95,12 +95,13 @@ const prevNextAlbumSchema = {
 	title: "Prev / Next Album",
 	description: "Prev and next album",
 	type: "object",
-	required: ["itemName", "parentPath"],
+	required: ["itemName", "parentPath", "updatedOn"],
 	additionalProperties: false /* don't allow unknown properties */,
 	properties: {
 		itemName: albumNameSchema,
 		parentPath: albumParentPathSchema,
-		title: { type: "string" }
+		title: { type: "string" },
+		updatedOn: { type: "string", format: "date-time" }
 	}
 };
 module.exports.prevNextAlbumSchema = prevNextAlbumSchema;
