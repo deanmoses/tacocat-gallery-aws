@@ -76,7 +76,10 @@ describe("End to end test", async () => {
 				albumPath,
 				albumAttributes
 			);
-			await galleryApiJestHelper.updateAlbum(albumPath, albumAttributes);
+			await galleryApiJestHelper.expectUpdateAlbumSuccess(
+				albumPath,
+				albumAttributes
+			);
 			await galleryApiJestHelper.expectAlbumAttributesToMatch(
 				albumPath,
 				albumAttributes
@@ -90,7 +93,10 @@ describe("End to end test", async () => {
 				albumPath,
 				albumAttributes
 			);
-			await galleryApiJestHelper.updateAlbum(albumPath, albumAttributes);
+			await galleryApiJestHelper.expectUpdateAlbumSuccess(
+				albumPath,
+				albumAttributes
+			);
 			await galleryApiJestHelper.expectAlbumAttributesToMatch(
 				albumPath,
 				albumAttributes
@@ -134,7 +140,10 @@ describe("End to end test", async () => {
 				albumPath,
 				albumAttributes
 			);
-			await galleryApiJestHelper.updateAlbum(albumPath, albumAttributes);
+			await galleryApiJestHelper.expectUpdateAlbumSuccess(
+				albumPath,
+				albumAttributes
+			);
 			await galleryApiJestHelper.expectAlbumAttributesToMatch(
 				albumPath,
 				albumAttributes
@@ -149,7 +158,10 @@ describe("End to end test", async () => {
 				albumPath,
 				albumAttributes
 			);
-			await galleryApiJestHelper.updateAlbum(albumPath, albumAttributes);
+			await galleryApiJestHelper.expectUpdateAlbumSuccess(
+				albumPath,
+				albumAttributes
+			);
 			await galleryApiJestHelper.expectAlbumAttributesToMatch(
 				albumPath,
 				albumAttributes
@@ -203,10 +215,17 @@ describe("End to end test", async () => {
 				description: "Updated description " + generateRandomInt()
 			};
 			await galleryApiJestHelper.expectImageAttributesToNotMatch(
+				imagePath,
 				imageAttributes
 			);
-			await galleryApiJestHelper.updateImage(imagePath, imageAttributes);
-			await galleryApiJestHelper.expectImageAttributesToMatch(imageAttributes);
+			await galleryApiJestHelper.expectUpdateImageSuccess(
+				imagePath,
+				imageAttributes
+			);
+			await galleryApiJestHelper.expectImageAttributesToMatch(
+				imagePath,
+				imageAttributes
+			);
 		});
 
 		test("Update image title", async () => {
@@ -214,10 +233,17 @@ describe("End to end test", async () => {
 				title: "Updated title v2 " + generateRandomInt()
 			};
 			await galleryApiJestHelper.expectImageAttributesToNotMatch(
+				imagePath,
 				imageAttributes
 			);
-			await galleryApiJestHelper.updateImage(imagePath, imageAttributes);
-			await galleryApiJestHelper.expectImageAttributesToMatch(imageAttributes);
+			await galleryApiJestHelper.expectUpdateImageSuccess(
+				imagePath,
+				imageAttributes
+			);
+			await galleryApiJestHelper.expectImageAttributesToMatch(
+				imagePath,
+				imageAttributes
+			);
 		});
 	});
 
@@ -239,11 +265,11 @@ describe("End to end test", async () => {
 		//
 
 		test("Thumbnail version of image no longer in S3", async () => {
-			expect(galleryS3.thumbnailExists(imagePath)).toBeFalsy();
+			expect(await galleryS3.thumbnailExists(imagePath)).toBeFalsy();
 		});
 
 		test("Large version of image is no longer in S3", async () => {
-			expect(galleryS3.largeVersionOfImageExists(imagePath)).toBeFalsy();
+			expect(await galleryS3.largeVersionOfImageExists(imagePath)).toBeFalsy();
 		});
 
 		test("API no longer returns image", async () => {

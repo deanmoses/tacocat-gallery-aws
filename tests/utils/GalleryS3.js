@@ -121,7 +121,7 @@ class GalleryS3 {
 	async imageExists(imagePath) {
 		PathUtils.assertIsImagePath(imagePath);
 
-		return this.objectExists(
+		return await this.objectExists(
 			this.stack.originalImageBucketName,
 			this.stack.originalImagePrefix + imagePath
 		);
@@ -132,10 +132,10 @@ class GalleryS3 {
 	 *
 	 * @param {String} imagePath like "/2001/12-31/image.jpg"
 	 */
-	async thumbnailExists(imagePrefix, imagePath) {
+	async thumbnailExists(imagePath) {
 		PathUtils.assertIsImagePath(imagePath);
 
-		return this.objectExists(
+		return await this.objectExists(
 			this.stack.derivedImageBucketName,
 			this.stack.thumbnailImagePrefix + imagePath
 		);
@@ -146,10 +146,10 @@ class GalleryS3 {
 	 *
 	 * @param {String} imagePath like "/2001/12-31/image.jpg"
 	 */
-	async largeVersionOfImageExists(imagePrefix, imagePath) {
+	async largeVersionOfImageExists(imagePath) {
 		PathUtils.assertIsImagePath(imagePath);
 
-		return this.objectExists(
+		return await this.objectExists(
 			this.stack.derivedImageBucketName,
 			this.stack.largeImagePrefix + imagePath
 		);

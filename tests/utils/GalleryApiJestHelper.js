@@ -25,7 +25,9 @@ class GalleryApiJestHelper {
 	 * @param {Object} attributesToMatch like {title: "x", description: "y"}
 	 */
 	async expectAlbumAttributesToMatch(albumPath, attributesToMatch) {
-		const albumResponse = this.getAndValidateAlbum(albumPath);
+		expect(albumPath).toBeDefined();
+		expect(attributesToMatch).toBeDefined();
+		const albumResponse = await this.getAndValidateAlbum(albumPath);
 		JestUtils.expectAttributesToMatch(albumResponse.album, attributesToMatch);
 	}
 
@@ -36,7 +38,9 @@ class GalleryApiJestHelper {
 	 * @param {Object} attributesToNotMatch like {title: "x", description: "y"}
 	 */
 	async expectAlbumAttributesToNotMatch(albumPath, attributesToNotMatch) {
-		const albumResponse = this.getAndValidateAlbum(albumPath);
+		expect(albumPath).toBeDefined();
+		expect(attributesToNotMatch).toBeDefined();
+		const albumResponse = await this.getAndValidateAlbum(albumPath);
 		JestUtils.expectAttributesToNotMatch(
 			albumResponse.album,
 			attributesToNotMatch
@@ -49,8 +53,10 @@ class GalleryApiJestHelper {
 	 * @param {Object} attributesToMatch like {title: "x", description: "y"}
 	 */
 	async expectImageAttributesToMatch(imagePath, attributesToMatch) {
+		expect(imagePath).toBeDefined();
+		expect(attributesToMatch).toBeDefined();
 		const image = await this.getAndValidateImage(imagePath);
-		JestUtils.expectImageAttributesToMatch(image, attributesToMatch);
+		JestUtils.expectAttributesToNotMatch(image, attributesToMatch);
 	}
 
 	/**
@@ -59,8 +65,10 @@ class GalleryApiJestHelper {
 	 * @param {Object} attributesToNotMatch like {title: "x", description: "y"}
 	 */
 	async expectImageAttributesToNotMatch(imagePath, attributesToNotMatch) {
+		expect(imagePath).toBeDefined();
+		expect(attributesToNotMatch).toBeDefined();
 		const image = await this.getAndValidateImage(imagePath);
-		JestUtils.expectImageAttributesToNotMatch(image, attributesToNotMatch);
+		JestUtils.expectAttributesToNotMatch(image, attributesToNotMatch);
 	}
 
 	/**
