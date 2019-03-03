@@ -38,6 +38,7 @@ describe("Update Album", () => {
 	test("title", async () => {
 		expect.assertions(13);
 		const newTitle = "New Title 1";
+
 		// mock out doUpdate()
 		const mockDoUpdate = jest.fn(q => {
 			// do some expects *inside* the mocked function
@@ -55,10 +56,15 @@ describe("Update Album", () => {
 			return {};
 		});
 		ctx.doUpdate = mockDoUpdate;
+
+		// do the update
 		let result = await updateAlbum(ctx, albumPath, {
 			title: newTitle
 		});
+
+		// did the mock update get called?
 		expect(ctx.doUpdate).toBeCalledTimes(1);
+
 		expect(result).toBeDefined();
 		expect(Object.keys(result).length).toBe(0);
 	});
