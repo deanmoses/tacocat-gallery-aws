@@ -34,10 +34,10 @@ describe("Retrieve latest album via API", async () => {
 		JestUtils.expectValidAlbum(album);
 
 		// Is album itemName a valid week album like "12-31"?
-		JestUtils.expectValidWeekItemName(album.itemName);
+		JestUtils.expectValidWeekAlbumName(album.itemName);
 
 		// Is album parentPath a valid year album like "/2001/"?
-		JestUtils.expectValidYearPath(album.parentPath);
+		JestUtils.expectValidYearAlbumPath(album.parentPath);
 
 		// Is date the expected format?
 		JestUtils.expectValidDate(album.updatedOn);
