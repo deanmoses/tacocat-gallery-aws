@@ -26,8 +26,8 @@ async function createFixtureData() {
 		const year = fixture[prevCurNextYear].year;
 		const yearPath = PathUtils.getYearPath(year);
 
-		/* eslint-disable no-console */
 		if (!(await galleryS3.albumExists(yearPath))) {
+			// eslint-disable-next-line no-console
 			console.log("Creating year: " + yearPath);
 			await galleryS3.createAlbum(yearPath);
 		}
@@ -38,6 +38,7 @@ async function createFixtureData() {
 			const weekPath = PathUtils.getWeekPath(year, week);
 
 			if (!(await galleryS3.albumExists(weekPath))) {
+				// eslint-disable-next-line no-console
 				console.log("Creating week: " + weekPath);
 				await galleryS3.createAlbum(weekPath);
 			}
@@ -47,12 +48,12 @@ async function createFixtureData() {
 				const image = fixture[prevCurNextImage].image;
 				const imagePath = PathUtils.getImagePath(year, week, image);
 				if (!(await galleryS3.imageExists(imagePath))) {
+					// eslint-disable-next-line no-console
 					console.log("Uploading image: " + imagePath);
 					await galleryS3.uploadImage(imagePathOnDisk, imagePath);
 				}
 			}
 		}
-		/* eslint-enable no-console */
 	}
 }
 
