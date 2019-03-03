@@ -106,6 +106,14 @@ class JestUtils {
 	}
 
 	/**
+	 * Expect valid album path like / or /2001 or /2001/12-31/
+	 * @param {String} path
+	 */
+	static expectValidAlbumPath(path) {
+		expect(path).toMatchSchema(schemas.albumPath);
+	}
+
+	/**
 	 * Expect string in ISO 8601 format date like "2001-12-31T23:59:59.999Z"
 	 * @param {String} d date string
 	 */
