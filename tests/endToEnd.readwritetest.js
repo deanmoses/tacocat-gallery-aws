@@ -160,8 +160,8 @@ describe("End to end test", async () => {
 	/**
 	 * CREATE IMAGE
 	 */
-	describe.only("Create image", async () => {
-		test.only("Upload image to S3", async () => {
+	describe("Create image", async () => {
+		test("Upload image to S3", async () => {
 			const imagePathOnDisk = path.join(
 				path.dirname(__dirname),
 				"tests",
@@ -298,13 +298,13 @@ afterAll(async () => {
 		Delete: {
 			Objects: [
 				{
-					Key: stack.originalImagePrefix + "/" + yearAlbum
+					Key: stack.originalImagePrefix + yearAlbum
 				},
 				{
-					Key: stack.originalImagePrefix + "/" + weekAlbum
+					Key: stack.originalImagePrefix + weekAlbum
 				},
 				{
-					Key: stack.originalImagePrefix + "/" + imagePath
+					Key: stack.originalImagePrefix + imagePath
 				}
 			]
 		}
@@ -342,7 +342,7 @@ async function expectStateMachineToHaveCompletedSuccessfully() {
  * Fail if image isn't retrievable via CloudFront
  */
 async function expectImageToBeInCloudFront(imagePrefix) {
-	const imageUrl = stack.cloudFrontUrl + "/" + imagePrefix + "/" + imagePath;
+	const imageUrl = stack.cloudFrontUrl + "/" + imagePrefix + imagePath;
 	const headResult = await fetch(imageUrl, { method: "HEAD" });
 	expect(headResult).toBeDefined();
 	if (headResult.status !== 200) {
