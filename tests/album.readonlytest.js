@@ -61,11 +61,11 @@ describe("Retrieve albums via API", async () => {
 		const albumResponse = await api.fetchExistingAlbum(fix.getYearPath());
 		const album = albumResponse.album;
 		JestUtils.expectValidAlbum(album);
-		JestUtils.expectValidYearItemName(album.itemName);
+		JestUtils.expectValidYearAlbumName(album.itemName);
 		expect(album.parentPath).toBe("/");
 
-		JestUtils.expectValidNextPrevAlbum(albumResponse.nextAlbum);
-		JestUtils.expectValidNextPrevAlbum(albumResponse.prevAlbum);
+		JestUtils.expectValidPrevNextAlbum(albumResponse.nextAlbum);
+		JestUtils.expectValidPrevNextAlbum(albumResponse.prevAlbum);
 	});
 
 	test("Week album exists", async () => {
