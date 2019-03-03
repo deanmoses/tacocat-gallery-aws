@@ -21,7 +21,12 @@ async function deleteImageFromDynamo(docClient, tableName, path) {
 		},
 		ConditionExpression: "attribute_exists (itemName)"
 	};
-	return await docClient.delete(ddbparams).promise();
+	try {
+		return await docClient.delete(ddbparams).promise();
+	} catch (e) {
+		e.imagePath = path;
+		throw e;
+	}
 }
 
 module.exports = deleteImageFromDynamo;
