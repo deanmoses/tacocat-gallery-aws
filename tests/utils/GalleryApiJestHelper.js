@@ -1,5 +1,6 @@
 const GalleryApi = require("./GalleryApi.js");
 const JestUtils = require("./JestUtils.js");
+const PathUtils = require("./PathUtils.js");
 
 /**
  * Class to simplify Jest testing the Gallery API
@@ -130,6 +131,8 @@ class GalleryApiJestHelper {
 	 * @param {Object} attributesToUpdate like {title: "x", description: "y"}
 	 */
 	async expectUpdateAlbumSuccess(albumPath, attributesToUpdate) {
+		PathUtils.assertIsAlbumPath(albumPath);
+
 		const response = await this.api.updateAlbum(albumPath, attributesToUpdate);
 
 		// Download the response body

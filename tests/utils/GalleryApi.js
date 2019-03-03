@@ -2,6 +2,7 @@ const fetch = require("node-fetch");
 const GalleryApiUtils = require("./GalleryApiUtils.js");
 const PathUtils = require("./PathUtils.js");
 const aws4 = require("aws4");
+const assert = require("assert");
 
 /**
  * Class to simplify working with the Gallery REST API
@@ -32,7 +33,7 @@ class GalleryApi {
 	/**
 	 * Fetch album, failing if album doesn't exist
 	 *
-	 * @param {String} albumPath path of album like 2001/12-31/
+	 * @param {String} albumPath path of album like 2001/12-31
 	 * @returns album object of format {album: Object, children: object}
 	 */
 	async fetchExistingAlbum(albumPath) {
@@ -57,6 +58,7 @@ class GalleryApi {
 	 * @returns response object including JSON body
 	 */
 	async fetchNonexistentAlbum(albumPath) {
+		validateAlbumPath(albumPath);
 		const response = await this.fetchAlbum(albumPath);
 		expect(response).toBeDefined();
 		const responseBody = await response.json();
@@ -77,7 +79,14 @@ class GalleryApi {
 	 * @returns response with body not yet resolved.  You have to do that yourself with response.json()
 	 */
 	async fetchAlbum(albumPath) {
-		return await fetch(this.albumUrl(albumPath));
+		let path = albumPath;
+		if (path === "/") {
+			path = "";
+		} else {
+			validateAlbumPath(path);
+		}
+		path = this.stack.apiUrl + "/album" + path + "/";
+		return await fetch(path);
 	}
 
 	/**
@@ -104,15 +113,25 @@ class GalleryApi {
 	/**
 	 * Update album
 	 *
-	 * @param {String} albumPath path of album like "/2001/12-31/"
+	 * @param {String} albumPath path of album like "/2001/12-31"
 	 * @param {Object} attributesToUpdate like {title: "x", description: "y"}
 	 * @returns response with body not yet resolved.  You have to do that yourself with response.json()
 	 */
 	async updateAlbum(albumPath, attributesToUpdate) {
-		PathUtils.assertIsAlbumPath(albumPath);
+		let path = albumPath;
+		if (path === "/") {
+			path = "";
+		} else {
+			validateAlbumPath(path);
+		}
 
+		//
 		// Set up the HTTP PATCH with the AWS authentication headers
-		const apiPath = "/prod/album" + albumPath;
+		//
+
+		// The apiPath is encoded, for security, and has to be exactly the path
+		const apiPath = "/prod/album" + path + "/";
+
 		const albumUrl = "https://" + this.stack.apiDomain + apiPath;
 		const unsignedFetchParams = {
 			method: "PATCH",
@@ -220,17 +239,6 @@ class GalleryApi {
 	}
 
 	/**
-	 * Generate URL to album endpoint
-	 *
-	 * @param {String} albumPath  like "/2001"
-	 * @returns {String} fully qualified URL to the REST API album endpoint
-	 */
-	albumUrl(albumPath) {
-		PathUtils.assertIsAlbumPath(albumPath);
-		return this.stack.apiUrl + "/album" + albumPath;
-	}
-
-	/**
 	 * Fully qualified REST API URL to retrieve the latest album
 	 */
 	latestAlbumUrl() {
@@ -238,3 +246,12 @@ class GalleryApi {
 	}
 }
 module.exports = GalleryApi;
+
+function validateAlbumPath(albumPath) {
+	assert(!!albumPath, "albumPath not defined");
+	PathUtils.assertIsAlbumPath(albumPath);
+	assert(
+		!albumPath.endsWith("/"),
+		"album path (" + albumPath + ") shouldn't end in a /"
+	);
+}

@@ -1,6 +1,8 @@
 const AWS = require("./configure_aws.js");
 const s3 = new AWS.S3();
 const fs = require("fs");
+const fsPromises = require("fs").promises;
+
 const assert = require("assert");
 const PathUtils = require("./PathUtils.js");
 
@@ -21,16 +23,12 @@ class GalleryS3 {
 	 * @param {String} albumPath like "/2001" or "/2001/12-31"
 	 */
 	async createAlbum(albumPath) {
-		assert(!!albumPath, "albumPath not defined");
-		PathUtils.assertIsAlbumPath(albumPath);
-
+		validateAlbumPath(albumPath);
 		const createParams = {
 			Bucket: this.stack.originalImageBucketName,
-			Key: this.stack.originalImagePrefix + albumPath
+			Key: this.stack.originalImagePrefix + albumPath + "/"
 		};
 		const createResult = await s3.putObject(createParams).promise();
-
-		console.log("createAlbum params: ", createParams);
 
 		assert(!!createResult, "createResult not defined");
 		assert(!!createResult.ETag, "createResult.ETag not defined");
@@ -47,13 +45,8 @@ class GalleryS3 {
 		assert(!!imagePathInCloud, "imagePathInCloud not defined");
 		PathUtils.assertIsImagePath(imagePathInCloud);
 
-		fs.access(imagePathOnDisk, fs.constants.F_OK, err => {
-			if (err) throw imagePathOnDisk + " does not exist";
-		});
-
-		fs.access(imagePathOnDisk, fs.constants.R_OK, err => {
-			if (err) throw imagePathOnDisk + " is not readable";
-		});
+		await fsPromises.access(imagePathOnDisk, fs.constants.F_OK); // check that file exists
+		await fsPromises.access(imagePathOnDisk, fs.constants.R_OK); // check that file is readable
 
 		const uploadParams = {
 			Bucket: this.stack.originalImageBucketName,
@@ -62,8 +55,6 @@ class GalleryS3 {
 			Body: fs.createReadStream(imagePathOnDisk)
 		};
 		const uploadResult = await s3.upload(uploadParams).promise();
-
-		console.log("image uploadParams: ", uploadParams);
 
 		assert(!!uploadResult, "uploadResult not defined");
 		assert(!!uploadResult.Location, "uploadResult.Location not defined");
@@ -85,7 +76,7 @@ class GalleryS3 {
 		await s3
 			.deleteObject({
 				Bucket: this.stack.originalImageBucketName,
-				Key: this.stack.originalImagePrefix + "/" + imagePath
+				Key: this.stack.originalImagePrefix + imagePath
 			})
 			.promise();
 	}
@@ -96,13 +87,12 @@ class GalleryS3 {
 	 * @param {String} albumPath like "/2001/12-31"
 	 */
 	async deleteAlbum(albumPath) {
-		assert(!!albumPath, "albumPath not defined");
-		PathUtils.assertIsAlbumPath(albumPath);
+		validateAlbumPath(albumPath);
 
 		await s3
 			.deleteObject({
 				Bucket: this.stack.originalImageBucketName,
-				Key: this.stack.originalImagePrefix + "/" + albumPath
+				Key: this.stack.originalImagePrefix + albumPath + "/"
 			})
 			.promise();
 	}
@@ -114,12 +104,11 @@ class GalleryS3 {
 	 * @returns true if album folder exists in the S3 bucket of originals
 	 */
 	async albumExists(albumPath) {
-		assert(!!albumPath, "albumPath not defined");
-		PathUtils.assertIsAlbumPath(albumPath);
+		validateAlbumPath(albumPath);
 
 		return this.objectExists(
 			this.stack.originalImageBucketName,
-			this.stack.originalImagePrefix + "/" + albumPath
+			this.stack.originalImagePrefix + albumPath + "/"
 		);
 	}
 
@@ -134,7 +123,7 @@ class GalleryS3 {
 
 		return this.objectExists(
 			this.stack.originalImageBucketName,
-			this.stack.originalImagePrefix + "/" + imagePath
+			this.stack.originalImagePrefix + imagePath
 		);
 	}
 
@@ -148,7 +137,7 @@ class GalleryS3 {
 
 		return this.objectExists(
 			this.stack.derivedImageBucketName,
-			this.stack.thumbnailImagePrefix + "/" + imagePath
+			this.stack.thumbnailImagePrefix + imagePath
 		);
 	}
 
@@ -162,7 +151,7 @@ class GalleryS3 {
 
 		return this.objectExists(
 			this.stack.derivedImageBucketName,
-			this.stack.largeImagePrefix + "/" + imagePath
+			this.stack.largeImagePrefix + imagePath
 		);
 	}
 
@@ -192,3 +181,12 @@ class GalleryS3 {
 	}
 }
 module.exports = GalleryS3;
+
+function validateAlbumPath(albumPath) {
+	assert(!!albumPath, "albumPath not defined");
+	PathUtils.assertIsAlbumPath(albumPath);
+	assert(
+		!albumPath.endsWith("/"),
+		"album path (" + albumPath + ") shouldn't end in a /"
+	);
+}
