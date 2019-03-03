@@ -30,13 +30,17 @@ exports.handler = async event => {
 		await createImage(docClient, tableName, imagePath);
 	}
 
+	//
 	// Update the image entry in DynamoDB
-	const metadata = event.extractedMetadata;
-	return await updateImage(
-		docClient,
-		tableName,
-		imagePath,
-		imageIsNew,
-		metadata
-	);
+	//
+
+	// Set up execution context
+	// This is everything that updateImage() needs in order to execute
+	// This is done to make updateImage() unit testable
+	let ctx = {};
+	ctx.tableName = tableName;
+	ctx.doUpdate = async dynamoParams => {
+		return docClient.update(dynamoParams).promise();
+	};
+	return await updateImage(ctx, imagePath, imageIsNew, event.extractedMetadata);
 };

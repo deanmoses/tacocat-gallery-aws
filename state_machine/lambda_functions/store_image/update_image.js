@@ -1,69 +1,80 @@
 const getParentAndNameFromPath = require("./get_parent_and_name_from_path.js");
 
 /**
- * Update a previously created image in DynamoDB.
+ * Update image in DynamoDB.
  *
- * I expect this to be called  happen every time a new version of the item is
- * uploaded to the bucket.
+ * To be called every time a new version of the image is uploaded to S3.
  *
- * @param {*} docClient AWS DynamoDB DocumentClient
- * @param {*} tableName Name of the table in DynamoDB in which to store gallery items
- * @param {*} imagePath Path of the image like /2001/12-31/image.jpg
- * @param {*} imageIsNew true if the image is not being re-uploaded
- * @param {*} metadata EXIF and IPTC metadata extracted from the image
+ * @param {Object} ctx execution context
+ * @param {String} imagePath Path of the image like /2001/12-31/image.jpg
+ * @param {Boolean} imageIsNew true if the image is not being re-uploaded
+ * @param {Object} metadata EXIF and IPTC metadata extracted from the image
+ *
+ * @returns {Object} result from DynamoDB if success, throws exception if there's a problem with the input
  */
-function updateImage(docClient, tableName, imagePath, imageIsNew, metadata) {
+async function updateImage(ctx, imagePath, imageIsNew, metadata) {
 	const now = new Date().toISOString();
 
-	var UpdateExpression =
-		"SET updatedOn = :updatedOn" +
-		", fileUpdateOn = :fileUpdatedOn" +
-		", mimeSubType = :mimeSubType" +
-		", mimeSubType = :dimensions";
+	let expr = "";
+	let exprVals = {};
 
-	var ExpressionAttributeValues = {
-		":updatedOn": now,
-		":fileUpdateOn": now,
-		":mimeSubType": metadata.format.toLowerCase(),
-		":dimensions": metadata.dimensions
-	};
+	expr = addToSetExpr(expr, exprVals, "updatedOn", now);
+	expr = addToSetExpr(expr, exprVals, "fileUpdatedOn", now);
+	const mimeSubType = metadata.format.toLowerCase();
+	expr = addToSetExpr(expr, exprVals, "mimeSubType", mimeSubType);
+	expr = addToSetExpr(expr, exprVals, "dimensions", metadata.dimensions);
 
 	if (metadata.creationTime) {
-		UpdateExpression += ", capturedOn = :capturedOn";
-		ExpressionAttributeValues[":capturedOn"] = metadata.creationTime;
+		expr = addToSetExpr(expr, exprVals, "capturedOn", metadata.creationTime);
 	}
 
-	// Don't update these if this image is being re-uploaded
+	// Don't update if image is being re-uploaded
 	if (imageIsNew) {
 		if (metadata.title) {
-			UpdateExpression += ", title = :title";
-			ExpressionAttributeValues[":title"] = metadata.title;
+			expr = addToSetExpr(expr, exprVals, "title", metadata.title);
 		}
 
 		if (metadata.description) {
-			UpdateExpression += ", description = :description";
-			ExpressionAttributeValues[":description"] = metadata.description;
+			expr = addToSetExpr(expr, exprVals, "description", metadata.description);
 		}
 	}
 
 	if (metadata.tags) {
-		UpdateExpression += ", tags = :tags";
-		ExpressionAttributeValues[":tags"] = metadata.tags;
+		expr = addToSetExpr(expr, exprVals, "tags", metadata.tags);
 	}
 
 	const pathParts = getParentAndNameFromPath(imagePath);
 	const ddbparams = {
-		TableName: tableName,
+		TableName: ctx.tableName,
 		Key: {
 			parentPath: pathParts.parent,
 			itemName: pathParts.name
 		},
-		UpdateExpression: UpdateExpression,
-		ExpressionAttributeValues: ExpressionAttributeValues,
+		UpdateExpression: expr,
+		ExpressionAttributeValues: exprVals,
 		ConditionExpression: "attribute_exists (itemName)"
 	};
 
-	return docClient.update(ddbparams).promise();
+	return await ctx.doUpdate(ddbparams);
+}
+
+/**
+ * Add to DynamoDB SET expression
+ *
+ * @param {String} expr
+ * @param {Array} exprVals
+ * @param {String} name
+ * @param {String} value
+ */
+function addToSetExpr(expr, exprVals, name, value) {
+	if (expr.length === 0) {
+		expr = "SET";
+	} else {
+		expr += ",";
+	}
+	expr += " x = :x".replace(/x/g, name);
+	exprVals[":" + name] = value;
+	return expr;
 }
 
 module.exports = updateImage;
