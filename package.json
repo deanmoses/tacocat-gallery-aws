@@ -10,6 +10,9 @@
 		"integration_readwrite_test": "jest -c jest.config.readwritetests.js",
 		"deploy": "cloudformation/deploy_stack.sh"
 	},
+	"jest": {
+		"testEnvironment": "node"
+	},
 	"repository": {
 		"type": "git",
 		"url": "git+https://github.com/deanmoses/tacocat-gallery-aws.git"
