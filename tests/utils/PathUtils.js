@@ -40,12 +40,20 @@ class PathUtils {
 		return PathUtils.getWeekPath(year, week) + "/" + image;
 	}
 
+	/**
+	 * @param {String} albumPath absolute path of album like / or /2001 or /2001/12-31
+	 * @throws Exception if it's not a valid album path
+	 */
 	static assertIsAlbumPath(albumPath) {
 		if (!albumPath || !albumPath.match(PathUtils.getAlbumPathRegex())) {
 			throw "'" + albumPath + "' is not a valid album path.";
 		}
 	}
 
+	/**
+	 * @param {String} imagePath absolute path of image like /2001/12-31/image.jpg
+	 * @throws Exception if it's not a valid image path
+	 */
 	static assertIsImagePath(imagePath) {
 		if (!imagePath || !imagePath.match(PathUtils.getImagePathRegex())) {
 			throw "'" + imagePath + "' is not a valid image path.";
