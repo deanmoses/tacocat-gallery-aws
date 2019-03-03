@@ -107,12 +107,6 @@ Outputs:
       Fn::GetAtt:
         - ExtractImageMetadataFunction
         - Arn
-  RekognitionLambda:
-    Description: Lambda function that uses Amazon Rekognition to detect objects and labels in image
-    Value:
-      Fn::GetAtt:
-        - RekognitionFunction
-        - Arn
   StoreAlbumLambda:
     Description: Lambda function that stores the album in DynamoDB
     Value:
@@ -442,15 +436,6 @@ Resources:
                   - "dynamodb:PutItem"
                   - "dynamodb:DeleteItem"
                 Resource: !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${GalleryItemDDBTable}"
-        - PolicyName: RekognitionDetectLabels
-          PolicyDocument:
-            Version: "2012-10-17"
-            Statement:
-              - Sid: RekognitionDetectLabels
-                Effect: Allow
-                Action:
-                  - "rekognition:DetectLabels"
-                Resource: "*"
         - PolicyName: StepFunctionStartExecution
           PolicyDocument:
             Version: "2012-10-17"
@@ -549,13 +534,6 @@ Resources:
           DERIVED_IMAGE_BUCKET: !Ref DerivedImageBucket
           THUMBNAIL_IMAGE_S3_PREFIX: !Ref ThumbnailImageS3Prefix
           LARGE_IMAGE_S3_PREFIX: !Ref LargeImageS3Prefix
-
-  RekognitionFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      Description: "Lambda function that uses Amazon Rekognition to detect labels from image"
-      Role: !GetAtt BackendProcessingLambdaRole.Arn
-      CodeUri: ../state_machine/lambda_functions/rekognition
 
   GenerateThumbnailImageFunction:
     Type: AWS::Serverless::Function
@@ -934,7 +912,6 @@ Resources:
             StoreImageLambdaArn: !GetAtt StoreImageFunction.Arn,
             DeleteImageFromDynamoLambdaArn: !GetAtt DeleteImageFromDynamoFunction.Arn,
             DeleteResizedImagesFromS3LambdaArn: !GetAtt DeleteResizedImagesFromS3Function.Arn,
-            RekognitionLambdaArn: !GetAtt RekognitionFunction.Arn,
             GenerateThumbnailImageLambdaArn: !GetAtt GenerateThumbnailImageFunction.Arn,
             GenerateLargeImageLambdaArn: !GetAtt GenerateLargeImageFunction.Arn,
           }
