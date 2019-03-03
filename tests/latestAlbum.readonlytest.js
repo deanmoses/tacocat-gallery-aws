@@ -40,6 +40,6 @@ describe("Retrieve latest album via API", async () => {
 		JestUtils.expectValidYearPath(album.parentPath);
 
 		// Is date the expected format?
-		JestUtils.expectValidDate(album.updateDateTime);
+		JestUtils.expectValidDate(album.updatedOn);
 	});
 });

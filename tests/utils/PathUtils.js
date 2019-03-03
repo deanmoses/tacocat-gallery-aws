@@ -29,15 +29,15 @@ class PathUtils {
 	}
 
 	static getYearPath(year) {
-		return "/" + year + "/";
+		return "/" + year;
 	}
 
 	static getWeekPath(year, week) {
-		return PathUtils.getYearPath(year) + week + "/";
+		return PathUtils.getYearPath(year) + "/" + week;
 	}
 
 	static getImagePath(year, week, image) {
-		return PathUtils.getWeekPath(year, week) + image;
+		return PathUtils.getWeekPath(year, week) + "/" + image;
 	}
 
 	static assertIsAlbumPath(albumPath) {
@@ -53,8 +53,7 @@ class PathUtils {
 	}
 
 	/**
-	 * Year or album path like /2001/ or /2001/12-31/
-	 * Does not match root path /
+	 * Root, year or album path like / or /2001/ or /2001/12-31/
 	 */
 	static getAlbumPathRegex() {
 		//return /^\/(\d\d\d\d\/(\d\d-\d\d\/)?)?$/;
@@ -62,7 +61,7 @@ class PathUtils {
 	}
 
 	static getAlbumPathRegexString() {
-		return "^/\\d\\d\\d\\d/(\\d\\d-\\d\\d/)?$";
+		return "^/(\\d\\d\\d\\d(/\\d\\d-\\d\\d)?/?)?$";
 	}
 
 	/**
@@ -110,7 +109,7 @@ class PathUtils {
 	}
 
 	static getYearAlbumPathRegexString() {
-		return "^/\\d\\d\\d\\d/$";
+		return "^/\\d\\d\\d\\d/?$";
 	}
 
 	/**
@@ -134,7 +133,7 @@ class PathUtils {
 	}
 
 	static getWeekAlbumPathRegexString() {
-		return "^/\\d\\d\\d\\d/\\d\\d-\\d\\d/$";
+		return "^/\\d\\d\\d\\d/\\d\\d-\\d\\d/?$";
 	}
 
 	/**
@@ -146,7 +145,7 @@ class PathUtils {
 	}
 
 	static getImageNameRegexString() {
-		return "^.*\\.[jpg|gif|heic|png]$";
+		return "^.*\\.(jpg|gif|heic|png)$";
 	}
 
 	/**
@@ -158,7 +157,7 @@ class PathUtils {
 	}
 
 	static getImagePathRegexString() {
-		return "^/\\d\\d\\d\\d/\\d\\d-\\d\\d/.*\\.[jpg|gif|heic|png]$";
+		return "^/\\d\\d\\d\\d/\\d\\d-\\d\\d/.*\\.(jpg|gif|heic|png)$";
 	}
 
 	/**

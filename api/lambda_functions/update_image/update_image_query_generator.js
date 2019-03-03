@@ -67,7 +67,7 @@ function generateUpdateImageQuery(tableName, imagePath, attributesToUpdate) {
 	setExpr = addToSetExpr(
 		setExpr,
 		exprVals,
-		"updateDateTime",
+		"updatedOn",
 		new Date().toISOString()
 	);
 

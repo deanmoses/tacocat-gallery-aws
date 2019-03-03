@@ -10,17 +10,19 @@ const getParentAndNameFromPath = require("./get_parent_and_name_from_path.js");
  * @param {*} docClient AWS DynamoDB DocumentClient
  * @param {*} tableName Name of the table in DynamoDB in which to store gallery items
  * @param {*} imagePath Path of the image like /2001/12-31/image.jpg
- * @param {*} fileUploadTimeStamp time the image was uploaded to S3
  */
-function createImage(docClient, tableName, imagePath, fileUploadTimeStamp) {
+function createImage(docClient, tableName, imagePath) {
 	const pathParts = getParentAndNameFromPath(imagePath);
+
+	const now = new Date().toISOString();
 
 	const dynamoItem = {
 		parentPath: pathParts.parent,
 		itemName: pathParts.name,
 		itemType: "media",
-		uploadDateTime: fileUploadTimeStamp,
-		updateDateTime: fileUploadTimeStamp
+		createdOn: now,
+		updatedOn: now,
+		fileUpdatedOn: now
 	};
 	const ddbparams = {
 		TableName: tableName,

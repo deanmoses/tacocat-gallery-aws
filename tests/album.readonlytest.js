@@ -34,7 +34,7 @@ describe("Retrieve albums via API", async () => {
 	});
 
 	test("Root album", async () => {
-		const albumResponse = await api.fetchExistingAlbum("");
+		const albumResponse = await api.fetchExistingAlbum("/");
 
 		// Is root album of the expected format?
 		const album = albumResponse.album;
@@ -45,9 +45,9 @@ describe("Retrieve albums via API", async () => {
 		// Do I have the expected child year albums?
 		const children = albumResponse.children;
 		JestUtils.expectValidArray(children);
-		JestUtils.expectAlbumToExist(children, fixture.current.year);
-		JestUtils.expectAlbumToExist(children, fixture.prev.year);
-		JestUtils.expectAlbumToExist(children, fixture.next.year);
+		JestUtils.expectChildAlbumToExist(children, fixture.current.year);
+		JestUtils.expectChildAlbumToExist(children, fixture.prev.year);
+		JestUtils.expectChildAlbumToExist(children, fixture.next.year);
 	});
 	test("Nonexistent year album", async () => {
 		await galleryApiJestHelper.expectAlbumToNotBeInApi("/1899");

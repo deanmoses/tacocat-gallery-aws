@@ -105,12 +105,42 @@ const prevNextAlbumSchema = {
 };
 module.exports.prevNextAlbumSchema = prevNextAlbumSchema;
 
+const dimensionsSchema = {
+	$schema: "http://json-schema.org/schema#",
+	title: "Dimensions",
+	description: "Dimensions of an image (width and height)",
+	type: "object",
+	required: ["height", "width"],
+	additionalProperties: false /* don't allow unknown properties */,
+	properties: {
+		width: { type: "integer", minimum: 1 },
+		height: { type: "integer", minimum: 1 }
+	}
+};
+module.exports.dimensionsSchema = dimensionsSchema;
+
+const imageThumbnailSchema = {
+	$schema: "http://json-schema.org/schema#",
+	title: "Image Thumbnail",
+	description: "Thumbnail on an image",
+	type: "object",
+	required: ["x", "y", "length", "fileUpdatedOn"],
+	additionalProperties: false /* don't allow unknown properties */,
+	properties: {
+		x: { type: "integer", minimum: 0 },
+		y: { type: "integer", minimum: 0 },
+		length: { type: "integer", minimum: 1 },
+		fileUpdatedOn: { type: "string", format: "date-time" }
+	}
+};
+module.exports.imageThumbnailSchema = imageThumbnailSchema;
+
 const imageSchema = {
 	$schema: "http://json-schema.org/schema#",
 	title: "Image",
 	description: "Image object",
 	type: "object",
-	required: ["itemName", "parentPath", "updatedOn"],
+	required: ["itemName", "parentPath", "updatedOn", "itemType"],
 	additionalProperties: false /* don't allow unknown properties */,
 	properties: {
 		itemName: imageNameSchema,
@@ -119,7 +149,10 @@ const imageSchema = {
 		createdOn: { type: "string", format: "date-time" },
 		title: { type: "string" },
 		description: { type: "string" },
-		tags: tagsSchema
+		tags: tagsSchema,
+		dimensions: dimensionsSchema,
+		itemType: { type: "string", pattern: "media" },
+		thumbnail: imageThumbnailSchema
 	}
 };
 module.exports.imageSchema = imageSchema;
@@ -129,13 +162,14 @@ const albumSchema = {
 	title: "Album",
 	description: "Albums other than the root gallery",
 	type: "object",
-	required: ["itemName", "parentPath", "updatedOn"],
+	required: ["itemName", "parentPath", "updatedOn", "itemType"],
 	additionalProperties: false /* don't allow unknown properties */,
 	properties: {
 		itemName: albumNameSchema,
 		parentPath: albumParentPathSchema,
 		updatedOn: { type: "string", format: "date-time" },
 		createdOn: { type: "string", format: "date-time" },
+		itemType: { type: "string", pattern: "album" },
 		title: { type: "string" },
 		description: { type: "string" },
 		tags: tagsSchema

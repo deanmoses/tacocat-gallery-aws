@@ -16,7 +16,7 @@ class JestUtils {
 	 * @param {*} albumName like "2001" or "12-31": not this is NOT a path
 	 * @returns the named album, or undefined if not found
 	 */
-	static expectAlbumToExist(children, albumName) {
+	static expectChildAlbumToExist(children, albumName) {
 		const album = GalleryApiUtils.findImage(children, albumName);
 		JestUtils.expectValidAlbum(album);
 	}

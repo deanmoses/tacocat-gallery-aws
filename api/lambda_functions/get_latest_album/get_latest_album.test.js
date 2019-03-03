@@ -9,7 +9,7 @@ test("Get Album", async () => {
 
 	const parentPath = "/2001/12-31/";
 	const itemName = "12-31";
-	const updateDateTime = "2001-12-31T23:59:59Z";
+	const updatedOn = "2001-12-31T23:59:59Z";
 
 	// Mock out the AWS method
 	const mockResponse = {
@@ -17,7 +17,7 @@ test("Get Album", async () => {
 			{
 				itemName: itemName,
 				parentPath: parentPath,
-				updateDateTime: updateDateTime
+				updatedOn: updatedOn
 			}
 		]
 	};
@@ -33,7 +33,7 @@ test("Get Album", async () => {
 	expect(album).toBeDefined();
 	expect(album.itemName).toBe(itemName);
 	expect(album.parentPath).toBe(parentPath);
-	expect(album.updateDateTime).toBe(updateDateTime);
+	expect(album.updatedOn).toBe(updatedOn);
 	AWS_MOCK.restore("DynamoDB.DocumentClient");
 });
 

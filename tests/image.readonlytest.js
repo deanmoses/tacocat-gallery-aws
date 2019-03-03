@@ -30,11 +30,8 @@ describe("Retrieve images via API", async () => {
 		galleryApi = new GalleryApi(stack);
 		fix = new FixtureHelper(fixture);
 	});
-	test("Image exists: " + fixture.imagePath, async () => {
-		const image = await galleryApi.fetchImage(
-			fix.getWeekPath(),
-			fix.getImage()
-		);
+	test("Image exists: ", async () => {
+		const image = await galleryApi.fetchImage(fix.getImagePath());
 		JestUtils.expectValidImage(image);
 
 		// Is there a title?

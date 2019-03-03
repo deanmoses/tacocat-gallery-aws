@@ -25,15 +25,17 @@ async function saveThumbnailCropInfoToDynamo(
 			"Crop must contain {x:NUMBER,y:NUMBER,length:NUMBER}"
 		);
 	}
+	const now = new Date().toISOString();
+	crop.fileUpdatedOn = now;
 
 	let UpdateExpression = "SET";
 	let ExpressionAttributeValues = {};
 
-	UpdateExpression += " thumbCrop = :thumbCrop";
-	ExpressionAttributeValues[":thumbCrop"] = crop;
+	UpdateExpression += " thumbnail = :thumbnail";
+	ExpressionAttributeValues[":thumbnail"] = crop;
 
-	UpdateExpression += ", updateDateTime = :updateDateTime";
-	ExpressionAttributeValues[":updateDateTime"] = new Date().toISOString();
+	UpdateExpression += ", updatedOn = :updatedOn";
+	ExpressionAttributeValues[":updatedOn"] = now;
 
 	const pathParts = getParentAndNameFromPath(path);
 

@@ -46,11 +46,11 @@ describe("Update Album", () => {
 			expect(q.Key.parentPath).toBe("/2001/");
 			expect(q.Key.itemName).toBe("12-31");
 			expect(q.UpdateExpression).toBe(
-				"SET title = :title, updateDateTime = :updateDateTime"
+				"SET title = :title, updatedOn = :updatedOn"
 			);
 			expect(Object.keys(q.ExpressionAttributeValues).length).toBe(2);
 			expect(q.ExpressionAttributeValues[":title"]).toBe(newTitle);
-			JestUtils.expectValidDate(q.ExpressionAttributeValues[":updateDateTime"]);
+			JestUtils.expectValidDate(q.ExpressionAttributeValues[":updatedOn"]);
 			expect(q.ConditionExpression).toBe("attribute_exists (itemName)");
 			return {};
 		});
@@ -74,10 +74,10 @@ describe("Update Album", () => {
 			expect(q.Key.parentPath).toBe("/2001/");
 			expect(q.Key.itemName).toBe("12-31");
 			expect(q.UpdateExpression).toBe(
-				"SET updateDateTime = :updateDateTime REMOVE title"
+				"SET updatedOn = :updatedOn REMOVE title"
 			);
 			expect(Object.keys(q.ExpressionAttributeValues).length).toBe(1);
-			JestUtils.expectValidDate(q.ExpressionAttributeValues[":updateDateTime"]);
+			JestUtils.expectValidDate(q.ExpressionAttributeValues[":updatedOn"]);
 			expect(q.ConditionExpression).toBe("attribute_exists (itemName)");
 			return {};
 		});
@@ -101,11 +101,11 @@ describe("Update Album", () => {
 			expect(q.Key.parentPath).toBe("/2001/");
 			expect(q.Key.itemName).toBe("12-31");
 			expect(q.UpdateExpression).toBe(
-				"SET description = :description, updateDateTime = :updateDateTime"
+				"SET description = :description, updatedOn = :updatedOn"
 			);
 			expect(Object.keys(q.ExpressionAttributeValues).length).toBe(2);
 			expect(q.ExpressionAttributeValues[":description"]).toBe(newDescription);
-			JestUtils.expectValidDate(q.ExpressionAttributeValues[":updateDateTime"]);
+			JestUtils.expectValidDate(q.ExpressionAttributeValues[":updatedOn"]);
 			expect(q.ConditionExpression).toBe("attribute_exists (itemName)");
 			return {};
 		});
@@ -129,10 +129,10 @@ describe("Update Album", () => {
 			expect(q.Key.parentPath).toBe("/2001/");
 			expect(q.Key.itemName).toBe("12-31");
 			expect(q.UpdateExpression).toBe(
-				"SET updateDateTime = :updateDateTime REMOVE description"
+				"SET updatedOn = :updatedOn REMOVE description"
 			);
 			expect(Object.keys(q.ExpressionAttributeValues).length).toBe(1);
-			JestUtils.expectValidDate(q.ExpressionAttributeValues[":updateDateTime"]);
+			JestUtils.expectValidDate(q.ExpressionAttributeValues[":updatedOn"]);
 			expect(q.ConditionExpression).toBe("attribute_exists (itemName)");
 			return {};
 		});
@@ -157,12 +157,12 @@ describe("Update Album", () => {
 			expect(q.Key.parentPath).toBe("/2001/");
 			expect(q.Key.itemName).toBe("12-31");
 			expect(q.UpdateExpression).toBe(
-				"SET title = :title, description = :description, updateDateTime = :updateDateTime"
+				"SET title = :title, description = :description, updatedOn = :updatedOn"
 			);
 			expect(Object.keys(q.ExpressionAttributeValues).length).toBe(3);
 			expect(q.ExpressionAttributeValues[":title"]).toBe(newTitle);
 			expect(q.ExpressionAttributeValues[":description"]).toBe(newDescription);
-			JestUtils.expectValidDate(q.ExpressionAttributeValues[":updateDateTime"]);
+			JestUtils.expectValidDate(q.ExpressionAttributeValues[":updatedOn"]);
 			expect(q.ConditionExpression).toBe("attribute_exists (itemName)");
 			return {};
 		});
@@ -187,11 +187,11 @@ describe("Update Album", () => {
 			expect(q.Key.parentPath).toBe("/2001/");
 			expect(q.Key.itemName).toBe("12-31");
 			expect(q.UpdateExpression).toBe(
-				"SET thumbnail = :thumbnail, updateDateTime = :updateDateTime"
+				"SET thumbnail = :thumbnail, updatedOn = :updatedOn"
 			);
 			expect(Object.keys(q.ExpressionAttributeValues).length).toBe(2);
 			expect(q.ExpressionAttributeValues[":thumbnail"]).toBe(newThumbnail);
-			JestUtils.expectValidDate(q.ExpressionAttributeValues[":updateDateTime"]);
+			JestUtils.expectValidDate(q.ExpressionAttributeValues[":updatedOn"]);
 			expect(q.ConditionExpression).toBe("attribute_exists (itemName)");
 			return {};
 		});
@@ -217,10 +217,10 @@ describe("Update Album", () => {
 			expect(q.Key.parentPath).toBe("/2001/");
 			expect(q.Key.itemName).toBe("12-31");
 			expect(q.UpdateExpression).toBe(
-				"SET updateDateTime = :updateDateTime REMOVE thumbnail"
+				"SET updatedOn = :updatedOn REMOVE thumbnail"
 			);
 			expect(Object.keys(q.ExpressionAttributeValues).length).toBe(1);
-			JestUtils.expectValidDate(q.ExpressionAttributeValues[":updateDateTime"]);
+			JestUtils.expectValidDate(q.ExpressionAttributeValues[":updatedOn"]);
 			expect(q.ConditionExpression).toBe("attribute_exists (itemName)");
 			return {};
 		});

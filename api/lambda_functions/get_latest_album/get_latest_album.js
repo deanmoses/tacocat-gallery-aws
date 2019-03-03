@@ -11,14 +11,22 @@ const getLatestItemInAlbum = require("./get_latest_item_in_album.js");
  */
 async function getLatestAlbum(docClient, tableName) {
 	// get current year's album
-	const albumPath = "/" + new Date().getUTCFullYear() + "/";
-	const album = await getLatestItemInAlbum(docClient, tableName, albumPath);
+	const currentYearAlbumPath = "/" + new Date().getUTCFullYear() + "/";
+	const album = await getLatestItemInAlbum(
+		docClient,
+		tableName,
+		currentYearAlbumPath
+	);
 	if (!album) return;
 	else {
-		const ret = {
-			album: await getLatestItemInAlbum(docClient, tableName, albumPath)
+		// get the latest album of the current year
+		return {
+			album: await getLatestItemInAlbum(
+				docClient,
+				tableName,
+				currentYearAlbumPath
+			)
 		};
-		return ret;
 	}
 }
 

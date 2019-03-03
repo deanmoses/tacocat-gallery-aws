@@ -4,8 +4,6 @@ const AWS_MOCK = require("aws-sdk-mock");
 const awsRegion = "us-west-2";
 const tableName = "NotRealImageTable";
 const imageId = "/not/a/real/image.jpg";
-const fileUploadTimeStamp = "2001-12-31T23:59:59.999Z";
-const thumbnailS3key = "thumbnails/2001/12-31/ba-IMG_20160706_094820.jpg";
 const metadata = {
 	creationTime: "2016:07:06 09:48:21",
 	geo: {
@@ -31,48 +29,6 @@ const metadata = {
 	fileSize: "2.136MB",
 	format: "JPEG"
 };
-const labels = [
-	{
-		Name: "Palm Tree",
-		Confidence: 99.21247100830078
-	},
-	{
-		Name: "Plant",
-		Confidence: 99.21247100830078
-	},
-	{
-		Name: "Tree",
-		Confidence: 99.21247100830078
-	},
-	{
-		Name: "Agavaceae",
-		Confidence: 96.6033935546875
-	},
-	{
-		Name: "Aloe",
-		Confidence: 96.2696762084961
-	},
-	{
-		Name: "Beach",
-		Confidence: 94.15129089355469
-	},
-	{
-		Name: "Coast",
-		Confidence: 94.15129089355469
-	},
-	{
-		Name: "Outdoors",
-		Confidence: 94.15129089355469
-	},
-	{
-		Name: "Sea",
-		Confidence: 94.15129089355469
-	},
-	{
-		Name: "Water",
-		Confidence: 94.15129089355469
-	}
-];
 
 test("Update Image", async () => {
 	expect.assertions(2);
@@ -90,10 +46,7 @@ test("Update Image", async () => {
 		tableName,
 		imageId,
 		true,
-		fileUploadTimeStamp,
-		thumbnailS3key,
-		metadata,
-		labels
+		metadata
 	);
 	expect(updateResult).toBeDefined();
 	//console.log(updateResult);

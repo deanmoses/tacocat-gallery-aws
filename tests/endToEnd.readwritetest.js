@@ -381,7 +381,7 @@ async function expectAlbumToBeInApi(albumPath) {
 	expect(albumResponse.album).toBeDefined();
 
 	// Is date the expected format?
-	expect(isIso8601(albumResponse.album.updateDateTime)).toBeTruthy();
+	expect(isIso8601(albumResponse.album.updatedOn)).toBeTruthy();
 
 	return albumResponse;
 }
@@ -540,7 +540,7 @@ async function expectImageToBeInApi() {
 	const image = await fetchImage();
 	expect(image).toBeDefined();
 	// Is date the expected format?
-	expect(isIso8601(image.updateDateTime)).toBeTruthy();
+	expect(isIso8601(image.updatedOn)).toBeTruthy();
 	return image;
 }
 

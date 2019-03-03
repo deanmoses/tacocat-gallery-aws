@@ -41,11 +41,11 @@ describe("Update Image", () => {
 			expect(q.Key.parentPath).toBe("/2001/12-31/");
 			expect(q.Key.itemName).toBe("image.jpg");
 			expect(q.UpdateExpression).toBe(
-				"SET title = :title, updateDateTime = :updateDateTime"
+				"SET title = :title, updatedOn = :updatedOn"
 			);
 			expect(Object.keys(q.ExpressionAttributeValues).length).toBe(2);
 			expect(q.ExpressionAttributeValues[":title"]).toBe(newTitle);
-			JestUtils.expectValidDate(q.ExpressionAttributeValues[":updateDateTime"]);
+			JestUtils.expectValidDate(q.ExpressionAttributeValues[":updatedOn"]);
 			expect(q.ConditionExpression).toBe("attribute_exists (itemName)");
 			return {};
 		});
@@ -69,10 +69,10 @@ describe("Update Image", () => {
 			expect(q.Key.parentPath).toBe("/2001/12-31/");
 			expect(q.Key.itemName).toBe("image.jpg");
 			expect(q.UpdateExpression).toBe(
-				"SET updateDateTime = :updateDateTime REMOVE title"
+				"SET updatedOn = :updatedOn REMOVE title"
 			);
 			expect(Object.keys(q.ExpressionAttributeValues).length).toBe(1);
-			JestUtils.expectValidDate(q.ExpressionAttributeValues[":updateDateTime"]);
+			JestUtils.expectValidDate(q.ExpressionAttributeValues[":updatedOn"]);
 			expect(q.ConditionExpression).toBe("attribute_exists (itemName)");
 			return {};
 		});
@@ -96,11 +96,11 @@ describe("Update Image", () => {
 			expect(q.Key.parentPath).toBe("/2001/12-31/");
 			expect(q.Key.itemName).toBe("image.jpg");
 			expect(q.UpdateExpression).toBe(
-				"SET description = :description, updateDateTime = :updateDateTime"
+				"SET description = :description, updatedOn = :updatedOn"
 			);
 			expect(Object.keys(q.ExpressionAttributeValues).length).toBe(2);
 			expect(q.ExpressionAttributeValues[":description"]).toBe(newDescription);
-			JestUtils.expectValidDate(q.ExpressionAttributeValues[":updateDateTime"]);
+			JestUtils.expectValidDate(q.ExpressionAttributeValues[":updatedOn"]);
 			expect(q.ConditionExpression).toBe("attribute_exists (itemName)");
 			return {};
 		});
@@ -124,10 +124,10 @@ describe("Update Image", () => {
 			expect(q.Key.parentPath).toBe("/2001/12-31/");
 			expect(q.Key.itemName).toBe("image.jpg");
 			expect(q.UpdateExpression).toBe(
-				"SET updateDateTime = :updateDateTime REMOVE description"
+				"SET updatedOn = :updatedOn REMOVE description"
 			);
 			expect(Object.keys(q.ExpressionAttributeValues).length).toBe(1);
-			JestUtils.expectValidDate(q.ExpressionAttributeValues[":updateDateTime"]);
+			JestUtils.expectValidDate(q.ExpressionAttributeValues[":updatedOn"]);
 			expect(q.ConditionExpression).toBe("attribute_exists (itemName)");
 			return {};
 		});
@@ -152,12 +152,12 @@ describe("Update Image", () => {
 			expect(q.Key.parentPath).toBe("/2001/12-31/");
 			expect(q.Key.itemName).toBe("image.jpg");
 			expect(q.UpdateExpression).toBe(
-				"SET title = :title, description = :description, updateDateTime = :updateDateTime"
+				"SET title = :title, description = :description, updatedOn = :updatedOn"
 			);
 			expect(Object.keys(q.ExpressionAttributeValues).length).toBe(3);
 			expect(q.ExpressionAttributeValues[":title"]).toBe(newTitle);
 			expect(q.ExpressionAttributeValues[":description"]).toBe(newDescription);
-			JestUtils.expectValidDate(q.ExpressionAttributeValues[":updateDateTime"]);
+			JestUtils.expectValidDate(q.ExpressionAttributeValues[":updatedOn"]);
 			expect(q.ConditionExpression).toBe("attribute_exists (itemName)");
 			return {};
 		});
