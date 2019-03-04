@@ -20,7 +20,7 @@ config.testRegex = "readwritetest\\.js$";
 
 // Stop running tests after the first failure
 // This is important for the end-to-end test because each test builds on the next
-config.runInBand = true;
+config.isSerial = true;
 config.bail = true;
 
 // Tell where Jest to look for tests

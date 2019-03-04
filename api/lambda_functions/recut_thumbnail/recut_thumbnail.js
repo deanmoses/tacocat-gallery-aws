@@ -1,4 +1,7 @@
-const { NotFoundException, BadRequestException } = require("http_utils");
+const {
+	NotFoundException,
+	BadRequestException
+} = require("http-response-utils");
 const gm = require("gm").subClass({ imageMagick: true }); // Enable ImageMagick integration
 
 /**

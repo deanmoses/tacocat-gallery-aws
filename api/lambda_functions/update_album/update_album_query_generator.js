@@ -1,5 +1,5 @@
-const { BadRequestException } = require("http_utils");
-const getParentAndNameFromPath = require("./get_parent_and_name_from_path.js");
+const { BadRequestException } = require("http-response-utils");
+const { getParentAndNameFromPath } = require("gallery-path-utils");
 
 /**
  * Generate the query to update an album's attributes (like title and description) in DynamoDB

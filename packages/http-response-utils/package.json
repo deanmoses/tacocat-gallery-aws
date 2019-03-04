@@ -1,5 +1,5 @@
 {
-	"name": "http_utils",
+	"name": "http-response-utils",
 	"description": "Utilities to help AWS Lambda functions reply to the AWS API Gateway in a way that can be translated into HTTP responses",
 	"version": "1.0.0",
 	"private": true

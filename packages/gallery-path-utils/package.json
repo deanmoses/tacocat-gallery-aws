@@ -1,0 +1,6 @@
+{
+	"name": "gallery-path-utils",
+	"description": "Utilities to work with Tacocat Gallery Paths",
+	"version": "1.0.0",
+	"private": true
+}

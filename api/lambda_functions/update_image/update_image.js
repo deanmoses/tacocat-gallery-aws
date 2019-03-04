@@ -1,4 +1,4 @@
-const { NotFoundException } = require("http_utils");
+const { NotFoundException } = require("http-response-utils");
 const generateDynamoUpdateParams = require("./update_image_query_generator.js");
 
 /**

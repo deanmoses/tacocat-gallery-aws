@@ -3,6 +3,7 @@
 	"version": "1.0.0",
 	"private": true,
 	"dependencies": {
-		"http_utils": "1.0.0"
+		"http-response-utils": "1.0.0",
+		"gallery-path-utils": "1.0.0"
 	}
 }

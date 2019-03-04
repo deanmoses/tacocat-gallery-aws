@@ -1,5 +1,8 @@
-const { NotFoundException, BadRequestException } = require("http_utils");
-const getParentAndNameFromPath = require("./get_parent_and_name_from_path.js");
+const {
+	NotFoundException,
+	BadRequestException
+} = require("http-response-utils");
+const { getParentAndNameFromPath } = require("gallery-path-utils");
 
 /**
  * Save image thumbnail crop info to DynamoDB

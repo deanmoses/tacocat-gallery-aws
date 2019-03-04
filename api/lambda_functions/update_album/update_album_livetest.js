@@ -1,5 +1,5 @@
 const updateAlbum = require("./update_album.js");
-const { NotFoundException } = require("http_utils");
+const { NotFoundException } = require("http-response-utils");
 const AWS = require("aws-sdk");
 const tableName = "TacocatGallery-GalleryItemDDBTable-GA5UVC6VCQRQ";
 const docClient = new AWS.DynamoDB.DocumentClient({

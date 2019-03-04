@@ -1,4 +1,4 @@
-const getParentAndNameFromPath = require("./get_parent_and_name_from_path.js");
+const { getParentAndNameFromPath } = require("gallery-path-utils");
 
 /**
  * Delete album from DynamoDB

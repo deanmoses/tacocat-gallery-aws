@@ -1,4 +1,4 @@
-const getParentAndNameFromPath = require("./get_parent_and_name_from_path.js");
+const { getParentAndNameFromPath } = require("gallery-path-utils");
 
 /**
  * Retrieve an album from DynamoDB.  Does not retrieve any child photos or child albums.

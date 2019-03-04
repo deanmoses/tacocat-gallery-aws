@@ -1,5 +1,4 @@
 const saveThumbnailCropInfoToDynamo = require("./save_thumb_crop_info_to_dynamo.js");
-const { NotFoundException, BadRequestException } = require("http_utils");
 const JestUtils = require("../../../tests/utils/JestUtils.js");
 
 const imagePath = "/2001/12-31/image.jpg";

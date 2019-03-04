@@ -1,9 +1,8 @@
 {
-	"name": "update_image",
+	"name": "store_album",
 	"version": "1.0.0",
 	"private": true,
 	"dependencies": {
-		"http-response-utils": "1.0.0",
 		"gallery-path-utils": "1.0.0"
 	}
 }

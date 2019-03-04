@@ -1,4 +1,4 @@
-const { NotFoundException, BadRequestException } = require("http_utils");
+const { NotFoundException, BadRequestException } = require("http-response-utils");
 const generateDynamoUpdateParams = require("./update_album_query_generator.js");
 
 /**

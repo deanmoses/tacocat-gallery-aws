@@ -11,11 +11,13 @@ module.exports = {
 	// I'm not sure if this is necessary: Jest can scan the entire tree
 	roots: [
 		"api/lambda_functions/",
-		"api/lambdas/",
-		"state_machine/lambda_functions/"
+		"state_machine/lambda_functions/",
+		"packages/"
 	],
 
 	modulePathIgnorePatterns: ["npm-cache", ".npm", ".cache"],
 
-	transformIgnorePatterns: ["<rootDir>/node_modules/(?!http_utils|another)"]
+	transformIgnorePatterns: [
+		"<rootDir>/node_modules/(?!http-response-utils|gallery-path-utils)"
+	]
 };

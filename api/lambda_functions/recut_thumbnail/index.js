@@ -1,6 +1,9 @@
 const recutThumbnail = require("./recut_thumbnail.js");
 const saveThumbnailCropInfoToDynamo = require("./save_thumb_crop_info_to_dynamo.js");
-const { NotFoundException, BadRequestException } = require("http_utils");
+const {
+	NotFoundException,
+	BadRequestException
+} = require("http-response-utils");
 const AWS = require("aws-sdk");
 const s3 = new AWS.S3();
 

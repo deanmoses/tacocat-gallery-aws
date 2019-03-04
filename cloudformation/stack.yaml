@@ -454,7 +454,7 @@ Resources:
     Type: AWS::Serverless::Function
     DependsOn: PhotoRepoS3Bucket
     Properties:
-      CodeUri: ../state_machine/lambda_functions/start_state_machine
+      CodeUri: dist/state_machine/lambda_functions/start_state_machine
       Description: "Triggered by S3 image upload to the repo bucket and start the image processing step function workflow"
       Role: !GetAtt BackendProcessingLambdaRole.Arn
       Environment:
@@ -470,7 +470,7 @@ Resources:
   ExtractImageMetadataFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: ../state_machine/lambda_functions/extract_image_metadata
+      CodeUri: dist/state_machine/lambda_functions/extract_image_metadata
       Description: "Lambda function that extracts image metadata such as format, size, geolocation, etc"
       MemorySize: 1024
       Timeout: 200
@@ -479,14 +479,14 @@ Resources:
   TransformImageMetadataFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: ../state_machine/lambda_functions/transform_image_metadata
+      CodeUri: dist/state_machine/lambda_functions/transform_image_metadata
       Description: "Lambda function that massages JSON of extracted image metadata into more usable format"
       Role: !GetAtt BackendProcessingLambdaRole.Arn
 
   StoreAlbumFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: ../state_machine/lambda_functions/store_album
+      CodeUri: dist/state_machine/lambda_functions/store_album
       Description: "Lambda function that stores album in DynamoDB"
       Role: !GetAtt BackendProcessingLambdaRole.Arn
       Environment:
@@ -496,7 +496,7 @@ Resources:
   DeleteAlbumFromDynamoFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: ../state_machine/lambda_functions/delete_album_from_dynamo
+      CodeUri: dist/state_machine/lambda_functions/delete_album_from_dynamo
       Description: "Lambda function that deletes album from DynamoDB"
       Role: !GetAtt BackendProcessingLambdaRole.Arn
       Environment:
@@ -506,7 +506,7 @@ Resources:
   StoreImageFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: ../state_machine/lambda_functions/store_image
+      CodeUri: dist/state_machine/lambda_functions/store_image
       Description: "Lambda function that stores image in DynamoDB"
       Role: !GetAtt BackendProcessingLambdaRole.Arn
       Environment:
@@ -516,7 +516,7 @@ Resources:
   DeleteImageFromDynamoFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: ../state_machine/lambda_functions/delete_image_from_dynamo
+      CodeUri: dist/state_machine/lambda_functions/delete_image_from_dynamo
       Description: "Lambda function that deletes image entry from DynamoDB"
       Role: !GetAtt BackendProcessingLambdaRole.Arn
       Environment:
@@ -526,7 +526,7 @@ Resources:
   DeleteResizedImagesFromS3Function:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: ../state_machine/lambda_functions/delete_resized_images_from_s3
+      CodeUri: dist/state_machine/lambda_functions/delete_resized_images_from_s3
       Description: "Lambda function that deletes resized versions of image from S3"
       Role: !GetAtt BackendProcessingLambdaRole.Arn
       Environment:
@@ -538,7 +538,7 @@ Resources:
   GenerateThumbnailImageFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: ../state_machine/lambda_functions/generate_thumbnail_image
+      CodeUri: dist/state_machine/lambda_functions/generate_thumbnail_image
       Description: "Lambda function that generates thumbnail version of image"
       MemorySize: 1536
       Timeout: 300
@@ -553,7 +553,7 @@ Resources:
   GenerateLargeImageFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: ../state_machine/lambda_functions/generate_large_image
+      CodeUri: dist/state_machine/lambda_functions/generate_large_image
       Description: "Lambda function that generates large version of image"
       MemorySize: 1536
       Timeout: 300
@@ -878,7 +878,7 @@ Resources:
       MemorySize: 1024
       Timeout: 200
       Role: !GetAtt CustomResourceHelperRole.Arn
-      CodeUri: ../state_machine/lambda_functions/create_s3_event_trigger_helper
+      CodeUri: dist/state_machine/lambda_functions/create_s3_event_trigger_helper
     Type: AWS::Serverless::Function
 
   S3EventTrigger:
@@ -955,7 +955,7 @@ Resources:
       MemorySize: 1024
       Timeout: 200
       Role: !GetAtt DescribeExecutionFunctionRole.Arn
-      CodeUri: ../state_machine/lambda_functions/describe_state_machine_execution
+      CodeUri: dist/state_machine/lambda_functions/describe_state_machine_execution
 
   DescribeExecutionFunctionRole:
     Type: "AWS::IAM::Role"
