@@ -43,17 +43,33 @@ const dynamoDocClient = new AWS.DynamoDB.DocumentClient({
  * 		}
  */
 exports.handler = async event => {
-	if (!s3BucketName) throw "Undefined s3BucketName";
-	if (!originalImagePrefix) throw "Undefined originalImagePrefix";
-	if (!derivedImageBucketName) throw "Undefined derivedImageBucketName";
-	if (!thumbnailImagePrefix) throw "Undefined thumbnailImagePrefix";
-	if (!edgeSize) throw "Undefined edgeSize";
-	if (!jpegQuality) throw "Undefined jpegQuality";
-	if (!event) throw "Undefined event";
+	const ctx = {
+		s3: s3,
+		s3BucketName: s3BucketName,
+		originalImagePrefix: originalImagePrefix,
+		derivedImageBucketName: derivedImageBucketName,
+		thumbnailImagePrefix: thumbnailImagePrefix,
+		edgeSize: edgeSize,
+		jpegQuality: jpegQuality,
+		event: event
+	};
+
+	return await doIt(ctx);
+};
+
+async function doIt(ctx) {
+	if (!ctx) throw "Undefined ctx";
+	if (!ctx.s3BucketName) throw "Undefined s3BucketName";
+	if (!ctx.originalImagePrefix) throw "Undefined originalImagePrefix";
+	if (!ctx.derivedImageBucketName) throw "Undefined derivedImageBucketName";
+	if (!ctx.thumbnailImagePrefix) throw "Undefined thumbnailImagePrefix";
+	if (!ctx.edgeSize) throw "Undefined edgeSize";
+	if (!ctx.jpegQuality) throw "Undefined jpegQuality";
+	if (!ctx.event) throw "Undefined event";
 
 	// event.path is passed in from the API Gateway and contains the full path
-	// of the HTTP request, such as  "/thumb/path/to/image.jpg"
-	if (!event.path) {
+	// of the HTTP request, such as  "/thumb/2001/12-31/image.jpg"
+	if (!ctx.event.path) {
 		return {
 			isBase64Encoded: false,
 			statusCode: 400,
@@ -62,10 +78,10 @@ exports.handler = async event => {
 	}
 
 	// Remove the first segment of the URL path to get the image path
-	const imagePath = event.path.replace("/thumb", "");
+	const imagePath = ctx.event.path.replace("/thumb", "");
 
 	// event.body contains the body of the HTTP request
-	if (!event.body) {
+	if (!ctx.event.body) {
 		return {
 			isBase64Encoded: false,
 			statusCode: 400,
@@ -74,29 +90,18 @@ exports.handler = async event => {
 	}
 
 	// Turn the body into a javascript object
-	const crop = JSON.parse(event.body);
-
-	// Validate that the body contains everything we need
-	if (!crop.x || !crop.y || !crop.length) {
-		return {
-			isBase64Encoded: false,
-			statusCode: 400,
-			body: JSON.stringify({
-				errorMessage: "HTTP body must contain {x:NUMBER,y:NUMBER,length:NUMBER}"
-			})
-		};
-	}
+	let crop = JSON.parse(ctx.event.body);
 
 	try {
 		// Cut the new thumbnail
-		await recutThumbnail(
-			s3,
-			s3BucketName,
-			originalImagePrefix,
-			derivedImageBucketName,
-			thumbnailImagePrefix,
-			edgeSize,
-			jpegQuality,
+		crop = await recutThumbnail(
+			ctx.s3,
+			ctx.s3BucketName,
+			ctx.originalImagePrefix,
+			ctx.derivedImageBucketName,
+			ctx.thumbnailImagePrefix,
+			ctx.edgeSize,
+			ctx.jpegQuality,
 			imagePath,
 			crop
 		);
@@ -104,7 +109,7 @@ exports.handler = async event => {
 		// Set up execution context for saveThumbnailCropInfoToDynamo()
 		// This is everything the method needs in order to execute
 		// This is done to make the method unit testable
-		let ctx = {};
+		ctx = {};
 		ctx.tableName = dynamoTableName;
 		ctx.doUpdate = async dynamoParams => {
 			return dynamoDocClient.update(dynamoParams).promise();
@@ -112,6 +117,15 @@ exports.handler = async event => {
 
 		// Save the crop to Dynamo
 		await saveThumbnailCropInfoToDynamo(ctx, imagePath, crop);
+
+		// Success
+		return {
+			isBase64Encoded: false,
+			statusCode: 200,
+			body: JSON.stringify({
+				successMessage: "Recut thumbnail of image " + imagePath
+			})
+		};
 	} catch (e) {
 		if (e instanceof NotFoundException) {
 			return {
@@ -133,13 +147,5 @@ exports.handler = async event => {
 			};
 		}
 	}
-
-	// Success
-	return {
-		isBase64Encoded: false,
-		statusCode: 200,
-		body: JSON.stringify({
-			successMessage: "Recut thumbnail of image " + imagePath
-		})
-	};
-};
+}
+exports.doIt = doIt;

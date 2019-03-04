@@ -1,7 +1,5 @@
-const {
-	NotFoundException,
-	BadRequestException
-} = require("http-response-utils");
+const { BadRequestException } = require("http-response-utils");
+const { NotFoundException } = require("http-response-utils");
 const gm = require("gm").subClass({ imageMagick: true }); // Enable ImageMagick integration
 
 /**
@@ -32,12 +30,21 @@ async function recutThumbnail(
 	imagePath,
 	crop
 ) {
-	// Validate that the body contains everything we need
-	if (!crop || !crop.x || !crop.y || !crop.length) {
-		throw new BadRequestException(
-			"Crop must contain {x:NUMBER,y:NUMBER,length:NUMBER}"
-		);
+	if (!crop) {
+		throw new BadRequestException("Crop not specified");
 	}
+
+	// Validate that the body contains everything we need
+	checkInt("x", crop.x);
+	checkInt("y", crop.y);
+	checkInt("length", crop.length);
+
+	// Ensure crop values are stored as numbers, not strings
+	crop = {
+		x: Number(crop.x),
+		y: Number(crop.y),
+		length: Number(crop.length)
+	};
 
 	// Get the original image
 	let s3Object;
@@ -82,6 +89,34 @@ async function recutThumbnail(
 			Body: buffer
 		})
 		.promise();
+
+	// Return the cleaned
+	return crop;
 }
 
 module.exports = recutThumbnail;
+
+/**
+ * Return false if the passed-in thing is a positive integer
+ * @param {boolean}
+ */
+function checkInt(name, value) {
+	if (!isInt(value)) {
+		throw new BadRequestException("Invalid " + name + ": (" + value + ")");
+	}
+}
+
+/**
+ * Return true if the passed-in thing is a positive integer
+ * @param {boolean}
+ */
+function isInt(x) {
+	if (x === undefined) return false;
+	if (typeof x === "string") {
+		return x.match(/^\d+$/);
+	}
+	if (typeof x === "number" && Number.isInteger(x) && Math.sign(x) >= 0)
+		return true;
+
+	return false;
+}
