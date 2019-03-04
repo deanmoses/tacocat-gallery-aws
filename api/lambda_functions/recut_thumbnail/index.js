@@ -1,7 +1,6 @@
 const recutThumbnail = require("./recut_thumbnail.js");
 const saveThumbnailCropInfoToDynamo = require("./save_thumb_crop_info_to_dynamo.js");
-const BadRequestException = require("./BadRequestException.js");
-const NotFoundException = require("./NotFoundException.js");
+const { NotFoundException, BadRequestException } = require("http_utils");
 const AWS = require("aws-sdk");
 const s3 = new AWS.S3();
 
@@ -99,13 +98,17 @@ exports.handler = async event => {
 			crop
 		);
 
-		// Save the crop info to Dynamo DB
-		await saveThumbnailCropInfoToDynamo(
-			dynamoDocClient,
-			dynamoTableName,
-			imagePath,
-			crop
-		);
+		// Set up execution context for saveThumbnailCropInfoToDynamo()
+		// This is everything the method needs in order to execute
+		// This is done to make the method unit testable
+		let ctx = {};
+		ctx.tableName = dynamoTableName;
+		ctx.doUpdate = async dynamoParams => {
+			return dynamoDocClient.update(dynamoParams).promise();
+		};
+
+		// Save the crop to Dynamo
+		await saveThumbnailCropInfoToDynamo(ctx, imagePath, crop);
 	} catch (e) {
 		if (e instanceof NotFoundException) {
 			return {

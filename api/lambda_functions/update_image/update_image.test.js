@@ -1,5 +1,5 @@
 const updateImage = require("./update_image.js");
-const BadRequestException = require("./BadRequestException.js");
+const { BadRequestException } = require("http_utils");
 const JestUtils = require("../../../tests/utils/JestUtils.js");
 
 const imagePath = "/2001/12-31/image.jpg";

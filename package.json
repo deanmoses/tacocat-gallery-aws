@@ -2,27 +2,29 @@
 	"name": "tacocat-gallery-aws",
 	"version": "1.0.0",
 	"description": "The AWS serverless back end infrastructure for the Tacocat image gallery",
-	"main": "index.js",
+	"license": "Apache-2.0",
+	"author": "Dean Moses <moses@tacocat.com>",
+	"homepage": "https://github.com/deanmoses/tacocat-gallery-aws#readme",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/deanmoses/tacocat-gallery-aws.git"
+	},
+	"bugs": {
+		"url": "https://github.com/deanmoses/tacocat-gallery-aws/issues"
+	},
 	"scripts": {
 		"test": "jest -c jest.config.js",
 		"integration_readonly_test": "jest -c jest.config.readonlytests.js",
 		"integration_update_test": "jest -c jest.config.updatetests.js",
 		"integration_readwrite_test": "jest -c jest.config.readwritetests.js",
-		"deploy": "cloudformation/deploy_stack.sh"
+		"clean_dist": "rm -Rf cloudformation/dist/*",
+		"copy_api_to_dist": "rsync -rptgo --copy-links --exclude '*.test.js' --exclude '*_livetest.js' api/lambda_functions cloudformation/dist/api",
+		"copy_state_machine_to_dist": "rsync -rptgo --copy-links --exclude '*.test.js' --exclude '*_livetest.js' state_machine/lambda_functions cloudformation/dist/state_machine",
+		"copy_all_to_dist": "run-s copy_api_to_dist copy_state_machine_to_dist",
+		"package": "run-s clean_dist copy_all_to_dist",
+		"deploy_to_aws": "cloudformation/deploy_stack.sh",
+		"deploy": "run-s package deploy_to_aws"
 	},
-	"jest": {
-		"testEnvironment": "node"
-	},
-	"repository": {
-		"type": "git",
-		"url": "git+https://github.com/deanmoses/tacocat-gallery-aws.git"
-	},
-	"author": "Dean Moses <moses@tacocat.com>",
-	"license": "Apache-2.0",
-	"bugs": {
-		"url": "https://github.com/deanmoses/tacocat-gallery-aws/issues"
-	},
-	"homepage": "https://github.com/deanmoses/tacocat-gallery-aws#readme",
 	"devDependencies": {
 		"aws-sdk": "^2.355.0",
 		"aws-sdk-mock": "^4.2.0",
@@ -36,7 +38,8 @@
 		"eslint-plugin-standard": "^4.0.0",
 		"jest": "^23.6.0",
 		"jest-json-schema": "^2.0.2",
-		"node-fetch": "^2.3.0"
-	},
-	"dependencies": {}
+		"lerna": "^3.13.1",
+		"node-fetch": "^2.3.0",
+		"npm-run-all": "^4.1.5"
+	}
 }

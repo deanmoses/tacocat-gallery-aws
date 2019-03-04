@@ -15,7 +15,11 @@
 // import the unit test config; these tests will inherit from it
 const config = require("./jest.config.js");
 
-config.testRegex = "updatetest\\.js$"; // foo.updatetest.js instead of foo.test.js
-config.bail = true; // stop running tests after the first failure
+// foo.updatetest.js instead of foo.test.js
+config.testRegex = "updatetest\\.js$";
+
+// Tell where Jest to look for tests
+// I'm not sure if this is necessary: Jest can scan the entire tree
+config.roots = ["tests/"];
 
 module.exports = config;

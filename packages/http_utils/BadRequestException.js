@@ -1,3 +1,8 @@
+/**
+ * Exception that instructs the lambda function to return a 400
+ *
+ * @param {String} message error message
+ */
 function BadRequestException(message) {
 	this.httpStatusCode = 400;
 	this.message = message;

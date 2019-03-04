@@ -1,0 +1,4 @@
+{
+	"packages": ["packages/*", "api/lambda_functions/*"],
+	"version": "0.0.0"
+}

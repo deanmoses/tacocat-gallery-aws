@@ -1,0 +1,8 @@
+{
+	"name": "update_image",
+	"version": "1.0.0",
+	"private": true,
+	"dependencies": {
+		"http_utils": "1.0.0"
+	}
+}

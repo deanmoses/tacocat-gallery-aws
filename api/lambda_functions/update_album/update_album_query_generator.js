@@ -1,4 +1,4 @@
-const BadRequestException = require("./BadRequestException.js");
+const { BadRequestException } = require("http_utils");
 const getParentAndNameFromPath = require("./get_parent_and_name_from_path.js");
 
 /**

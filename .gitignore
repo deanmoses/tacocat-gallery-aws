@@ -60,9 +60,12 @@ typings/
 # next.js build output
 .next
 
-# Processed cloudformation templates
+# Processed CloudFormation templates
 cloudformation/stack.provisional.yaml
 cloudformation/stack.final.yaml
+
+# CloudFormation build output directory
+cloudformation/dist
 
 #OSX folder information file
 .DS_Store

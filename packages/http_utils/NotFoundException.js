@@ -1,3 +1,8 @@
+/**
+ * Exception that instructs the lambda function to return a 404
+ * 
+ * @param {String} message error message
+ */
 function NotFoundException(message) {
 	this.httpStatusCode = 404;
 	this.message = message;

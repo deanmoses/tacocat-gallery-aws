@@ -634,7 +634,7 @@ Resources:
   # Lambda function that retrieves an album and its children from DynamoDB
   GetAlbumFunction:
     Properties:
-      CodeUri: ../api/lambda_functions/get_album
+      CodeUri: dist/api/lambda_functions/get_album
       Description: "Lambda function that returns an album and its children from DynamoDB"
       Role: !GetAtt ApiGatewayLambdaReadOnlyRole.Arn
       Environment:
@@ -645,7 +645,7 @@ Resources:
   # Lambda function that retrieves the latest album from DynamoDB
   GetLatestAlbumFunction:
     Properties:
-      CodeUri: ../api/lambda_functions/get_latest_album
+      CodeUri: dist/api/lambda_functions/get_latest_album
       Description: "Lambda function that retrieves the latest album from DynamoDB"
       Role: !GetAtt ApiGatewayLambdaReadOnlyRole.Arn
       Environment:
@@ -656,7 +656,7 @@ Resources:
   # Lambda function that updates attributes like title and description on existing albums in DynamoDB
   UpdateAlbumFunction:
     Properties:
-      CodeUri: ../api/lambda_functions/update_album
+      CodeUri: dist/api/lambda_functions/update_album
       Description: "Lambda function that updates attributes like title and description on existing albums in DynamoDB"
       Role: !GetAtt ApiGatewayLambdaWriteRole.Arn
       Environment:
@@ -667,7 +667,7 @@ Resources:
   # Lambda function that updates attributes like title and description on existing images in DynamoDB
   UpdateImageFunction:
     Properties:
-      CodeUri: ../api/lambda_functions/update_image
+      CodeUri: dist/api/lambda_functions/update_image
       Description: "Lambda function that updates attributes like title and description on existing images in DynamoDB"
       Role: !GetAtt ApiGatewayLambdaWriteRole.Arn
       Environment:
@@ -679,7 +679,7 @@ Resources:
   RecutThumbnailFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: ../api/lambda_functions/recut_thumbnail
+      CodeUri: dist/api/lambda_functions/recut_thumbnail
       Description: "Lambda function that re-cuts an image's thumbnail to the specified region of the image"
       MemorySize: 1536
       Timeout: 300

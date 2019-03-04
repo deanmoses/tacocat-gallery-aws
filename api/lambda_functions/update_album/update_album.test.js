@@ -1,5 +1,5 @@
 const updateAlbum = require("./update_album.js");
-const BadRequestException = require("./BadRequestException.js");
+const { BadRequestException } = require("http_utils");
 const JestUtils = require("../../../tests/utils/JestUtils.js");
 
 const albumPath = "/2001/12-31/";

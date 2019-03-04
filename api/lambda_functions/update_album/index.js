@@ -1,8 +1,7 @@
 const AWS = require("aws-sdk");
 const updateAlbum = require("./update_album.js");
 const itemExists = require("./item_exists.js");
-const NotFoundException = require("./NotFoundException.js");
-const BadRequestException = require("./BadRequestException.js");
+const { NotFoundException, BadRequestException } = require("http_utils");
 
 const tableName = process.env.GALLERY_ITEM_DDB_TABLE;
 

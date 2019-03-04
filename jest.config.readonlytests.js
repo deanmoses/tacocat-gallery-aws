@@ -17,4 +17,8 @@ const config = require("./jest.config.js");
 
 config.testRegex = "readonlytest\\.js$"; // foo.readonlytest.js instead of foo.test.js
 
+// Tell where Jest to look for tests
+// I'm not sure if this is necessary: Jest can scan the entire tree
+config.roots = ["tests/"];
+
 module.exports = config;

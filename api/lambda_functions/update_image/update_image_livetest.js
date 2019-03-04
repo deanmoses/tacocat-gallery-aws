@@ -1,5 +1,5 @@
 const updateImage = require("./update_image.js");
-const NotFoundException = require("./NotFoundException.js");
+const { NotFoundException } = require("http_utils");
 const AWS = require("aws-sdk");
 const tableName = "TacocatGallery-GalleryItemDDBTable-GA5UVC6VCQRQ";
 const docClient = new AWS.DynamoDB.DocumentClient({

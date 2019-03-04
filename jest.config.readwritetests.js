@@ -15,7 +15,16 @@
 // import the unit test config; these tests will inherit from it
 const config = require("./jest.config.js");
 
-config.testRegex = "readwritetest\\.js$"; // foo.readwritetest.js instead of foo.test.js
-config.bail = true; // stop running tests after the first failure
+// foo.readwritetest.js instead of foo.test.js
+config.testRegex = "readwritetest\\.js$";
+
+// Stop running tests after the first failure
+// This is important for the end-to-end test because each test builds on the next
+config.runInBand = true;
+config.bail = true;
+
+// Tell where Jest to look for tests
+// I'm not sure if this is necessary: Jest can scan the entire tree
+config.roots = ["tests/"];
 
 module.exports = config;
