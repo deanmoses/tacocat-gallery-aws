@@ -12,8 +12,8 @@
 // StepFunction executions!
 //
 
-// import the unit test config; these tests will inherit from it
-const config = require("./jest.config.js");
+// import the base test config; these tests will inherit from it
+const config = require("./jest.config.base.js");
 
 config.testRegex = "readonlytest\\.js$"; // foo.readonlytest.js instead of foo.test.js
 

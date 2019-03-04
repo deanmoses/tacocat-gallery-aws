@@ -1,28 +1,21 @@
-// Configuration for Jest unit tests (integration test config inherits from this)
-module.exports = {
-	// testEnvironment: "node" makes tests run faster by disabling JSDom
-	// See https://medium.com/@kevinsimper/how-to-disable-jsdom-in-jest-make-jest-run-twice-as-fast-a01193f23405
-	testEnvironment: "node",
+// Configuration for Jest *UNIT* tests
+// Integration tests get a different configuration
 
-	collectCoverage: true,
-	collectCoverageFrom: [
-		"packages/**/*.{js}",
-		"api/lambda_functions/**/*.{js}",
-		"state_machine/lambda_functions/**/*.{js}",
-		"!**/node_modules/**"
-	],
+// import the base test config; these tests will inherit from it
+const config = require("./jest.config.base.js");
 
-	// Tell where Jest to look for tests
-	// I'm not sure if this is necessary: Jest can scan the entire tree
-	roots: [
-		"packages/",
-		"api/lambda_functions/",
-		"state_machine/lambda_functions/"
-	],
+config.collectCoverage = true;
+config.collectCoverageFrom = [
+	"packages/**/*.{js}",
+	"api/lambda_functions/**/*.{js}",
+	"state_machine/lambda_functions/**/*.{js}",
+	"!**/node_modules/**"
+];
 
-	modulePathIgnorePatterns: ["npm-cache", ".npm", ".cache"],
+config.roots = [
+	"packages/",
+	"api/lambda_functions/",
+	"state_machine/lambda_functions/"
+];
 
-	transformIgnorePatterns: [
-		"<rootDir>/node_modules/(?!http-response-utils|gallery-path-utils)"
-	]
-};
+module.exports = config;
