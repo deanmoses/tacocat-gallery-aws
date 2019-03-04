@@ -1,4 +1,4 @@
-const pth = require("./get_parent_and_name_from_path.js");
+const pth = require("./getParentAndNameFromPath.js");
 
 test("empty", () => {
 	expect(() => {

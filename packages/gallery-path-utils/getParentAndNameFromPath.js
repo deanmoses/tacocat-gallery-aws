@@ -6,6 +6,8 @@
  *  - /2001/12-31 returns '/2001/' and '12-31'
  *  - /2001 returns '/' and 2000'
  *  - / returns  ''
+ *
+ *  @param {String} path a path of the format /2001/12-31/image.jpg, or a subset thereof
  */
 function getParentAndNameFromPath(path) {
 	if (!path) throw new Error("Path cannot be empty");

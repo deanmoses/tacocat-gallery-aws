@@ -1,1 +1,3 @@
-module.exports.getParentAndNameFromPath = require("./get_parent_and_name_from_path.js");
+module.exports.getParentAndNameFromPath = require("./getParentAndNameFromPath.js");
+module.exports.getParentFromPath = require("./getParentFromPath.js");
+module.exports.getNameFromPath = require("./getNameFromPath.js");
