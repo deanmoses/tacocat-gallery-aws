@@ -5,14 +5,19 @@ module.exports = {
 	testEnvironment: "node",
 
 	collectCoverage: true,
-	collectCoverageFrom: ["packages/**/*.{js}", "!**/node_modules/**"],
+	collectCoverageFrom: [
+		"packages/**/*.{js}",
+		"api/lambda_functions/**/*.{js}",
+		"state_machine/lambda_functions/**/*.{js}",
+		"!**/node_modules/**"
+	],
 
 	// Tell where Jest to look for tests
 	// I'm not sure if this is necessary: Jest can scan the entire tree
 	roots: [
+		"packages/",
 		"api/lambda_functions/",
-		"state_machine/lambda_functions/",
-		"packages/"
+		"state_machine/lambda_functions/"
 	],
 
 	modulePathIgnorePatterns: ["npm-cache", ".npm", ".cache"],
