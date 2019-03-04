@@ -1,4 +1,3 @@
-const getImagePath = require("./get_image_path.js");
 const retrieveImageFromDynamo = require("./retrieve_image_from_dynamo.js");
 const createImage = require("./create_image.js");
 const updateImage = require("./update_image.js");
@@ -15,7 +14,7 @@ const docClient = new AWS.DynamoDB.DocumentClient({
  * A Lambda function that creates/updates the image in DynamoDB
  */
 exports.handler = async event => {
-	const imagePath = getImagePath(event.s3Key);
+	const imagePath = event.objectID;
 
 	// Retrieve image entry from DynamoDB
 	const imageEntry = await retrieveImageFromDynamo(
