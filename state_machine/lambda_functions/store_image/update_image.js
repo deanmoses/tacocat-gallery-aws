@@ -7,41 +7,55 @@ const { getParentAndNameFromPath } = require("gallery-path-utils");
  *
  * @param {Object} ctx execution context
  * @param {String} imagePath Path of the image like /2001/12-31/image.jpg
- * @param {Boolean} imageIsNew true if the image is not being re-uploaded
  * @param {Object} metadata EXIF and IPTC metadata extracted from the image
  *
  * @returns {Object} result from DynamoDB if success, throws exception if there's a problem with the input
  */
-async function updateImage(ctx, imagePath, imageIsNew, metadata) {
+async function updateImage(ctx, imagePath, metadata) {
 	const now = new Date().toISOString();
 
 	let expr = "";
 	let exprVals = {};
+	let removeExpr = "";
 
 	expr = addToSetExpr(expr, exprVals, "updatedOn", now);
 	expr = addToSetExpr(expr, exprVals, "fileUpdatedOn", now);
-	const mimeSubType = metadata.format.toLowerCase();
-	expr = addToSetExpr(expr, exprVals, "mimeSubType", mimeSubType);
-	expr = addToSetExpr(expr, exprVals, "dimensions", metadata.dimensions);
 
-	if (metadata.creationTime) {
+	if (metadata.format == undefined) {
+		addToRemoveExpr(removeExpr, "mimeSubType");
+	} else {
+		const mimeSubType = metadata.format.toLowerCase();
+		expr = addToSetExpr(expr, exprVals, "mimeSubType", mimeSubType);
+	}
+
+	if (metadata.dimensions == undefined) {
+		addToRemoveExpr(removeExpr, "dimensions");
+	} else {
+		expr = addToSetExpr(expr, exprVals, "dimensions", metadata.dimensions);
+	}
+
+	if (metadata.creationTime == undefined) {
+		addToRemoveExpr(removeExpr, "capturedOn");
+	} else {
+		// Don't check the date format: that was done in the transform metadata step
 		expr = addToSetExpr(expr, exprVals, "capturedOn", metadata.creationTime);
 	}
 
-	// Don't update if image is being re-uploaded
-	if (imageIsNew) {
-		if (metadata.title) {
-			expr = addToSetExpr(expr, exprVals, "title", metadata.title);
-		}
-
-		if (metadata.description) {
-			expr = addToSetExpr(expr, exprVals, "description", metadata.description);
-		}
-	}
-
-	if (metadata.tags) {
+	if (metadata.tags == undefined) {
+		addToRemoveExpr(removeExpr, "tags");
+	} else {
 		expr = addToSetExpr(expr, exprVals, "tags", metadata.tags);
 	}
+
+	// Combine the SET and REMOVE expression fragments
+	let updateExpression = expr;
+	if (removeExpr) {
+		updateExpression += " " + removeExpr;
+	}
+
+	//
+	// Generate the DynamoDB parameters
+	//
 
 	const pathParts = getParentAndNameFromPath(imagePath);
 	const ddbparams = {
@@ -50,13 +64,18 @@ async function updateImage(ctx, imagePath, imageIsNew, metadata) {
 			parentPath: pathParts.parent,
 			itemName: pathParts.name
 		},
-		UpdateExpression: expr,
+		UpdateExpression: updateExpression,
 		ExpressionAttributeValues: exprVals,
 		ConditionExpression: "attribute_exists (itemName)"
 	};
 
-	return await ctx.doUpdate(ddbparams);
+	//
+	// Send update to DynamoDB
+	//
+
+	await ctx.doUpdate(ddbparams);
 }
+module.exports = updateImage;
 
 /**
  * Add to DynamoDB SET expression
@@ -77,4 +96,19 @@ function addToSetExpr(expr, exprVals, name, value) {
 	return expr;
 }
 
-module.exports = updateImage;
+/**
+ * Add to DynamoDB REMOVE expression
+ *
+ * @param {String} expr
+ * @param {String} name
+ */
+function addToRemoveExpr(expr, name) {
+	if (expr.length === 0) {
+		expr = "REMOVE";
+	} else {
+		expr += ",";
+	}
+	expr += " " + name;
+
+	return expr;
+}

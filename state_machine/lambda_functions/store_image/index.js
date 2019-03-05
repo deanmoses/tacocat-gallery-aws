@@ -1,7 +1,5 @@
-const retrieveImageFromDynamo = require("./retrieve_image_from_dynamo.js");
 const createImage = require("./create_image.js");
 const updateImage = require("./update_image.js");
-
 const AWS = require("aws-sdk");
 
 const tableName = process.env.GALLERY_ITEM_DDB_TABLE;
@@ -14,33 +12,38 @@ const docClient = new AWS.DynamoDB.DocumentClient({
  * A Lambda function that creates/updates the image in DynamoDB
  */
 exports.handler = async event => {
-	const imagePath = event.objectID;
-
-	// Retrieve image entry from DynamoDB
-	const imageEntry = await retrieveImageFromDynamo(
-		docClient,
-		tableName,
-		imagePath
-	);
-	const imageIsNew = !imageEntry;
-
-	// Create the image in DynamoDB if it hasn't already been created
-	if (imageIsNew) {
-		await createImage(docClient, tableName, imagePath);
-	}
-
-	//
-	// Update the image entry in DynamoDB
-	//
-
-	// Set up execution context
-	// This is everything that updateImage() needs in order to execute
-	// This is done to make updateImage() unit testable
+	// Set up the execution context
 	let ctx = {};
 	ctx.tableName = tableName;
+	ctx.doPut = async dynamoParams => {
+		return docClient.put(dynamoParams).promise();
+	};
 	ctx.doUpdate = async dynamoParams => {
 		return docClient.update(dynamoParams).promise();
 	};
-	await updateImage(ctx, imagePath, imageIsNew, event.extractedMetadata);
-	return "SUCCESS";
+
+	// Do the lambda's work
+	return await doLambda(event, ctx);
 };
+
+/**
+ * Do the lambda's work
+ *
+ * @param {Object} event the Lambda event
+ * @param {Object} ctx the environmental context needed to do the work
+ */
+async function doLambda(event, ctx) {
+	const imagePath = event.objectID;
+	const imageMetadata = event.extractedMetadata;
+
+	// Create image in DynamoDB if it doesn't exist
+	await createImage(ctx, imagePath, imageMetadata);
+
+	// Update image in DynamoDB
+	await updateImage(ctx, imagePath, imageMetadata);
+
+	// Return success to StepFunctions
+	// This value is not used; it's just for debugging
+	return "SUCCESS";
+}
+exports.doLambda = doLambda;

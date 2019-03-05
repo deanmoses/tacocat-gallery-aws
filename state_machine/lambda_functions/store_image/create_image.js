@@ -3,15 +3,14 @@ const { getParentAndNameFromPath } = require("gallery-path-utils");
 /**
  * Create image in DynamoDB if it has not already been created.
  *
- * I expect this to be be called every time a new version of the item is
- * uploaded to the S3 bucket, but it will do nothing every time but the
- * first.
+ * This is to be called every time a new version of the item is uploaded to the
+ * S3 bucket, but it will do nothing every time but the first.
  *
- * @param {*} docClient AWS DynamoDB DocumentClient
- * @param {*} tableName Name of the table in DynamoDB in which to store gallery items
- * @param {*} imagePath Path of the image like /2001/12-31/image.jpg
+ * @param {Object} ctx execution context
+ * @param {String} imagePath Path of the image like /2001/12-31/image.jpg
+ * @param {Object} metadata EXIF and IPTC metadata extracted from the image
  */
-function createImage(docClient, tableName, imagePath) {
+async function createImage(ctx, imagePath, metadata) {
 	const pathParts = getParentAndNameFromPath(imagePath);
 
 	const now = new Date().toISOString();
@@ -24,31 +23,30 @@ function createImage(docClient, tableName, imagePath) {
 		updatedOn: now,
 		fileUpdatedOn: now
 	};
+
+	if (metadata.title !== undefined) {
+		dynamoItem.title = metadata.title;
+	}
+
+	if (metadata.description !== undefined) {
+		dynamoItem.description = metadata.description;
+	}
+
 	const ddbparams = {
-		TableName: tableName,
+		TableName: ctx.tableName,
 		Item: dynamoItem,
 		ConditionExpression: "attribute_not_exists (itemName)"
 	};
 
-	return new Promise(function(resolve, reject) {
-		docClient
-			.put(ddbparams)
-			.promise()
-			.then(data => {
-				resolve(data);
-			})
-			.catch(err => {
-				// A ConditionalCheckFailedException error means the image already
-				// exists.  That's not an error.
-				if (err.errorType !== "ConditionalCheckFailedException") {
-					resolve("Success: image already existed");
-				}
-				// Every other error is a real error
-				else {
-					reject(err);
-				}
-			});
-	});
+	try {
+		await ctx.doPut(ddbparams);
+	} catch (err) {
+		// ConditionalCheckFailedException means the image exists.
+		// That's not an error. Everything else is an error.
+		if (err.code !== "ConditionalCheckFailedException") {
+			throw err;
+		}
+	}
 }
 
 module.exports = createImage;
