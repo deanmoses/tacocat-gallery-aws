@@ -13,7 +13,7 @@
 //
 
 // import the unit test config; these tests will inherit from it
-const config = require("./jest.config.js");
+const config = require("./jest.config.base.js");
 
 // foo.updatetest.js instead of foo.test.js
 config.testRegex = "updatetest\\.js$";
