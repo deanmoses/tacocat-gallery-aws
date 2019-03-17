@@ -1,4 +1,4 @@
-const doLambda = require("./index.js").doLambda;
+const storeImage = require("./store_image.js");
 const JestUtils = require("../../../tests/utils/JestUtils.js");
 
 // Execution context: stuff passed into method being tested
@@ -50,7 +50,7 @@ describe("Store Image", () => {
 		ctx.doPut = mockDoPut;
 
 		// do the update, expecting it to fail with the error message thrown above
-		await expect(doLambda(event, ctx)).rejects.toMatch("Missing");
+		await expect(storeImage(event, ctx)).rejects.toMatch("Missing");
 
 		// did the mocks get called?
 		expect(ctx.doPut).toBeCalledTimes(0);
@@ -76,7 +76,7 @@ describe("Store Image", () => {
 		ctx.doPut = mockDoPut;
 
 		// do the update, expecting it to fail with the error message thrown above
-		await expect(doLambda(event, ctx)).rejects.toMatch("dimensions");
+		await expect(storeImage(event, ctx)).rejects.toMatch("dimensions");
 
 		// did the mocks get called?
 		expect(ctx.doPut).toBeCalledTimes(0);
@@ -105,7 +105,7 @@ describe("Store Image", () => {
 		ctx.doPut = mockDoPut;
 
 		// do the update, expecting it to fail with the error message thrown above
-		await expect(doLambda(event, ctx)).rejects.toMatch("format");
+		await expect(storeImage(event, ctx)).rejects.toMatch("format");
 
 		// did the mocks get called?
 		expect(ctx.doPut).toBeCalledTimes(0);
@@ -156,7 +156,7 @@ describe("Store Image", () => {
 		ctx.doUpdate = mockDoUpdate;
 
 		// do the update
-		const response = await doLambda(event, ctx);
+		const response = await storeImage(event, ctx);
 
 		// did the mocks get called?
 		expect(ctx.doPut).toBeCalledTimes(1);
@@ -217,7 +217,7 @@ describe("Store Image", () => {
 		ctx.doUpdate = mockDoUpdate;
 
 		// do the update
-		const response = await doLambda(event, ctx);
+		const response = await storeImage(event, ctx);
 
 		// did the mocks get called?
 		expect(ctx.doPut).toBeCalledTimes(1);
@@ -274,7 +274,7 @@ describe("Store Image", () => {
 		ctx.doUpdate = mockDoUpdate;
 
 		// do the update
-		const response = await doLambda(event, ctx);
+		const response = await storeImage(event, ctx);
 
 		// did the mocks get called?
 		expect(ctx.doPut).toBeCalledTimes(1);
@@ -335,7 +335,7 @@ describe("Store Image", () => {
 		ctx.doUpdate = mockDoUpdate;
 
 		// do the update
-		const response = await doLambda(event, ctx);
+		const response = await storeImage(event, ctx);
 
 		// did the mocks get called?
 		expect(ctx.doPut).toBeCalledTimes(1);
@@ -372,7 +372,7 @@ describe("Store Image", () => {
 		ctx.doUpdate = mockDoUpdate;
 
 		// do the update
-		const response = await doLambda(event, ctx);
+		const response = await storeImage(event, ctx);
 
 		// did the mocks get called?
 		expect(ctx.doPut).toBeCalledTimes(1);
@@ -416,7 +416,7 @@ describe("Store Image", () => {
 		ctx.doUpdate = mockDoUpdate;
 
 		// do the update
-		const response = await doLambda(event, ctx);
+		const response = await storeImage(event, ctx);
 
 		// did the mocks get called?
 		expect(ctx.doPut).toBeCalledTimes(1);
@@ -439,7 +439,7 @@ describe("Store Image", () => {
 		ctx.doPut = mockDoPut;
 
 		// do the update, expecting it to fail with the error message thrown above
-		await expect(doLambda(event, ctx)).rejects.toMatch("xxyz");
+		await expect(storeImage(event, ctx)).rejects.toMatch("xxyz");
 
 		// did the mocks get called?
 		expect(ctx.doPut).toBeCalledTimes(1);
