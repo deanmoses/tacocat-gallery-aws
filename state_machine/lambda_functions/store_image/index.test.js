@@ -14,7 +14,7 @@ beforeEach(() => {
 	// Mock out the Lambda event to be passed into method being tested
 	event = {
 		objectID: "/2001/12-31/image.jpg",
-		extractedMetadata: {}
+		extractedMetadata: minimumMetadata
 	};
 
 	// Mock out an execution context to be passed into method being tested
@@ -38,7 +38,85 @@ describe("Store Image", () => {
 	 *
 	 */
 	test("Empty Image Metadata", async () => {
-		expect.assertions(27);
+		expect.assertions(3);
+
+		event.extractedMetadata = {};
+
+		// mock out doPut()
+		const mockDoPut = jest.fn(() => {
+			// This is part of the exception DynamoDB would return if the image existed
+			throw "xxyz";
+		});
+		ctx.doPut = mockDoPut;
+
+		// do the update, expecting it to fail with the error message thrown above
+		await expect(doLambda(event, ctx)).rejects.toMatch("Missing");
+
+		// did the mocks get called?
+		expect(ctx.doPut).toBeCalledTimes(0);
+		expect(ctx.doUpdate).toBeCalledTimes(0);
+	});
+
+	/**
+	 *
+	 */
+	test("Missing Image Dimensions", async () => {
+		expect.assertions(3);
+
+		event.extractedMetadata = {
+			fileSize: "2.136MB",
+			format: "JPEG"
+		};
+
+		// mock out doPut()
+		const mockDoPut = jest.fn(() => {
+			// This is part of the exception DynamoDB would return if the image existed
+			throw "xxyz";
+		});
+		ctx.doPut = mockDoPut;
+
+		// do the update, expecting it to fail with the error message thrown above
+		await expect(doLambda(event, ctx)).rejects.toMatch("dimensions");
+
+		// did the mocks get called?
+		expect(ctx.doPut).toBeCalledTimes(0);
+		expect(ctx.doUpdate).toBeCalledTimes(0);
+	});
+
+	/**
+	 *
+	 */
+	test("Missing Image Format", async () => {
+		expect.assertions(3);
+
+		event.extractedMetadata = {
+			dimensions: {
+				width: 4032,
+				height: 3024
+			},
+			fileSize: "2.136MB"
+		};
+
+		// mock out doPut()
+		const mockDoPut = jest.fn(() => {
+			// This is part of the exception DynamoDB would return if the image existed
+			throw "xxyz";
+		});
+		ctx.doPut = mockDoPut;
+
+		// do the update, expecting it to fail with the error message thrown above
+		await expect(doLambda(event, ctx)).rejects.toMatch("format");
+
+		// did the mocks get called?
+		expect(ctx.doPut).toBeCalledTimes(0);
+		expect(ctx.doUpdate).toBeCalledTimes(0);
+	});
+
+	/**
+	 *
+	 */
+	test("Minimum Image Metadata", async () => {
+		expect.assertions(29);
 
 		// mock out doPut()
 		const mockDoPut = jest.fn(q => {
@@ -65,11 +143,13 @@ describe("Store Image", () => {
 			expect(q.Key.parentPath).toBe("/2001/12-31/");
 			expect(q.Key.itemName).toBe("image.jpg");
 			expect(q.UpdateExpression).toBe(
-				"SET updatedOn = :updatedOn, fileUpdatedOn = :fileUpdatedOn"
+				"SET updatedOn = :updatedOn, fileUpdatedOn = :fileUpdatedOn, mimeSubType = :mimeSubType, dimensions = :dimensions REMOVE capturedOn, tags"
 			);
-			expect(Object.keys(q.ExpressionAttributeValues).length).toBe(2);
+			expect(Object.keys(q.ExpressionAttributeValues).length).toBe(4);
 			JestUtils.expectValidDate(q.ExpressionAttributeValues[":updatedOn"]);
 			JestUtils.expectValidDate(q.ExpressionAttributeValues[":fileUpdatedOn"]);
+			expect(q.ExpressionAttributeValues[":mimeSubType"]).toBe("jpeg");
+			expect(q.ExpressionAttributeValues[":dimensions"].height).toBe(3024);
 			expect(q.ConditionExpression).toBe("attribute_exists (itemName)");
 			return {};
 		});
@@ -149,6 +229,63 @@ describe("Store Image", () => {
 	/**
 	 *
 	 */
+	test("Title and Description Are Present But Blank", async () => {
+		expect.assertions(31);
+
+		event.extractedMetadata = blankTitleMetadata;
+
+		// mock out doPut()
+		const mockDoPut = jest.fn(q => {
+			// do some expects *inside* the mocked function
+			expect(q).toBeDefined();
+			expect(q.TableName).toBe(ctx.tableName);
+			expect(q.Item.parentPath).toBe("/2001/12-31/");
+			expect(q.Item.itemName).toBe("image.jpg");
+			expect(q.Item.itemType).toBe("media");
+			JestUtils.expectValidDate(q.Item.createdOn);
+			JestUtils.expectValidDate(q.Item.updatedOn);
+			JestUtils.expectValidDate(q.Item.fileUpdatedOn);
+			expect(q.Item.title).toBeUndefined();
+			expect(q.Item.description).toBeUndefined();
+			expect(Object.keys(q.Item).length).toBe(6);
+			expect(q.ConditionExpression).toBe("attribute_not_exists (itemName)");
+			return {};
+		});
+		ctx.doPut = mockDoPut;
+
+		// mock out doUpdate()
+		const mockDoUpdate = jest.fn(q => {
+			// do some expects *inside* the mocked function
+			expect(q).toBeDefined();
+			expect(q.TableName).toBe(ctx.tableName);
+			expect(q.Key.parentPath).toBe("/2001/12-31/");
+			expect(q.Key.itemName).toBe("image.jpg");
+			expect(q.UpdateExpression).toBe(
+				"SET updatedOn = :updatedOn, fileUpdatedOn = :fileUpdatedOn, mimeSubType = :mimeSubType, dimensions = :dimensions REMOVE capturedOn, tags"
+			);
+			expect(Object.keys(q.ExpressionAttributeValues).length).toBe(4);
+			JestUtils.expectValidDate(q.ExpressionAttributeValues[":updatedOn"]);
+			JestUtils.expectValidDate(q.ExpressionAttributeValues[":fileUpdatedOn"]);
+			expect(q.ExpressionAttributeValues[":mimeSubType"]).toBe("jpeg");
+			expect(q.ExpressionAttributeValues[":dimensions"].height).toBe(3024);
+			expect(q.ConditionExpression).toBe("attribute_exists (itemName)");
+			return {};
+		});
+		ctx.doUpdate = mockDoUpdate;
+
+		// do the update
+		const response = await doLambda(event, ctx);
+
+		// did the mocks get called?
+		expect(ctx.doPut).toBeCalledTimes(1);
+		expect(ctx.doUpdate).toBeCalledTimes(1);
+
+		expect(response).toBe("SUCCESS");
+	});
+
+	/**
+	 *
+	 */
 	test("Metadata Without Tags or CreationTime", async () => {
 		expect.assertions(33);
 
@@ -181,7 +318,7 @@ describe("Store Image", () => {
 			expect(q.Key.parentPath).toBe("/2001/12-31/");
 			expect(q.Key.itemName).toBe("image.jpg");
 			expect(q.UpdateExpression).toBe(
-				"SET updatedOn = :updatedOn, fileUpdatedOn = :fileUpdatedOn, mimeSubType = :mimeSubType, dimensions = :dimensions"
+				"SET updatedOn = :updatedOn, fileUpdatedOn = :fileUpdatedOn, mimeSubType = :mimeSubType, dimensions = :dimensions REMOVE capturedOn, tags"
 			);
 			JestUtils.expectValidDate(q.ExpressionAttributeValues[":updatedOn"]);
 			JestUtils.expectValidDate(q.ExpressionAttributeValues[":fileUpdatedOn"]);
@@ -210,12 +347,10 @@ describe("Store Image", () => {
 	/**
 	 *
 	 */
-	test("Metadata With Just CreationTime", async () => {
+	test("Metadata With CreationTime", async () => {
 		expect.assertions(16);
 
-		event.extractedMetadata = {
-			creationTime: "2018-12-31T13:03:15.000Z"
-		};
+		event.extractedMetadata.creationTime = "2018-12-31T13:03:15.000Z";
 
 		// mock out doUpdate()
 		const mockDoUpdate = jest.fn(q => {
@@ -225,12 +360,12 @@ describe("Store Image", () => {
 			expect(q.Key.parentPath).toBe("/2001/12-31/");
 			expect(q.Key.itemName).toBe("image.jpg");
 			expect(q.UpdateExpression).toBe(
-				"SET updatedOn = :updatedOn, fileUpdatedOn = :fileUpdatedOn, capturedOn = :capturedOn"
+				"SET updatedOn = :updatedOn, fileUpdatedOn = :fileUpdatedOn, mimeSubType = :mimeSubType, dimensions = :dimensions, capturedOn = :capturedOn REMOVE tags"
 			);
 			JestUtils.expectValidDate(q.ExpressionAttributeValues[":updatedOn"]);
 			JestUtils.expectValidDate(q.ExpressionAttributeValues[":fileUpdatedOn"]);
 			JestUtils.expectValidDate(q.ExpressionAttributeValues[":capturedOn"]);
-			expect(Object.keys(q.ExpressionAttributeValues).length).toBe(3);
+			expect(Object.keys(q.ExpressionAttributeValues).length).toBe(5);
 			expect(q.ConditionExpression).toBe("attribute_exists (itemName)");
 			return {};
 		});
@@ -270,11 +405,11 @@ describe("Store Image", () => {
 			expect(q.Key.parentPath).toBe("/2001/12-31/");
 			expect(q.Key.itemName).toBe("image.jpg");
 			expect(q.UpdateExpression).toBe(
-				"SET updatedOn = :updatedOn, fileUpdatedOn = :fileUpdatedOn"
+				"SET updatedOn = :updatedOn, fileUpdatedOn = :fileUpdatedOn, mimeSubType = :mimeSubType, dimensions = :dimensions, capturedOn = :capturedOn REMOVE tags"
 			);
 			JestUtils.expectValidDate(q.ExpressionAttributeValues[":updatedOn"]);
 			JestUtils.expectValidDate(q.ExpressionAttributeValues[":fileUpdatedOn"]);
-			expect(Object.keys(q.ExpressionAttributeValues).length).toBe(2);
+			expect(Object.keys(q.ExpressionAttributeValues).length).toBe(5);
 			expect(q.ConditionExpression).toBe("attribute_exists (itemName)");
 			return {};
 		});
@@ -311,6 +446,26 @@ describe("Store Image", () => {
 		expect(ctx.doUpdate).toBeCalledTimes(0);
 	});
 });
+
+const minimumMetadata = {
+	dimensions: {
+		width: 4032,
+		height: 3024
+	},
+	fileSize: "2.136MB",
+	format: "JPEG"
+};
+
+const blankTitleMetadata = {
+	dimensions: {
+		width: 4032,
+		height: 3024
+	},
+	fileSize: "2.136MB",
+	format: "JPEG",
+	title: "",
+	description: ""
+};
 
 const metadata = {
 	creationTime: "2019-02-15T17:04:23.000Z",

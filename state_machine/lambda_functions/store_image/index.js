@@ -36,6 +36,16 @@ async function doLambda(event, ctx) {
 	const imagePath = event.objectID;
 	const imageMetadata = event.extractedMetadata;
 
+	if (!imageMetadata) {
+		throw "Missing all image metadata";
+	}
+	if (!imageMetadata.format) {
+		throw "Missing image format";
+	}
+	if (!imageMetadata.dimensions) {
+		throw "Missing image dimensions";
+	}
+
 	// Create image in DynamoDB if it doesn't exist
 	await createImage(ctx, imagePath, imageMetadata);
 

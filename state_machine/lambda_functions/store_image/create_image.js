@@ -1,4 +1,5 @@
 const { getParentAndNameFromPath } = require("gallery-path-utils");
+const { isEmpty } = require("dynamo-utils");
 
 /**
  * Create image in DynamoDB if it has not already been created.
@@ -24,11 +25,11 @@ async function createImage(ctx, imagePath, metadata) {
 		fileUpdatedOn: now
 	};
 
-	if (metadata.title !== undefined) {
+	if (!isEmpty(metadata.title)) {
 		dynamoItem.title = metadata.title;
 	}
 
-	if (metadata.description !== undefined) {
+	if (!isEmpty(metadata.description)) {
 		dynamoItem.description = metadata.description;
 	}
 

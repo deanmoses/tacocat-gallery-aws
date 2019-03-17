@@ -1,6 +1,7 @@
 const { BadRequestException } = require("http-response-utils");
 const { NotFoundException } = require("http-response-utils");
 const { getParentAndNameFromPath } = require("gallery-path-utils");
+const { DynamoUpdateBuilder } = require("dynamo-utils");
 
 /**
  * Update an album's attributes (like title and description) in DynamoDB
@@ -33,72 +34,22 @@ async function updateAlbum(ctx, path, attributesToUpdate) {
 		throw new BadRequestException("No attributes to update");
 	}
 
-	// These are the attributes it's valid to set on an album
+	// Ensure only these attributes are in the input
 	const validKeys = new Set(["title", "description", "thumbnail"]);
-
-	// We'll be separating out the attributes to update from the attributes to
-	// remove.  Setting an attribute to blank ("") isn't allowed in DynamoDB;
-	// instead you have to remove it completely.
-	let attributesToSet = new Set();
-	let attributesToRemove = new Set();
-
-	// For each attributes to update
 	keysToUpdate.forEach(keyToUpdate => {
 		// Ensure we aren't trying to update an unknown attribute
 		if (!validKeys.has(keyToUpdate)) {
 			throw new BadRequestException("Unknown attribute: " + keyToUpdate);
 		}
-
-		// Put the blank attributes into the 'attributesToRemove' bucket
-		const value = attributesToUpdate[keyToUpdate];
-		if (!value) {
-			attributesToRemove.add(keyToUpdate);
-		} else {
-			attributesToSet.add(keyToUpdate);
-		}
 	});
 
-	// Special validation for non-empty thumbnail
-	if (attributesToUpdate.thumbnail) {
-		assertWellFormedImagePath(attributesToUpdate.thumbnail);
-	}
-
-	//
-	// Build the Dynamo DB expression
-	//
-
-	let exprVals = {};
-
-	// Build the SET expression
-	let setExpr = "";
-	attributesToSet.forEach(key => {
-		setExpr = addToSetExpr(setExpr, exprVals, key, attributesToUpdate[key]);
-	});
-	// Always set the update time
-	setExpr = addToSetExpr(
-		setExpr,
-		exprVals,
-		"updatedOn",
-		new Date().toISOString()
-	);
-
-	// Build the REMOVE expression
-	let removeExpr = "";
-	attributesToRemove.forEach(key => {
-		removeExpr = addToRemoveExpr(removeExpr, key);
-	});
-
-	// Combine the SET and REMOVE expression fragments
-	let updateExpression = setExpr;
-	if (removeExpr) {
-		updateExpression += " " + removeExpr;
-	}
-
-	// If thumbnail is one of the attributes to update
+	// Validate thumbnail
 	if (
 		attributesToUpdate.thumbnail !== undefined &&
 		attributesToUpdate.thumbnail !== ""
 	) {
+		assertWellFormedImagePath(attributesToUpdate.thumbnail);
+
 		// Ensure thumbnail actually exists
 		const thumbPath = attributesToUpdate.thumbnail;
 		if (!(await ctx.itemExists(thumbPath))) {
@@ -107,8 +58,15 @@ async function updateAlbum(ctx, path, attributesToUpdate) {
 	}
 
 	//
-	// Generate the DynamoDB parameters
+	// Construct the DynamoDB update statement
 	//
+
+	const bldr = new DynamoUpdateBuilder();
+	keysToUpdate.forEach(keyToUpdate => {
+		bldr.add(keyToUpdate, attributesToUpdate[keyToUpdate]);
+	});
+	// Always set the update time
+	bldr.add("updatedOn", new Date().toISOString());
 
 	const pathParts = getParentAndNameFromPath(path);
 
@@ -118,8 +76,8 @@ async function updateAlbum(ctx, path, attributesToUpdate) {
 			parentPath: pathParts.parent,
 			itemName: pathParts.name
 		},
-		UpdateExpression: updateExpression,
-		ExpressionAttributeValues: exprVals,
+		UpdateExpression: bldr.getUpdateExpression(),
+		ExpressionAttributeValues: bldr.getExpressionAttributeValues(),
 		ConditionExpression: "attribute_exists (itemName)"
 	};
 
@@ -139,42 +97,6 @@ async function updateAlbum(ctx, path, attributesToUpdate) {
 }
 
 module.exports = updateAlbum;
-
-/**
- * Add to DynamoDB SET expression
- *
- * @param {String} expr
- * @param {Array} exprVals
- * @param {String} name
- * @param {String} value
- */
-function addToSetExpr(expr, exprVals, name, value) {
-	if (expr.length === 0) {
-		expr = "SET";
-	} else {
-		expr += ",";
-	}
-	expr += " x = :x".replace(/x/g, name);
-	exprVals[":" + name] = value;
-	return expr;
-}
-
-/**
- * Add to DynamoDB REMOVE expression
- *
- * @param {String} expr
- * @param {String} name
- */
-function addToRemoveExpr(expr, name) {
-	if (expr.length === 0) {
-		expr = "REMOVE";
-	} else {
-		expr += ",";
-	}
-	expr += " " + name;
-
-	return expr;
-}
 
 /**
  * Throw exception if it's not a well-formed album path

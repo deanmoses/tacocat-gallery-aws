@@ -3,6 +3,7 @@ const {
 	BadRequestException
 } = require("http-response-utils");
 const { getParentAndNameFromPath } = require("gallery-path-utils");
+const { DynamoUpdateBuilder } = require("dynamo-utils");
 
 /**
  * Save image thumbnail crop info to DynamoDB
@@ -24,14 +25,9 @@ async function saveThumbnailCropInfoToDynamo(ctx, imagePath, crop) {
 	const now = new Date().toISOString();
 	crop.fileUpdatedOn = now;
 
-	let UpdateExpression = "SET";
-	let ExpressionAttributeValues = {};
-
-	UpdateExpression += " thumbnail = :thumbnail";
-	ExpressionAttributeValues[":thumbnail"] = crop;
-
-	UpdateExpression += ", updatedOn = :updatedOn";
-	ExpressionAttributeValues[":updatedOn"] = now;
+	const bldr = new DynamoUpdateBuilder();
+	bldr.add("thumbnail", crop);
+	bldr.add("updatedOn", now);
 
 	const pathParts = getParentAndNameFromPath(imagePath);
 
@@ -41,8 +37,8 @@ async function saveThumbnailCropInfoToDynamo(ctx, imagePath, crop) {
 			parentPath: pathParts.parent,
 			itemName: pathParts.name
 		},
-		UpdateExpression: UpdateExpression,
-		ExpressionAttributeValues: ExpressionAttributeValues,
+		UpdateExpression: bldr.getUpdateExpression(),
+		ExpressionAttributeValues: bldr.getExpressionAttributeValues(),
 		ConditionExpression: "attribute_exists (itemName)"
 	};
 

@@ -1,0 +1,6 @@
+{
+	"name": "dynamo-utils",
+	"description": "Utilities to work with AWS DynamoDB",
+	"version": "1.0.0",
+	"private": true
+}
