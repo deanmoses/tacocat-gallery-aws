@@ -509,6 +509,9 @@ Resources:
       CodeUri: dist/state_machine/lambda_functions/store_image
       Description: "Step Functions function that stores image in DynamoDB"
       Role: !GetAtt BackendProcessingLambdaRole.Arn
+      # The AWS javascript SDK that comes with Lambda doesn't have transactions.  Until it does, use this layer I created
+      Layers:
+        - "arn:aws:lambda:us-west-2:010410881828:layer:aws-sdk:1"
       Environment:
         Variables:
           GALLERY_ITEM_DDB_TABLE: !Ref GalleryItemDDBTable

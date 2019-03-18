@@ -1,6 +1,6 @@
 const validateImage = require("./validate_image.js");
 const updateImage = require("./update_image.js");
-//const updateAlbum = require("./update_album.js");
+const setImageAsAlbumThumb = require("./set_image_as_album_thumb.js");
 
 /**
  * An image, or a new version of an image, was uploaded to S3.
@@ -24,11 +24,8 @@ async function storeImage(event, ctx) {
 	// Create or update the image
 	await updateImage(ctx, imagePath, imageMetadata, now);
 
-	// TRANSACTION: if any of these fail, they all fail
-	// Set the image as the album's thumbnail if album doesn't have one
-	//await setImageAsAlbumThumb(ctx, imagePath, now);
-	// Tell the image that it's the album's thumb
-	//await setAlbumOnImage(ctx, imagePath);
+	// Set image as the album's thumb if album doesn't have a thumb
+	await setImageAsAlbumThumb(ctx, imagePath, now);
 
 	// Return success to StepFunctions
 	// This value is not used; it's just for debugging

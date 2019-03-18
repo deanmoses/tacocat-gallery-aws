@@ -1,5 +1,8 @@
 const isEmpty = require("./isEmpty.js");
 
+const AWS = require("aws-sdk");
+const docClient = new AWS.DynamoDB.DocumentClient(); // just needed for constructing the set parameter correctly
+
 /**
  * Helps build a DynamoDB UpdateItem statement.
  *
@@ -23,11 +26,12 @@ class DynamoUpdateBuilder {
 		// update.  Setting an attribute to blank ("") isn't allowed in DynamoDB;
 		// instead you have to remove it completely.
 		this.itemsToRemove = new Set();
+		this.setsToUpdate = {};
 	}
 
 	/**
 	 * Set this field in DynamoDB.
-	 * Will result in an expression like SET foo = :foo
+	 * This will result in an expression like "SET foo = :foo"
 	 * If the value is blank/undefined, it instead results in DELETE foo
 	 *
 	 * @param {String} name name of field
@@ -43,7 +47,7 @@ class DynamoUpdateBuilder {
 
 	/**
 	 * Set this field if it doesn't already exist in DynamoDB.
-	 * Will result in an expression like SET foo = if_not_exists(foo, :foo)
+	 * This will result in an expression like "SET foo = if_not_exists(foo, :foo)"
 	 * If the value is blank/undefined, it isn't added to the command.
 	 *
 	 * @param {String} name name of field
@@ -56,12 +60,26 @@ class DynamoUpdateBuilder {
 	}
 
 	/**
-	 * Build the Dynamo DB UpdateExpression
+	 * Add the item to the set.
+	 * This will result in an expression like "ADD nameOfSet :itemInSet"
 	 *
-	 * @returns {String} such as "SET attr1 = :attr1, attr2 = :attr2, attr3 = if_not_exists(attr3, :attr3), REMOVE attr4"
+	 * @param {String} nameOfSetField name of set field
+	 * @param {Object} itemInSet item in set
+	 */
+	addToSet(nameOfSetField, itemInSet) {
+		if (this.setsToUpdate[nameOfSetField] == undefined) {
+			this.setsToUpdate[nameOfSetField] = new Set();
+		}
+		this.setsToUpdate[nameOfSetField].add(itemInSet);
+	}
+
+	/**
+	 * Construct the DynamoDB UpdateExpression
+	 *
+	 * @returns {String} such as "SET attr1 = :attr1, REMOVE attr2"
 	 */
 	getUpdateExpression() {
-		// Build the SET expression
+		// Build the SET
 		let setExpr = "";
 		for (const [name, value] of Object.entries(this.itemsToSetIfNotExists)) {
 			setExpr = addToSetIfNotExistsExpr(setExpr, name, value);
@@ -70,13 +88,19 @@ class DynamoUpdateBuilder {
 			setExpr = addToSetExpr(setExpr, name, value);
 		}
 
-		// Build the REMOVE expression
+		// Build the REMOVE
 		let removeExpr = "";
 		this.itemsToRemove.forEach(name => {
 			removeExpr = addToRemoveExpr(removeExpr, name);
 		});
 
-		// Combine SET and REMOVE
+		// Build the ADD
+		let addExpr = "";
+		for (const [name, value] of Object.entries(this.setsToUpdate)) {
+			addExpr = addToAddExpr(addExpr, name, value);
+		}
+
+		// Combine SET, REMOVE and ADD
 		let updateExpression = "";
 		if (setExpr) {
 			updateExpression = setExpr;
@@ -84,10 +108,15 @@ class DynamoUpdateBuilder {
 		if (removeExpr) {
 			updateExpression += " " + removeExpr;
 		}
+		if (addExpr) {
+			updateExpression += " " + addExpr;
+		}
 		return updateExpression;
 	}
 
 	/**
+	 * Construct the DyanmoDB ExpressionAttributeValues
+	 *
 	 * @returns {Object}
 	 */
 	getExpressionAttributeValues() {
@@ -97,6 +126,9 @@ class DynamoUpdateBuilder {
 		}
 		for (const [name, value] of Object.entries(this.itemsToSet)) {
 			exprVals[":" + name] = value;
+		}
+		for (const [name, value] of Object.entries(this.setsToUpdate)) {
+			exprVals[":" + name] = docClient.createSet(Array.from(value));
 		}
 		return exprVals;
 	}
@@ -120,7 +152,7 @@ function addToSetExpr(expr, name) {
 }
 
 /**
- * Add to DynamoDB SET expression
+ * Add to DynamoDB SET expression with an if_not_exists() qualifier
  *
  * @param {String} expr
  * @param {String} name
@@ -148,6 +180,23 @@ function addToRemoveExpr(expr, name) {
 		expr += ",";
 	}
 	expr += " " + name;
+
+	return expr;
+}
+
+/**
+ * Add to DynamoDB ADD expression
+ *
+ * @param {String} expr
+ * @param {String} name
+ */
+function addToAddExpr(expr, name) {
+	if (expr.length === 0) {
+		expr = "ADD";
+	} else {
+		expr += ",";
+	}
+	expr += " z :z".replace(/z/g, name);
 
 	return expr;
 }

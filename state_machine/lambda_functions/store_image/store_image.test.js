@@ -116,7 +116,56 @@ describe("Store Image", () => {
 	 *
 	 */
 	test("Minimum Image Metadata", async () => {
-		expect.assertions(17);
+		expect.assertions(43);
+
+		// mock out doTransaction()
+		const mockDoTransaction = jest.fn(q => {
+			// do some expects *inside* the mocked function
+			expect(q).toBeDefined();
+			expect(Object.keys(q).length).toBe(1);
+			JestUtils.expectValidArray(q.TransactItems);
+			expect(q.TransactItems.length).toBe(2);
+			const albumUpdate = q.TransactItems[0].Update;
+			expect(albumUpdate.TableName).toBe(ctx.tableName);
+			expect(albumUpdate.Key.parentPath).toBe("/2001/");
+			expect(albumUpdate.Key.itemName).toBe("12-31");
+			expect(albumUpdate.UpdateExpression).toBe(
+				"SET updatedOn = :updatedOn, thumbnail = :thumbnail"
+			);
+			expect(albumUpdate.ConditionExpression).toBe(
+				"(attribute_exists (itemName) and attribute_not_exists (thumbnail))"
+			);
+			expect(Object.keys(albumUpdate.ExpressionAttributeValues).length).toBe(2);
+			JestUtils.expectValidDate(
+				albumUpdate.ExpressionAttributeValues[":updatedOn"]
+			);
+			expect(albumUpdate.ExpressionAttributeValues[":thumbnail"].path).toBe(
+				"/2001/12-31/image.jpg"
+			);
+			JestUtils.expectValidDate(
+				albumUpdate.ExpressionAttributeValues[":thumbnail"].fileUpdatedOn
+			);
+
+			const imageUpdate = q.TransactItems[1].Update;
+			expect(imageUpdate.TableName).toBe(ctx.tableName);
+			expect(imageUpdate.Key.parentPath).toBe("/2001/12-31/");
+			expect(imageUpdate.Key.itemName).toBe("image.jpg");
+			expect(imageUpdate.UpdateExpression).toBe(
+				"SET updatedOn = :updatedOn ADD thumbForAlbums :thumbForAlbums"
+			);
+			expect(imageUpdate.ConditionExpression).toBe(
+				"attribute_exists (itemName)"
+			);
+			expect(Object.keys(imageUpdate.ExpressionAttributeValues).length).toBe(2);
+			JestUtils.expectValidDate(
+				imageUpdate.ExpressionAttributeValues[":updatedOn"]
+			);
+			const setValue = imageUpdate.ExpressionAttributeValues[":thumbForAlbums"];
+			expect(setValue.values[0]).toBe("/2001/12-31/");
+
+			return {};
+		});
+		ctx.doTransaction = mockDoTransaction;
 
 		// mock out doUpdate()
 		const mockDoUpdate = jest.fn(q => {
@@ -143,6 +192,7 @@ describe("Store Image", () => {
 		const response = await storeImage(event, ctx);
 
 		// did the mocks get called?
+		expect(ctx.doTransaction).toBeCalledTimes(1);
 		expect(ctx.doUpdate).toBeCalledTimes(1);
 
 		expect(response).toBe("SUCCESS");

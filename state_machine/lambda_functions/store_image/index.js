@@ -19,6 +19,9 @@ exports.handler = async event => {
 	ctx.doUpdate = async dynamoParams => {
 		return docClient.update(dynamoParams).promise();
 	};
+	ctx.doTransaction = async dynamoParams => {
+		return docClient.transactWrite(dynamoParams).promise();
+	};
 
 	//
 	// Do the lambda's work
