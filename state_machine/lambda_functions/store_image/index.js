@@ -16,9 +16,6 @@ exports.handler = async event => {
 	//
 	let ctx = {};
 	ctx.tableName = tableName;
-	ctx.doPut = async dynamoParams => {
-		return docClient.put(dynamoParams).promise();
-	};
 	ctx.doUpdate = async dynamoParams => {
 		return docClient.update(dynamoParams).promise();
 	};

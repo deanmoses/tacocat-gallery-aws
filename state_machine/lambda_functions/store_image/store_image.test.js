@@ -116,24 +116,7 @@ describe("Store Image", () => {
 	 *
 	 */
 	test("Minimum Image Metadata", async () => {
-		expect.assertions(29);
-
-		// mock out doPut()
-		const mockDoPut = jest.fn(q => {
-			// do some expects *inside* the mocked function
-			expect(q).toBeDefined();
-			expect(q.TableName).toBe(ctx.tableName);
-			expect(q.Item.parentPath).toBe("/2001/12-31/");
-			expect(q.Item.itemName).toBe("image.jpg");
-			expect(q.Item.itemType).toBe("media");
-			JestUtils.expectValidDate(q.Item.createdOn);
-			JestUtils.expectValidDate(q.Item.updatedOn);
-			JestUtils.expectValidDate(q.Item.fileUpdatedOn);
-			expect(Object.keys(q.Item).length).toBe(6);
-			expect(q.ConditionExpression).toBe("attribute_not_exists (itemName)");
-			return {};
-		});
-		ctx.doPut = mockDoPut;
+		expect.assertions(17);
 
 		// mock out doUpdate()
 		const mockDoUpdate = jest.fn(q => {
@@ -143,14 +126,15 @@ describe("Store Image", () => {
 			expect(q.Key.parentPath).toBe("/2001/12-31/");
 			expect(q.Key.itemName).toBe("image.jpg");
 			expect(q.UpdateExpression).toBe(
-				"SET updatedOn = :updatedOn, fileUpdatedOn = :fileUpdatedOn, mimeSubType = :mimeSubType, dimensions = :dimensions REMOVE capturedOn, tags"
+				"SET itemType = if_not_exists(itemType, :itemType), createdOn = if_not_exists(createdOn, :createdOn), updatedOn = :updatedOn, fileUpdatedOn = :fileUpdatedOn, mimeSubType = :mimeSubType, dimensions = :dimensions REMOVE capturedOn, tags"
 			);
-			expect(Object.keys(q.ExpressionAttributeValues).length).toBe(4);
+			expect(Object.keys(q.ExpressionAttributeValues).length).toBe(6);
+			expect(q.ExpressionAttributeValues[":itemType"]).toBe("media");
+			JestUtils.expectValidDate(q.ExpressionAttributeValues[":createdOn"]);
 			JestUtils.expectValidDate(q.ExpressionAttributeValues[":updatedOn"]);
 			JestUtils.expectValidDate(q.ExpressionAttributeValues[":fileUpdatedOn"]);
 			expect(q.ExpressionAttributeValues[":mimeSubType"]).toBe("jpeg");
 			expect(q.ExpressionAttributeValues[":dimensions"].height).toBe(3024);
-			expect(q.ConditionExpression).toBe("attribute_exists (itemName)");
 			return {};
 		});
 		ctx.doUpdate = mockDoUpdate;
@@ -159,7 +143,6 @@ describe("Store Image", () => {
 		const response = await storeImage(event, ctx);
 
 		// did the mocks get called?
-		expect(ctx.doPut).toBeCalledTimes(1);
 		expect(ctx.doUpdate).toBeCalledTimes(1);
 
 		expect(response).toBe("SUCCESS");
