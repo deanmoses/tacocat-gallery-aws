@@ -471,7 +471,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: dist/state_machine/lambda_functions/extract_image_metadata
-      Description: "Lambda function that extracts image metadata such as format, size, geolocation, etc"
+      Description: "Step Functions function that extracts image metadata such as format, size, geolocation, etc"
       MemorySize: 1024
       Timeout: 200
       Role: !GetAtt BackendProcessingLambdaRole.Arn
@@ -480,14 +480,14 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: dist/state_machine/lambda_functions/transform_image_metadata
-      Description: "Lambda function that massages JSON of extracted image metadata into more usable format"
+      Description: "Step Functions function that massages JSON of extracted image metadata into more usable format"
       Role: !GetAtt BackendProcessingLambdaRole.Arn
 
   StoreAlbumFunction:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: dist/state_machine/lambda_functions/store_album
-      Description: "Lambda function that stores album in DynamoDB"
+      Description: "Step Functions function that stores album in DynamoDB"
       Role: !GetAtt BackendProcessingLambdaRole.Arn
       Environment:
         Variables:
@@ -497,7 +497,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: dist/state_machine/lambda_functions/delete_album_from_dynamo
-      Description: "Lambda function that deletes album from DynamoDB"
+      Description: "Step Functions function that deletes album from DynamoDB"
       Role: !GetAtt BackendProcessingLambdaRole.Arn
       Environment:
         Variables:
@@ -507,7 +507,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: dist/state_machine/lambda_functions/store_image
-      Description: "Lambda function that stores image in DynamoDB"
+      Description: "Step Functions function that stores image in DynamoDB"
       Role: !GetAtt BackendProcessingLambdaRole.Arn
       Environment:
         Variables:
@@ -517,7 +517,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: dist/state_machine/lambda_functions/delete_image_from_dynamo
-      Description: "Lambda function that deletes image entry from DynamoDB"
+      Description: "Step Functions function that deletes image from DynamoDB"
       Role: !GetAtt BackendProcessingLambdaRole.Arn
       Environment:
         Variables:
@@ -527,7 +527,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: dist/state_machine/lambda_functions/delete_resized_images_from_s3
-      Description: "Lambda function that deletes resized versions of image from S3"
+      Description: "Step Functions function that deletes resized versions of image from S3"
       Role: !GetAtt BackendProcessingLambdaRole.Arn
       Environment:
         Variables:
@@ -539,7 +539,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: dist/state_machine/lambda_functions/generate_thumbnail_image
-      Description: "Lambda function that generates thumbnail version of image"
+      Description: "Step Functions function that generates thumbnail version of image"
       MemorySize: 1536
       Timeout: 300
       Role: !GetAtt BackendProcessingLambdaRole.Arn
@@ -554,7 +554,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: dist/state_machine/lambda_functions/generate_large_image
-      Description: "Lambda function that generates large version of image"
+      Description: "Step Functions function that generates large version of image"
       MemorySize: 1536
       Timeout: 300
       Role: !GetAtt BackendProcessingLambdaRole.Arn
@@ -576,7 +576,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: ../search_indexing/lambda_functions/dynamodb_to_elasticsearch
-      Description: "Lambda function that syncs albums and images from DynamoDB to ElasticSearch"
+      Description: "Syncs albums and images from DynamoDB to ElasticSearch"
       Role: !GetAtt SearchIndexerFunctionRole.Arn
       Environment:
         Variables:
@@ -635,7 +635,7 @@ Resources:
   GetAlbumFunction:
     Properties:
       CodeUri: dist/api/lambda_functions/get_album
-      Description: "Lambda function that returns an album and its children from DynamoDB"
+      Description: "API Gateway function that returns an album and its children from DynamoDB"
       Role: !GetAtt ApiGatewayLambdaReadOnlyRole.Arn
       Environment:
         Variables:
@@ -646,7 +646,7 @@ Resources:
   GetLatestAlbumFunction:
     Properties:
       CodeUri: dist/api/lambda_functions/get_latest_album
-      Description: "Lambda function that retrieves the latest album from DynamoDB"
+      Description: "API Gateway function that retrieves the latest album from DynamoDB"
       Role: !GetAtt ApiGatewayLambdaReadOnlyRole.Arn
       Environment:
         Variables:
@@ -657,7 +657,7 @@ Resources:
   UpdateAlbumFunction:
     Properties:
       CodeUri: dist/api/lambda_functions/update_album
-      Description: "Lambda function that updates attributes like title and description on existing albums in DynamoDB"
+      Description: "API Gateway function that updates attributes like title and description on existing albums in DynamoDB"
       Role: !GetAtt ApiGatewayLambdaWriteRole.Arn
       Environment:
         Variables:
@@ -668,7 +668,7 @@ Resources:
   UpdateImageFunction:
     Properties:
       CodeUri: dist/api/lambda_functions/update_image
-      Description: "Lambda function that updates attributes like title and description on existing images in DynamoDB"
+      Description: "API Gateway function that updates attributes like title and description on existing images in DynamoDB"
       Role: !GetAtt ApiGatewayLambdaWriteRole.Arn
       Environment:
         Variables:
@@ -680,7 +680,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: dist/api/lambda_functions/recut_thumbnail
-      Description: "Lambda function that re-cuts an image's thumbnail to the specified region of the image"
+      Description: "API Gateway function that re-cuts an image's thumbnail to the specified region of the image"
       MemorySize: 1536
       Timeout: 300
       Role: !GetAtt ApiGatewayLambdaWriteDBAndPhotosRole.Arn
