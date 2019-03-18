@@ -22,12 +22,14 @@ beforeEach(() => {
 		tableName: "NotARealTableName"
 	};
 
-	// A mock doPut function goes into execution context
-	const mockDoPut = jest.fn();
-	mockDoPut.mockReturnValue({}); // Will return empty object {}
-	ctx.doPut = mockDoPut;
+	// Mock out doTransaction()
+	const mockDoTransaction = jest.fn(q => {
+		expect(q).toBeDefined();
+		return {};
+	});
+	ctx.doTransaction = mockDoTransaction;
 
-	// A mock doUpdate function goes into execution context
+	// Mock out doUpdate()
 	const mockDoUpdate = jest.fn();
 	mockDoUpdate.mockReturnValue({}); // Will return empty object {}
 	ctx.doUpdate = mockDoUpdate;
@@ -42,18 +44,11 @@ describe("Store Image", () => {
 
 		event.extractedMetadata = {};
 
-		// mock out doPut()
-		const mockDoPut = jest.fn(() => {
-			// This is part of the exception DynamoDB would return if the image existed
-			throw "xxyz";
-		});
-		ctx.doPut = mockDoPut;
-
 		// do the update, expecting it to fail with the error message thrown above
 		await expect(storeImage(event, ctx)).rejects.toMatch("Missing");
 
 		// did the mocks get called?
-		expect(ctx.doPut).toBeCalledTimes(0);
+		expect(ctx.doTransaction).toBeCalledTimes(0);
 		expect(ctx.doUpdate).toBeCalledTimes(0);
 	});
 
@@ -68,18 +63,11 @@ describe("Store Image", () => {
 			format: "JPEG"
 		};
 
-		// mock out doPut()
-		const mockDoPut = jest.fn(() => {
-			// This is part of the exception DynamoDB would return if the image existed
-			throw "xxyz";
-		});
-		ctx.doPut = mockDoPut;
-
 		// do the update, expecting it to fail with the error message thrown above
 		await expect(storeImage(event, ctx)).rejects.toMatch("dimensions");
 
 		// did the mocks get called?
-		expect(ctx.doPut).toBeCalledTimes(0);
+		expect(ctx.doTransaction).toBeCalledTimes(0);
 		expect(ctx.doUpdate).toBeCalledTimes(0);
 	});
 
@@ -97,18 +85,11 @@ describe("Store Image", () => {
 			fileSize: "2.136MB"
 		};
 
-		// mock out doPut()
-		const mockDoPut = jest.fn(() => {
-			// This is part of the exception DynamoDB would return if the image existed
-			throw "xxyz";
-		});
-		ctx.doPut = mockDoPut;
-
 		// do the update, expecting it to fail with the error message thrown above
 		await expect(storeImage(event, ctx)).rejects.toMatch("format");
 
 		// did the mocks get called?
-		expect(ctx.doPut).toBeCalledTimes(0);
+		expect(ctx.doTransaction).toBeCalledTimes(0);
 		expect(ctx.doUpdate).toBeCalledTimes(0);
 	});
 
@@ -202,28 +183,9 @@ describe("Store Image", () => {
 	 *
 	 */
 	test("Metadata With Title and Description", async () => {
-		expect.assertions(34);
+		expect.assertions(19);
 
 		event.extractedMetadata = metadata;
-
-		// mock out doPut()
-		const mockDoPut = jest.fn(q => {
-			// do some expects *inside* the mocked function
-			expect(q).toBeDefined();
-			expect(q.TableName).toBe(ctx.tableName);
-			expect(q.Item.parentPath).toBe("/2001/12-31/");
-			expect(q.Item.itemName).toBe("image.jpg");
-			expect(q.Item.itemType).toBe("media");
-			JestUtils.expectValidDate(q.Item.createdOn);
-			JestUtils.expectValidDate(q.Item.updatedOn);
-			JestUtils.expectValidDate(q.Item.fileUpdatedOn);
-			expect(q.Item.title).toBe(metadata.title);
-			expect(q.Item.description).toBe(metadata.description);
-			expect(Object.keys(q.Item).length).toBe(8);
-			expect(q.ConditionExpression).toBe("attribute_not_exists (itemName)");
-			return {};
-		});
-		ctx.doPut = mockDoPut;
 
 		// mock out doUpdate()
 		const mockDoUpdate = jest.fn(q => {
@@ -233,7 +195,7 @@ describe("Store Image", () => {
 			expect(q.Key.parentPath).toBe("/2001/12-31/");
 			expect(q.Key.itemName).toBe("image.jpg");
 			expect(q.UpdateExpression).toBe(
-				"SET updatedOn = :updatedOn, fileUpdatedOn = :fileUpdatedOn, mimeSubType = :mimeSubType, dimensions = :dimensions, capturedOn = :capturedOn, tags = :tags"
+				"SET itemType = if_not_exists(itemType, :itemType), createdOn = if_not_exists(createdOn, :createdOn), title = if_not_exists(title, :title), description = if_not_exists(description, :description), updatedOn = :updatedOn, fileUpdatedOn = :fileUpdatedOn, mimeSubType = :mimeSubType, dimensions = :dimensions, capturedOn = :capturedOn, tags = :tags"
 			);
 			JestUtils.expectValidDate(q.ExpressionAttributeValues[":updatedOn"]);
 			JestUtils.expectValidDate(q.ExpressionAttributeValues[":fileUpdatedOn"]);
@@ -243,8 +205,7 @@ describe("Store Image", () => {
 				metadata.dimensions
 			);
 			expect(q.ExpressionAttributeValues[":tags"]).toBe(metadata.tags);
-			expect(Object.keys(q.ExpressionAttributeValues).length).toBe(6);
-			expect(q.ConditionExpression).toBe("attribute_exists (itemName)");
+			expect(Object.keys(q.ExpressionAttributeValues).length).toBe(10);
 			return {};
 		});
 		ctx.doUpdate = mockDoUpdate;
@@ -253,7 +214,7 @@ describe("Store Image", () => {
 		const response = await storeImage(event, ctx);
 
 		// did the mocks get called?
-		expect(ctx.doPut).toBeCalledTimes(1);
+		expect(ctx.doTransaction).toBeCalledTimes(1);
 		expect(ctx.doUpdate).toBeCalledTimes(1);
 
 		expect(response).toBe("SUCCESS");
@@ -263,28 +224,9 @@ describe("Store Image", () => {
 	 *
 	 */
 	test("Title and Description Are Present But Blank", async () => {
-		expect.assertions(31);
+		expect.assertions(16);
 
 		event.extractedMetadata = blankTitleMetadata;
-
-		// mock out doPut()
-		const mockDoPut = jest.fn(q => {
-			// do some expects *inside* the mocked function
-			expect(q).toBeDefined();
-			expect(q.TableName).toBe(ctx.tableName);
-			expect(q.Item.parentPath).toBe("/2001/12-31/");
-			expect(q.Item.itemName).toBe("image.jpg");
-			expect(q.Item.itemType).toBe("media");
-			JestUtils.expectValidDate(q.Item.createdOn);
-			JestUtils.expectValidDate(q.Item.updatedOn);
-			JestUtils.expectValidDate(q.Item.fileUpdatedOn);
-			expect(q.Item.title).toBeUndefined();
-			expect(q.Item.description).toBeUndefined();
-			expect(Object.keys(q.Item).length).toBe(6);
-			expect(q.ConditionExpression).toBe("attribute_not_exists (itemName)");
-			return {};
-		});
-		ctx.doPut = mockDoPut;
 
 		// mock out doUpdate()
 		const mockDoUpdate = jest.fn(q => {
@@ -294,14 +236,13 @@ describe("Store Image", () => {
 			expect(q.Key.parentPath).toBe("/2001/12-31/");
 			expect(q.Key.itemName).toBe("image.jpg");
 			expect(q.UpdateExpression).toBe(
-				"SET updatedOn = :updatedOn, fileUpdatedOn = :fileUpdatedOn, mimeSubType = :mimeSubType, dimensions = :dimensions REMOVE capturedOn, tags"
+				"SET itemType = if_not_exists(itemType, :itemType), createdOn = if_not_exists(createdOn, :createdOn), updatedOn = :updatedOn, fileUpdatedOn = :fileUpdatedOn, mimeSubType = :mimeSubType, dimensions = :dimensions REMOVE capturedOn, tags"
 			);
-			expect(Object.keys(q.ExpressionAttributeValues).length).toBe(4);
+			expect(Object.keys(q.ExpressionAttributeValues).length).toBe(6);
 			JestUtils.expectValidDate(q.ExpressionAttributeValues[":updatedOn"]);
 			JestUtils.expectValidDate(q.ExpressionAttributeValues[":fileUpdatedOn"]);
 			expect(q.ExpressionAttributeValues[":mimeSubType"]).toBe("jpeg");
 			expect(q.ExpressionAttributeValues[":dimensions"].height).toBe(3024);
-			expect(q.ConditionExpression).toBe("attribute_exists (itemName)");
 			return {};
 		});
 		ctx.doUpdate = mockDoUpdate;
@@ -310,7 +251,7 @@ describe("Store Image", () => {
 		const response = await storeImage(event, ctx);
 
 		// did the mocks get called?
-		expect(ctx.doPut).toBeCalledTimes(1);
+		expect(ctx.doTransaction).toBeCalledTimes(1);
 		expect(ctx.doUpdate).toBeCalledTimes(1);
 
 		expect(response).toBe("SUCCESS");
@@ -320,28 +261,9 @@ describe("Store Image", () => {
 	 *
 	 */
 	test("Metadata Without Tags or CreationTime", async () => {
-		expect.assertions(33);
+		expect.assertions(18);
 
 		event.extractedMetadata = metadataWithoutTagsOrCreationTime;
-
-		// mock out doPut()
-		const mockDoPut = jest.fn(q => {
-			// do some expects *inside* the mocked function
-			expect(q).toBeDefined();
-			expect(q.TableName).toBe(ctx.tableName);
-			expect(q.Item.parentPath).toBe("/2001/12-31/");
-			expect(q.Item.itemName).toBe("image.jpg");
-			expect(q.Item.itemType).toBe("media");
-			JestUtils.expectValidDate(q.Item.createdOn);
-			JestUtils.expectValidDate(q.Item.updatedOn);
-			JestUtils.expectValidDate(q.Item.fileUpdatedOn);
-			expect(q.Item.title).toBeUndefined();
-			expect(q.Item.description).toBeUndefined();
-			expect(Object.keys(q.Item).length).toBe(6);
-			expect(q.ConditionExpression).toBe("attribute_not_exists (itemName)");
-			return {};
-		});
-		ctx.doPut = mockDoPut;
 
 		// mock out doUpdate()
 		const mockDoUpdate = jest.fn(q => {
@@ -351,7 +273,7 @@ describe("Store Image", () => {
 			expect(q.Key.parentPath).toBe("/2001/12-31/");
 			expect(q.Key.itemName).toBe("image.jpg");
 			expect(q.UpdateExpression).toBe(
-				"SET updatedOn = :updatedOn, fileUpdatedOn = :fileUpdatedOn, mimeSubType = :mimeSubType, dimensions = :dimensions REMOVE capturedOn, tags"
+				"SET itemType = if_not_exists(itemType, :itemType), createdOn = if_not_exists(createdOn, :createdOn), updatedOn = :updatedOn, fileUpdatedOn = :fileUpdatedOn, mimeSubType = :mimeSubType, dimensions = :dimensions REMOVE capturedOn, tags"
 			);
 			JestUtils.expectValidDate(q.ExpressionAttributeValues[":updatedOn"]);
 			JestUtils.expectValidDate(q.ExpressionAttributeValues[":fileUpdatedOn"]);
@@ -361,8 +283,7 @@ describe("Store Image", () => {
 			expect(q.ExpressionAttributeValues[":dimensions"]).toBe(
 				metadataWithoutTagsOrCreationTime.dimensions
 			);
-			expect(Object.keys(q.ExpressionAttributeValues).length).toBe(4);
-			expect(q.ConditionExpression).toBe("attribute_exists (itemName)");
+			expect(Object.keys(q.ExpressionAttributeValues).length).toBe(6);
 			return {};
 		});
 		ctx.doUpdate = mockDoUpdate;
@@ -371,7 +292,7 @@ describe("Store Image", () => {
 		const response = await storeImage(event, ctx);
 
 		// did the mocks get called?
-		expect(ctx.doPut).toBeCalledTimes(1);
+		expect(ctx.doTransaction).toBeCalledTimes(1);
 		expect(ctx.doUpdate).toBeCalledTimes(1);
 
 		expect(response).toBe("SUCCESS");
@@ -393,13 +314,12 @@ describe("Store Image", () => {
 			expect(q.Key.parentPath).toBe("/2001/12-31/");
 			expect(q.Key.itemName).toBe("image.jpg");
 			expect(q.UpdateExpression).toBe(
-				"SET updatedOn = :updatedOn, fileUpdatedOn = :fileUpdatedOn, mimeSubType = :mimeSubType, dimensions = :dimensions, capturedOn = :capturedOn REMOVE tags"
+				"SET itemType = if_not_exists(itemType, :itemType), createdOn = if_not_exists(createdOn, :createdOn), updatedOn = :updatedOn, fileUpdatedOn = :fileUpdatedOn, mimeSubType = :mimeSubType, dimensions = :dimensions, capturedOn = :capturedOn REMOVE tags"
 			);
 			JestUtils.expectValidDate(q.ExpressionAttributeValues[":updatedOn"]);
 			JestUtils.expectValidDate(q.ExpressionAttributeValues[":fileUpdatedOn"]);
 			JestUtils.expectValidDate(q.ExpressionAttributeValues[":capturedOn"]);
-			expect(Object.keys(q.ExpressionAttributeValues).length).toBe(5);
-			expect(q.ConditionExpression).toBe("attribute_exists (itemName)");
+			expect(Object.keys(q.ExpressionAttributeValues).length).toBe(7);
 			return {};
 		});
 		ctx.doUpdate = mockDoUpdate;
@@ -408,7 +328,7 @@ describe("Store Image", () => {
 		const response = await storeImage(event, ctx);
 
 		// did the mocks get called?
-		expect(ctx.doPut).toBeCalledTimes(1);
+		expect(ctx.doTransaction).toBeCalledTimes(1);
 		expect(ctx.doUpdate).toBeCalledTimes(1);
 
 		expect(response).toBe("SUCCESS");
@@ -438,12 +358,11 @@ describe("Store Image", () => {
 			expect(q.Key.parentPath).toBe("/2001/12-31/");
 			expect(q.Key.itemName).toBe("image.jpg");
 			expect(q.UpdateExpression).toBe(
-				"SET updatedOn = :updatedOn, fileUpdatedOn = :fileUpdatedOn, mimeSubType = :mimeSubType, dimensions = :dimensions, capturedOn = :capturedOn REMOVE tags"
+				"SET itemType = if_not_exists(itemType, :itemType), createdOn = if_not_exists(createdOn, :createdOn), updatedOn = :updatedOn, fileUpdatedOn = :fileUpdatedOn, mimeSubType = :mimeSubType, dimensions = :dimensions, capturedOn = :capturedOn REMOVE tags"
 			);
 			JestUtils.expectValidDate(q.ExpressionAttributeValues[":updatedOn"]);
 			JestUtils.expectValidDate(q.ExpressionAttributeValues[":fileUpdatedOn"]);
-			expect(Object.keys(q.ExpressionAttributeValues).length).toBe(5);
-			expect(q.ConditionExpression).toBe("attribute_exists (itemName)");
+			expect(Object.keys(q.ExpressionAttributeValues).length).toBe(7);
 			return {};
 		});
 		ctx.doUpdate = mockDoUpdate;
@@ -452,31 +371,10 @@ describe("Store Image", () => {
 		const response = await storeImage(event, ctx);
 
 		// did the mocks get called?
-		expect(ctx.doPut).toBeCalledTimes(1);
+		expect(ctx.doTransaction).toBeCalledTimes(1);
 		expect(ctx.doUpdate).toBeCalledTimes(1);
 
 		expect(response).toBe("SUCCESS");
-	});
-
-	/**
-	 *
-	 */
-	test("Another failure in putItem", async () => {
-		expect.assertions(3);
-
-		// mock out doPut()
-		const mockDoPut = jest.fn(() => {
-			// This is part of the exception DynamoDB would return if the image existed
-			throw "xxyz";
-		});
-		ctx.doPut = mockDoPut;
-
-		// do the update, expecting it to fail with the error message thrown above
-		await expect(storeImage(event, ctx)).rejects.toMatch("xxyz");
-
-		// did the mocks get called?
-		expect(ctx.doPut).toBeCalledTimes(1);
-		expect(ctx.doUpdate).toBeCalledTimes(0);
 	});
 });
 
