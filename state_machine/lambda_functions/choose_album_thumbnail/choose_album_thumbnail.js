@@ -1,4 +1,5 @@
-const { setImageAsAlbumThumb } = require("dynamo-utils");
+const { setImageAsAlbumThumb, DynamoUpdateBuilder } = require("dynamo-utils");
+const { getParentAndNameFromPath } = require("gallery-path-utils");
 
 /**
  * Chooses a new thumbnail for one or more albums in DynamoDB
@@ -37,23 +38,30 @@ async function chooseImageThumbnail(event, ctx) {
 		// get a single child image
 		const image = await getChildImage(ctx, albumPath);
 
-		// set the image as the album's thumb
-		const imagePath = albumPath + image.itemName;
-		const thumbnailUpdatedOn = image.thumbnail
-			? image.thumbnail.fileUpdatedOn
-			: image.fileUpdatedOn;
-		const albumThumbWasUpdated = await setImageAsAlbumThumb(
-			ctx,
-			albumPath,
-			imagePath,
-			thumbnailUpdatedOn,
-			true /* replaceExistingThumb */
-		);
+		// if album has no child images
+		if (image === undefined) {
+			await removeAlbumThumb(ctx, albumPath);
+			results[albumPath] = "Removed thumb; album has no child images";
+		}
+		// else set the image as the album's thumb
+		else {
+			const imagePath = albumPath + image.itemName;
+			const thumbnailUpdatedOn = image.thumbnail
+				? image.thumbnail.fileUpdatedOn
+				: image.fileUpdatedOn;
+			const albumThumbWasUpdated = await setImageAsAlbumThumb(
+				ctx,
+				albumPath,
+				imagePath,
+				thumbnailUpdatedOn,
+				true /* replaceExistingThumb */
+			);
 
-		// results are for debugging
-		results[albumPath] = albumThumbWasUpdated
-			? "Thumb was updated to " + imagePath
-			: "Thumb wasn't updated; album already had thumb";
+			// results are for debugging
+			results[albumPath] = albumThumbWasUpdated
+				? "Thumb was updated to " + imagePath
+				: "Thumb wasn't updated; album already had thumb";
+		}
 	}
 
 	// Return success to StepFunctions
@@ -61,6 +69,41 @@ async function chooseImageThumbnail(event, ctx) {
 	return results;
 }
 module.exports = chooseImageThumbnail;
+
+/**
+ * Remove thumbnail from album, leaving it without a thumbnail
+ *
+ * @param {Object} ctx the environmental context needed to do the work
+ * @param {String} albumPath Path of the album to delete, like /2001/12-31/
+ */
+async function removeAlbumThumb(ctx, albumPath) {
+	const bldr = new DynamoUpdateBuilder();
+	bldr.add("updatedOn", new Date().toISOString());
+	bldr.delete("thumbnail");
+
+	const pathParts = getParentAndNameFromPath(albumPath);
+
+	const dynamoParams = {
+		TableName: ctx.tableName,
+		Key: {
+			parentPath: pathParts.parent,
+			itemName: pathParts.name
+		},
+		UpdateExpression: bldr.getUpdateExpression(),
+		ExpressionAttributeValues: bldr.getExpressionAttributeValues(),
+		ConditionExpression: "attribute_exists (itemName)"
+	};
+
+	try {
+		return await ctx.doRemoveAlbumThumb(dynamoParams);
+	} catch (e) {
+		// Conditional failure means album doesn't exist
+		// That's not an error
+		if (e.toString().indexOf("conditional") >= 0) {
+			throw e;
+		}
+	}
+}
 
 /**
  * Get one of an album's immediate child images

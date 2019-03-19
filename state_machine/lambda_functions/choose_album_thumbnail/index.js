@@ -23,6 +23,9 @@ exports.handler = async event => {
 	ctx.queryChildImage = async dynamoParams => {
 		return docClient.query(dynamoParams).promise();
 	};
+	ctx.doRemoveAlbumThumb = async dynamoParams => {
+		return docClient.update(dynamoParams).promise();
+	};
 	ctx.doTransaction = async dynamoParams => {
 		return docClient.transactWrite(dynamoParams).promise();
 	};

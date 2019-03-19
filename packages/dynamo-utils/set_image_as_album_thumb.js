@@ -62,7 +62,7 @@ async function setImageAsAlbumThumb(
 module.exports = setImageAsAlbumThumb;
 
 /**
- * Generate DynamoDB command to set the album's thumbnail if it doesn't already have one.
+ * Generate DynamoDB command to set the album's thumbnail
  *
  * @param {Object} ctx execution context
  * @param {String} albumPath Path of the album like /2001/12-31/
@@ -106,7 +106,7 @@ function setImageOnAlbum(
 }
 
 /**
- * Generate DynamoDB command to let an image know that it is the thumbnail for an album.
+ * Generate DynamoDB command to let an image know that it is the thumbnail for an album
  *
  * @param {Object} ctx execution context
  * @param {String} imagePath Path of the image like /2001/12-31/image.jpg

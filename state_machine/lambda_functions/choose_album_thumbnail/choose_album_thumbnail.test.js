@@ -26,10 +26,15 @@ beforeEach(() => {
 		return mockGetChildImageResponse;
 	});
 
+	// Mock out doRemoveAlbumThumb()
+	ctx.doRemoveAlbumThumb = jest.fn(q => {
+		expect(q).toBeDefined();
+		return {};
+	});
+
 	// Mock out doTransaction()
 	ctx.doTransaction = jest.fn(q => {
 		expect(q).toBeDefined();
-
 		return {};
 	});
 });
@@ -43,7 +48,7 @@ describe("Choose Album Thumbnail", () => {
 	 *
 	 */
 	test("Empty Event: No Albums", async () => {
-		expect.assertions(3);
+		expect.assertions(4);
 
 		event = {};
 
@@ -52,6 +57,7 @@ describe("Choose Album Thumbnail", () => {
 
 		// did the mocks get called?
 		expect(ctx.queryChildImage).toBeCalledTimes(0);
+		expect(ctx.doRemoveAlbumThumb).toBeCalledTimes(0);
 		expect(ctx.doTransaction).toBeCalledTimes(0);
 	});
 
@@ -59,7 +65,7 @@ describe("Choose Album Thumbnail", () => {
 	 *
 	 */
 	test("Event With Empty Albums", async () => {
-		expect.assertions(3);
+		expect.assertions(4);
 
 		event.thumbForAlbums = [];
 
@@ -68,6 +74,7 @@ describe("Choose Album Thumbnail", () => {
 
 		// did the mocks get called?
 		expect(ctx.queryChildImage).toBeCalledTimes(0);
+		expect(ctx.doRemoveAlbumThumb).toBeCalledTimes(0);
 		expect(ctx.doTransaction).toBeCalledTimes(0);
 	});
 
@@ -75,7 +82,7 @@ describe("Choose Album Thumbnail", () => {
 	 *
 	 */
 	test("Basic test", async () => {
-		expect.assertions(29);
+		expect.assertions(30);
 
 		// TODO: assert that updatedOn is getting set
 
@@ -132,9 +139,45 @@ describe("Choose Album Thumbnail", () => {
 
 		// did the mocks get called?
 		expect(ctx.queryChildImage).toBeCalledTimes(1);
+		expect(ctx.doRemoveAlbumThumb).toBeCalledTimes(0);
 		expect(ctx.doTransaction).toBeCalledTimes(1);
 
 		expect(response[albumPath]).toMatch("updated");
+	});
+
+	/**
+	 *
+	 */
+	test("Album Has No Child Images", async () => {
+		expect.assertions(7);
+
+		// Mock out queryChildImage()
+		ctx.queryChildImage = jest.fn(q => {
+			expect(q).toBeDefined();
+			return {
+				Items: []
+			};
+		});
+
+		// Mock out doRemoveAlbumThumb()
+		ctx.doRemoveAlbumThumb = jest.fn(q => {
+			expect(q).toBeDefined();
+			expect(q.UpdateExpression).toBe(
+				"SET updatedOn = :updatedOn REMOVE thumbnail"
+			);
+
+			return {};
+		});
+
+		// do the update
+		const response = await chooseImageThumbnail(event, ctx);
+
+		// did the mocks get called?
+		expect(ctx.queryChildImage).toBeCalledTimes(1);
+		expect(ctx.doRemoveAlbumThumb).toBeCalledTimes(1);
+		expect(ctx.doTransaction).toBeCalledTimes(0);
+
+		expect(response[albumPath]).toMatch("Removed");
 	});
 });
 

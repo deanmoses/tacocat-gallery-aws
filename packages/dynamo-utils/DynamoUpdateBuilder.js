@@ -39,10 +39,20 @@ class DynamoUpdateBuilder {
 	 */
 	add(name, value) {
 		if (isEmpty(value)) {
-			this.itemsToRemove.add(name);
+			this.delete(name);
 		} else {
 			this.itemsToSet[name] = value;
 		}
+	}
+
+	/**
+	 * Remove this field from DynamoDB.
+	 * This will result in an expression like "REMOVE myAttr""
+	 *
+	 * @param {String} name name of field
+	 */
+	delete(name) {
+		this.itemsToRemove.add(name);
 	}
 
 	/**
