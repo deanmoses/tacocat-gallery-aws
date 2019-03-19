@@ -176,7 +176,7 @@ describe("Store Image", () => {
 		expect(ctx.doTransaction).toBeCalledTimes(1);
 		expect(ctx.doUpdate).toBeCalledTimes(1);
 
-		expect(response).toBe("SUCCESS");
+		expect(response).toMatch("SUCCESS");
 	});
 
 	/**
@@ -217,7 +217,7 @@ describe("Store Image", () => {
 		expect(ctx.doTransaction).toBeCalledTimes(1);
 		expect(ctx.doUpdate).toBeCalledTimes(1);
 
-		expect(response).toBe("SUCCESS");
+		expect(response).toMatch("SUCCESS");
 	});
 
 	/**
@@ -254,7 +254,7 @@ describe("Store Image", () => {
 		expect(ctx.doTransaction).toBeCalledTimes(1);
 		expect(ctx.doUpdate).toBeCalledTimes(1);
 
-		expect(response).toBe("SUCCESS");
+		expect(response).toMatch("SUCCESS");
 	});
 
 	/**
@@ -295,7 +295,7 @@ describe("Store Image", () => {
 		expect(ctx.doTransaction).toBeCalledTimes(1);
 		expect(ctx.doUpdate).toBeCalledTimes(1);
 
-		expect(response).toBe("SUCCESS");
+		expect(response).toMatch("SUCCESS");
 	});
 
 	/**
@@ -331,7 +331,7 @@ describe("Store Image", () => {
 		expect(ctx.doTransaction).toBeCalledTimes(1);
 		expect(ctx.doUpdate).toBeCalledTimes(1);
 
-		expect(response).toBe("SUCCESS");
+		expect(response).toMatch("SUCCESS");
 	});
 
 	/**
@@ -374,7 +374,7 @@ describe("Store Image", () => {
 		expect(ctx.doTransaction).toBeCalledTimes(1);
 		expect(ctx.doUpdate).toBeCalledTimes(1);
 
-		expect(response).toBe("SUCCESS");
+		expect(response).toMatch("SUCCESS");
 	});
 });
 

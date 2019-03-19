@@ -200,7 +200,38 @@
 									"BackoffRate": 1.5
 								}
 							],
+							"Next": "WasDeletedImageAnAlbumThumb"
+						},
+						"WasDeletedImageAnAlbumThumb": {
+							"Type": "Choice",
+							"InputPath": "$.deleteImageFromDynamoResult",
+							"Choices": [
+								{
+									"Variable": "$.albumCount",
+									"NumericGreaterThan": 0,
+									"Next": "ChooseNewThumbForAlbums"
+								}
+							],
+							"Default": "SuccessState"
+						},
+						"ChooseNewThumbForAlbums": {
+							"Type": "Task",
+							"Resource": "${ChooseAlbumThumbLambdaArn}",
+							"InputPath": "$",
+							"ResultPath": "$.chooseAlbumThumb",
+							"OutputPath": "$.chooseAlbumThumb",
+							"Retry": [
+								{
+									"ErrorEquals": ["States.ALL"],
+									"IntervalSeconds": 1,
+									"MaxAttempts": 4,
+									"BackoffRate": 1.5
+								}
+							],
 							"End": true
+						},
+						"SuccessState": {
+							"Type": "Succeed"
 						}
 					}
 				},

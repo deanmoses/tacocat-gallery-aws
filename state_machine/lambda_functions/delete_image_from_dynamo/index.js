@@ -13,12 +13,8 @@ const docClient = new AWS.DynamoDB.DocumentClient({
 exports.handler = async event => {
 	if (!event) throw "Undefined event";
 	if (!event.objectID) throw "Undefined event.objectID";
+	const imagePath = event.objectID;
 
 	// Remove the image's entry from DynamoDB
-	await deleteImageFromDynamo(
-		docClient,
-		tableName,
-		event.objectID // image path
-	);
-	return "SUCCESS";
+	return await deleteImageFromDynamo(docClient, tableName, imagePath);
 };

@@ -12,7 +12,7 @@
 # then we're using this python script.
 #
 echo "Adding state machine to CloudFormation template"
-python3 cloudformation/inject_state_machine_cfn.py -s state_machine/state_machine.json -c cloudformation/stack.yaml -o cloudformation/stack.provisional.yaml
+python3 cloudformation/inject_state_machine_cfn.py -s state_machine/state_machine.json -c cloudformation/stack.yaml -o cloudformation/dist/stack.provisional.yaml
 
 #
 # Upload the local assets that the template references up to a bucket, and
@@ -20,7 +20,7 @@ python3 cloudformation/inject_state_machine_cfn.py -s state_machine/state_machin
 # S3 locations of the lambda source code
 #
 echo "Packaging the stack"
-aws cloudformation package --template-file cloudformation/stack.provisional.yaml --output-template-file cloudformation/stack.final.yaml --s3-bucket cloudformationdeploysource
+aws cloudformation package --template-file cloudformation/dist/stack.provisional.yaml --output-template-file cloudformation/dist/stack.final.yaml --s3-bucket cloudformationdeploysource
 
 #
 # Deploy the stack
@@ -28,4 +28,4 @@ aws cloudformation package --template-file cloudformation/stack.provisional.yaml
 # Take the twice-processed template and use it to deploy the stack
 #
 echo "Deploying the stack"
-aws cloudformation deploy --template-file cloudformation/stack.final.yaml --stack-name TacocatGallery --capabilities CAPABILITY_IAM --s3-bucket cloudformationdeploysource
+aws cloudformation deploy --template-file cloudformation/dist/stack.final.yaml --stack-name TacocatGallery --capabilities CAPABILITY_IAM --s3-bucket cloudformationdeploysource

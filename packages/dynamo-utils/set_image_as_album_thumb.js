@@ -1,17 +1,25 @@
 const { getParentAndNameFromPath } = require("gallery-path-utils");
-const { DynamoUpdateBuilder } = require("dynamo-utils");
+const DynamoUpdateBuilder = require("./DynamoUpdateBuilder.js");
 
 /**
- * Set image as the album's thumb if album doesn't have a thumb.
+ * Set image as the album's thumb IF album doesn't have a thumb.
+ * If album already has thumb, this will fail silently.
  *
  * @param {Object} ctx execution context
+ * @param {String} albumPath Path of the album like /2001/12-31/
  * @param {String} imagePath Path of the image like /2001/12-31/image.jpg
  * @param {String} imageUpdatedOn ISO 8601 timestamp of when image was last updated
+ * @param {Boolean} replaceExistingThumb true (default): replace existing thumbnail
+ *
+ * @returns {Boolean} true if the album's thumb was updated; false if the album already had a thumb
  */
-async function setImageAsAlbumThumb(ctx, imagePath, imageUpdatedOn) {
-	const imagePathParts = getParentAndNameFromPath(imagePath);
-	const albumPath = imagePathParts.parent;
-
+async function setImageAsAlbumThumb(
+	ctx,
+	albumPath,
+	imagePath,
+	imageUpdatedOn,
+	replaceExistingThumb = true
+) {
 	// Build a transaction command
 	// This transaction does two things:
 	// 1) sets the image as the thumbnail on the album
@@ -22,7 +30,13 @@ async function setImageAsAlbumThumb(ctx, imagePath, imageUpdatedOn) {
 	};
 	dynamoParams.TransactItems.push(
 		// Set the image as the album's thumbnail if album doesn't have one
-		setImageOnAlbum(ctx, albumPath, imagePath, imageUpdatedOn)
+		setImageOnAlbum(
+			ctx,
+			albumPath,
+			imagePath,
+			imageUpdatedOn,
+			replaceExistingThumb
+		)
 	);
 	dynamoParams.TransactItems.push(
 		// Tell the image that it's the album's thumb
@@ -32,6 +46,7 @@ async function setImageAsAlbumThumb(ctx, imagePath, imageUpdatedOn) {
 	// Do the transaction
 	try {
 		await ctx.doTransaction(dynamoParams);
+		return true;
 	} catch (err) {
 		// ConditionalCheckFailed means the album already has a thumb.
 		// That's not an error. Everything else is an error.
@@ -42,6 +57,7 @@ async function setImageAsAlbumThumb(ctx, imagePath, imageUpdatedOn) {
 			throw err;
 		}
 	}
+	return false;
 }
 module.exports = setImageAsAlbumThumb;
 
@@ -52,10 +68,17 @@ module.exports = setImageAsAlbumThumb;
  * @param {String} albumPath Path of the album like /2001/12-31/
  * @param {String} imagePath Path of the thumbnail image like /2001/12-31/image.jpg
  * @param {String} imageUpdatedOn ISO 8601 timestamp of when thumbnail was last updated
+ * @param {Boolean} replaceExistingThumb true: replace existing thumbnail
  *
  * @returns {Object} DynamoDB update command
  */
-function setImageOnAlbum(ctx, albumPath, imagePath, imageUpdatedOn) {
+function setImageOnAlbum(
+	ctx,
+	albumPath,
+	imagePath,
+	imageUpdatedOn,
+	replaceExistingThumb
+) {
 	const bldr = new DynamoUpdateBuilder();
 	bldr.add("updatedOn", new Date().toISOString());
 	bldr.add("thumbnail", { path: imagePath, fileUpdatedOn: imageUpdatedOn });
@@ -71,10 +94,13 @@ function setImageOnAlbum(ctx, albumPath, imagePath, imageUpdatedOn) {
 			},
 			UpdateExpression: bldr.getUpdateExpression(),
 			ExpressionAttributeValues: bldr.getExpressionAttributeValues(),
-			ConditionExpression:
-				"(attribute_exists (itemName) and attribute_not_exists (thumbnail))"
+			ConditionExpression: "attribute_exists (itemName)"
 		}
 	};
+	if (!replaceExistingThumb) {
+		dynamoParams.Update.ConditionExpression =
+			"(attribute_exists (itemName) and attribute_not_exists (thumbnail))";
+	}
 
 	return dynamoParams;
 }

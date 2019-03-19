@@ -328,7 +328,7 @@ Resources:
     Type: AWS::Serverless::Api
     DependsOn: GalleryItemDDBTable
     Properties:
-      DefinitionUri: ../api/api.yaml
+      DefinitionUri: ../../api/api.yaml
       StageName: !Ref ApiStage
       Variables:
         Region: !Ref AWS::Region
@@ -376,7 +376,7 @@ Resources:
   # workflow, so it has the union of the required permissions for these Lambda
   # functions.
   #
-  # Amazon best practices would instead create individual IAM roles for each
+  # TODO: Amazon best practices would instead create individual IAM roles for each
   # Lambda to follow the Least privilege principle. This template consolidates
   # them simply to reduce the number of IAM roles it takes up in your account.
   # ---------------------------------------------------------------------------
@@ -435,6 +435,7 @@ Resources:
                   - "dynamodb:UpdateItem"
                   - "dynamodb:PutItem"
                   - "dynamodb:DeleteItem"
+                  - "dynamodb:Query"
                 Resource: !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${GalleryItemDDBTable}"
         - PolicyName: StepFunctionStartExecution
           PolicyDocument:
@@ -454,7 +455,7 @@ Resources:
     Type: AWS::Serverless::Function
     DependsOn: PhotoRepoS3Bucket
     Properties:
-      CodeUri: dist/state_machine/lambda_functions/start_state_machine
+      CodeUri: state_machine/lambda_functions/start_state_machine
       Description: "Triggered by S3 image upload to the repo bucket and start the image processing step function workflow"
       Role: !GetAtt BackendProcessingLambdaRole.Arn
       Environment:
@@ -470,7 +471,7 @@ Resources:
   ExtractImageMetadataFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: dist/state_machine/lambda_functions/extract_image_metadata
+      CodeUri: state_machine/lambda_functions/extract_image_metadata
       Description: "Step Functions function that extracts image metadata such as format, size, geolocation, etc"
       MemorySize: 1024
       Timeout: 200
@@ -479,14 +480,14 @@ Resources:
   TransformImageMetadataFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: dist/state_machine/lambda_functions/transform_image_metadata
+      CodeUri: state_machine/lambda_functions/transform_image_metadata
       Description: "Step Functions function that massages JSON of extracted image metadata into more usable format"
       Role: !GetAtt BackendProcessingLambdaRole.Arn
 
   StoreAlbumFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: dist/state_machine/lambda_functions/store_album
+      CodeUri: state_machine/lambda_functions/store_album
       Description: "Step Functions function that stores album in DynamoDB"
       Role: !GetAtt BackendProcessingLambdaRole.Arn
       Environment:
@@ -496,7 +497,7 @@ Resources:
   DeleteAlbumFromDynamoFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: dist/state_machine/lambda_functions/delete_album_from_dynamo
+      CodeUri: state_machine/lambda_functions/delete_album_from_dynamo
       Description: "Step Functions function that deletes album from DynamoDB"
       Role: !GetAtt BackendProcessingLambdaRole.Arn
       Environment:
@@ -506,7 +507,7 @@ Resources:
   StoreImageFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: dist/state_machine/lambda_functions/store_image
+      CodeUri: state_machine/lambda_functions/store_image
       Description: "Step Functions function that stores image in DynamoDB"
       Role: !GetAtt BackendProcessingLambdaRole.Arn
       # The AWS javascript SDK that comes with Lambda doesn't have transactions.  Until it does, use this layer I created
@@ -519,7 +520,7 @@ Resources:
   DeleteImageFromDynamoFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: dist/state_machine/lambda_functions/delete_image_from_dynamo
+      CodeUri: state_machine/lambda_functions/delete_image_from_dynamo
       Description: "Step Functions function that deletes image from DynamoDB"
       Role: !GetAtt BackendProcessingLambdaRole.Arn
       Environment:
@@ -529,7 +530,7 @@ Resources:
   DeleteResizedImagesFromS3Function:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: dist/state_machine/lambda_functions/delete_resized_images_from_s3
+      CodeUri: state_machine/lambda_functions/delete_resized_images_from_s3
       Description: "Step Functions function that deletes resized versions of image from S3"
       Role: !GetAtt BackendProcessingLambdaRole.Arn
       Environment:
@@ -541,7 +542,7 @@ Resources:
   GenerateThumbnailImageFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: dist/state_machine/lambda_functions/generate_thumbnail_image
+      CodeUri: state_machine/lambda_functions/generate_thumbnail_image
       Description: "Step Functions function that generates thumbnail version of image"
       MemorySize: 1536
       Timeout: 300
@@ -556,7 +557,7 @@ Resources:
   GenerateLargeImageFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: dist/state_machine/lambda_functions/generate_large_image
+      CodeUri: state_machine/lambda_functions/generate_large_image
       Description: "Step Functions function that generates large version of image"
       MemorySize: 1536
       Timeout: 300
@@ -568,6 +569,19 @@ Resources:
           LARGE_IMAGE_SIZE: !Ref LargeImageSize
           LARGE_IMAGE_QUALITY: !Ref LargeImageQuality
 
+  ChooseAlbumThumbFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: state_machine/lambda_functions/choose_album_thumbnail
+      Description: "Step Functions function that chooses an image to be an album's thumbnail and sets it in DynamoDB"
+      Role: !GetAtt BackendProcessingLambdaRole.Arn
+      # The AWS javascript SDK that comes with Lambda doesn't have transactions.  Until it does, use this layer I created
+      Layers:
+        - "arn:aws:lambda:us-west-2:010410881828:layer:aws-sdk:1"
+      Environment:
+        Variables:
+          GALLERY_ITEM_DDB_TABLE: !Ref GalleryItemDDBTable
+
   # -----------------------------------------------------------------------------
   # Lambda for moving albums and images from DynamoDB to ElasticSearch,
   # ... and a mapping that streams events from DynamoDB to the lambda
@@ -578,7 +592,7 @@ Resources:
   SearchIndexerFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: ../search_indexing/lambda_functions/dynamodb_to_elasticsearch
+      CodeUri: search_indexing/lambda_functions/dynamodb_to_elasticsearch
       Description: "Syncs albums and images from DynamoDB to ElasticSearch"
       Role: !GetAtt SearchIndexerFunctionRole.Arn
       Environment:
@@ -637,7 +651,7 @@ Resources:
   # Lambda function that retrieves an album and its children from DynamoDB
   GetAlbumFunction:
     Properties:
-      CodeUri: dist/api/lambda_functions/get_album
+      CodeUri: api/lambda_functions/get_album
       Description: "API Gateway function that returns an album and its children from DynamoDB"
       Role: !GetAtt ApiGatewayLambdaReadOnlyRole.Arn
       Environment:
@@ -648,7 +662,7 @@ Resources:
   # Lambda function that retrieves the latest album from DynamoDB
   GetLatestAlbumFunction:
     Properties:
-      CodeUri: dist/api/lambda_functions/get_latest_album
+      CodeUri: api/lambda_functions/get_latest_album
       Description: "API Gateway function that retrieves the latest album from DynamoDB"
       Role: !GetAtt ApiGatewayLambdaReadOnlyRole.Arn
       Environment:
@@ -659,7 +673,7 @@ Resources:
   # Lambda function that updates attributes like title and description on existing albums in DynamoDB
   UpdateAlbumFunction:
     Properties:
-      CodeUri: dist/api/lambda_functions/update_album
+      CodeUri: api/lambda_functions/update_album
       Description: "API Gateway function that updates attributes like title and description on existing albums in DynamoDB"
       Role: !GetAtt ApiGatewayLambdaWriteRole.Arn
       Environment:
@@ -670,7 +684,7 @@ Resources:
   # Lambda function that updates attributes like title and description on existing images in DynamoDB
   UpdateImageFunction:
     Properties:
-      CodeUri: dist/api/lambda_functions/update_image
+      CodeUri: api/lambda_functions/update_image
       Description: "API Gateway function that updates attributes like title and description on existing images in DynamoDB"
       Role: !GetAtt ApiGatewayLambdaWriteRole.Arn
       Environment:
@@ -682,7 +696,7 @@ Resources:
   RecutThumbnailFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: dist/api/lambda_functions/recut_thumbnail
+      CodeUri: api/lambda_functions/recut_thumbnail
       Description: "API Gateway function that re-cuts an image's thumbnail to the specified region of the image"
       MemorySize: 1536
       Timeout: 300
@@ -881,7 +895,7 @@ Resources:
       MemorySize: 1024
       Timeout: 200
       Role: !GetAtt CustomResourceHelperRole.Arn
-      CodeUri: dist/state_machine/lambda_functions/create_s3_event_trigger_helper
+      CodeUri: state_machine/lambda_functions/create_s3_event_trigger_helper
     Type: AWS::Serverless::Function
 
   S3EventTrigger:
@@ -917,6 +931,7 @@ Resources:
             DeleteResizedImagesFromS3LambdaArn: !GetAtt DeleteResizedImagesFromS3Function.Arn,
             GenerateThumbnailImageLambdaArn: !GetAtt GenerateThumbnailImageFunction.Arn,
             GenerateLargeImageLambdaArn: !GetAtt GenerateLargeImageFunction.Arn,
+            ChooseAlbumThumbLambdaArn: !GetAtt ChooseAlbumThumbFunction.Arn,
           }
       RoleArn: !GetAtt StateMachineRole.Arn
 
@@ -958,7 +973,7 @@ Resources:
       MemorySize: 1024
       Timeout: 200
       Role: !GetAtt DescribeExecutionFunctionRole.Arn
-      CodeUri: dist/state_machine/lambda_functions/describe_state_machine_execution
+      CodeUri: state_machine/lambda_functions/describe_state_machine_execution
 
   DescribeExecutionFunctionRole:
     Type: "AWS::IAM::Role"
