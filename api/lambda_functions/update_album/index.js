@@ -1,6 +1,5 @@
 const AWS = require("aws-sdk");
 const updateAlbum = require("./update_album.js");
-const itemExists = require("./item_exists.js");
 const { handleHttpExceptions } = require("http-response-utils");
 const { respondHttp } = require("http-response-utils");
 
@@ -33,9 +32,6 @@ exports.handler = async event => {
 		// This is done to make the lambda unit testable
 		let ctx = {};
 		ctx.tableName = tableName;
-		ctx.itemExists = async itemPath => {
-			return await itemExists(docClient, tableName, itemPath);
-		};
 		ctx.doUpdate = async dynamoParams => {
 			return docClient.update(dynamoParams).promise();
 		};

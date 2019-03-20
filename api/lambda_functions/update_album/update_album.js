@@ -35,7 +35,7 @@ async function updateAlbum(ctx, path, attributesToUpdate) {
 	}
 
 	// Ensure only these attributes are in the input
-	const validKeys = new Set(["title", "description", "thumbnail"]);
+	const validKeys = new Set(["title", "description"]);
 	keysToUpdate.forEach(keyToUpdate => {
 		// Ensure we aren't trying to update an unknown attribute
 		if (!validKeys.has(keyToUpdate)) {
@@ -43,30 +43,15 @@ async function updateAlbum(ctx, path, attributesToUpdate) {
 		}
 	});
 
-	// Validate thumbnail
-	if (
-		attributesToUpdate.thumbnail !== undefined &&
-		attributesToUpdate.thumbnail !== ""
-	) {
-		assertWellFormedImagePath(attributesToUpdate.thumbnail);
-
-		// Ensure thumbnail actually exists
-		const thumbPath = attributesToUpdate.thumbnail;
-		if (!(await ctx.itemExists(thumbPath))) {
-			throw new BadRequestException("Thumbnail not found: " + thumbPath);
-		}
-	}
-
 	//
 	// Construct the DynamoDB update statement
 	//
 
 	const bldr = new DynamoUpdateBuilder();
+	bldr.add("updatedOn", new Date().toISOString());
 	keysToUpdate.forEach(keyToUpdate => {
 		bldr.add(keyToUpdate, attributesToUpdate[keyToUpdate]);
 	});
-	// Always set the update time
-	bldr.add("updatedOn", new Date().toISOString());
 
 	const pathParts = getParentAndNameFromPath(path);
 
@@ -104,14 +89,5 @@ module.exports = updateAlbum;
 function assertWellFormedAlbumPath(albumPath) {
 	if (!albumPath.match(/^\/(\d\d\d\d\/(\d\d-\d\d\/)?)?$/)) {
 		throw new BadRequestException("Malformed album path: '" + albumPath + "'");
-	}
-}
-
-/**
- * Throw exception if it's not a well-formed image path
- */
-function assertWellFormedImagePath(imagePath) {
-	if (!imagePath.match(/^\/\d\d\d\d\/\d\d-\d\d\/.*\..*$/)) {
-		throw new BadRequestException("Malformed image path: '" + imagePath + "'");
 	}
 }
