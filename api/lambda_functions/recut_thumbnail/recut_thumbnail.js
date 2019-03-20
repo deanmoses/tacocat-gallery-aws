@@ -143,7 +143,7 @@ async function saveThumbnailCropInfoToDynamo(ctx, imagePath, crop) {
 	try {
 		updatedImage = await ctx.doSaveThumbCrop(dynamoParams);
 	} catch (e) {
-		if (e.toString().indexOf("conditional") !== -1) {
+		if (e.toString().includes("conditional")) {
 			throw new NotFoundException("Image not found: " + imagePath);
 		} else {
 			throw e;

@@ -21,7 +21,7 @@ async function getImage(ctx, path, attributesToUpdate) {
 	try {
 		return await ctx.doUpdate(dynamoParams);
 	} catch (e) {
-		if (e.toString().indexOf("conditional") !== -1) {
+		if (e.toString().includes("conditional")) {
 			throw new NotFoundException("Image not found: " + path);
 		} else {
 			throw e;
