@@ -12,6 +12,8 @@ const docClient = new AWS.DynamoDB.DocumentClient({
 
 /**
  * A Lambda function that updates an album's attributes (like title and description) in DynamoDB
+ *
+ * @param {Object} event an AWS API Gateway event
  */
 exports.handler = async event => {
 	// event.path is passed in from the API Gateway and contains the full path
@@ -27,8 +29,8 @@ exports.handler = async event => {
 
 	try {
 		// Set up execution context
-		// This is everything that updateAlbum() needs in order to execute
-		// This is done to make updateAlbum() unit testable
+		// This is everything the lambda needs in order to execute
+		// This is done to make the lambda unit testable
 		let ctx = {};
 		ctx.tableName = tableName;
 		ctx.itemExists = async itemPath => {
@@ -38,7 +40,7 @@ exports.handler = async event => {
 			return docClient.update(dynamoParams).promise();
 		};
 
-		// Update the album
+		// Do the lambda's work
 		await updateAlbum(ctx, path, attributesToUpdate);
 
 		// Return success

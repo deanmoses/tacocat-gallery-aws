@@ -21,12 +21,12 @@ const dynamoDocClient = new AWS.DynamoDB.DocumentClient({
  * store the thumbnail back in the same bucket
  * under the "Thumbnail/" prefix.
  *
- * @param event an event coming from AWS API Gateway
+ * @param {Object} event an AWS API Gateway event
  */
 exports.handler = async event => {
-	//
 	// Set up execution context
-	//
+	// This is everything the lambda needs in order to execute
+	// This is done to make the lambda unit testable
 	const ctx = {};
 	ctx.tableName = tableName;
 	ctx.doSaveThumbCrop = async dynamoParams => {

@@ -9,6 +9,8 @@ const docClient = new AWS.DynamoDB.DocumentClient({
 
 /**
  * A Lambda function that gets an album and its child images and child albums from DynamoDB
+ *
+ * @param {Object} event an AWS API Gateway event
  */
 exports.handler = async event => {
 	// event.path is passed in from the API Gateway and represents the full
