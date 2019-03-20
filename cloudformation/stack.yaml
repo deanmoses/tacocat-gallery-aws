@@ -339,6 +339,7 @@ Resources:
         UpdateAlbumFunctionName: !Ref UpdateAlbumFunction
         UpdateImageFunctionName: !Ref UpdateImageFunction
         RecutThumbnailFunctionName: !Ref RecutThumbnailFunction
+        SetAlbumThumbnailFunctionName: !Ref SetAlbumThumbnailFunction
 
   # Role for Gallery API
   GalleryApiRole:
@@ -359,6 +360,7 @@ Resources:
                   - !Sub "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${GetAlbumFunction}"
                   - !Sub "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${GetLatestAlbumFunction}"
                   - !Sub "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${RecutThumbnailFunction}"
+                  - !Sub "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${SetAlbumThumbnailFunction}"
                   - !Sub "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${UpdateAlbumFunction}"
                   - !Sub "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${UpdateImageFunction}"
       AssumeRolePolicyDocument:
@@ -510,7 +512,7 @@ Resources:
       CodeUri: state_machine/lambda_functions/store_image
       Description: "Step Functions function that stores image in DynamoDB"
       Role: !GetAtt BackendProcessingLambdaRole.Arn
-      # The AWS javascript SDK that comes with Lambda doesn't have transactions.  Until it does, use this layer I created
+      # The AWS javascript SDK that comes with Lambda doesn't have transactions as of March 20 2019.  Until it does, use this layer I created
       Layers:
         - "arn:aws:lambda:us-west-2:010410881828:layer:aws-sdk:1"
       Environment:
@@ -575,7 +577,7 @@ Resources:
       CodeUri: state_machine/lambda_functions/choose_album_thumbnail
       Description: "Step Functions function that chooses an image to be an album's thumbnail and sets it in DynamoDB"
       Role: !GetAtt BackendProcessingLambdaRole.Arn
-      # The AWS javascript SDK that comes with Lambda doesn't have transactions.  Until it does, use this layer I created
+      # The AWS javascript SDK that comes with Lambda doesn't have transactions as of March 20 2019.  Until it does, use this layer I created
       Layers:
         - "arn:aws:lambda:us-west-2:010410881828:layer:aws-sdk:1"
       Environment:
@@ -650,6 +652,7 @@ Resources:
 
   # Lambda function that retrieves an album and its children from DynamoDB
   GetAlbumFunction:
+    Type: AWS::Serverless::Function
     Properties:
       CodeUri: api/lambda_functions/get_album
       Description: "API Gateway function that returns an album and its children from DynamoDB"
@@ -657,10 +660,10 @@ Resources:
       Environment:
         Variables:
           GALLERY_ITEM_DDB_TABLE: !Ref GalleryItemDDBTable
-    Type: AWS::Serverless::Function
 
   # Lambda function that retrieves the latest album from DynamoDB
   GetLatestAlbumFunction:
+    Type: AWS::Serverless::Function
     Properties:
       CodeUri: api/lambda_functions/get_latest_album
       Description: "API Gateway function that retrieves the latest album from DynamoDB"
@@ -668,10 +671,10 @@ Resources:
       Environment:
         Variables:
           GALLERY_ITEM_DDB_TABLE: !Ref GalleryItemDDBTable
-    Type: AWS::Serverless::Function
 
   # Lambda function that updates attributes like title and description on existing albums in DynamoDB
   UpdateAlbumFunction:
+    Type: AWS::Serverless::Function
     Properties:
       CodeUri: api/lambda_functions/update_album
       Description: "API Gateway function that updates attributes like title and description on existing albums in DynamoDB"
@@ -679,10 +682,10 @@ Resources:
       Environment:
         Variables:
           GALLERY_ITEM_DDB_TABLE: !Ref GalleryItemDDBTable
-    Type: AWS::Serverless::Function
 
   # Lambda function that updates attributes like title and description on existing images in DynamoDB
   UpdateImageFunction:
+    Type: AWS::Serverless::Function
     Properties:
       CodeUri: api/lambda_functions/update_image
       Description: "API Gateway function that updates attributes like title and description on existing images in DynamoDB"
@@ -690,7 +693,20 @@ Resources:
       Environment:
         Variables:
           GALLERY_ITEM_DDB_TABLE: !Ref GalleryItemDDBTable
+
+  # Lambda function that sets an album's thumbnail to the specified image
+  SetAlbumThumbnailFunction:
     Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: api/lambda_functions/set_album_thumbnail
+      Description: "API Gateway function that sets an album's thumbnail to the specified image"
+      Role: !GetAtt ApiGatewayLambdaWriteRole.Arn
+      # The AWS javascript SDK that comes with Lambda doesn't have transactions as of March 20 2019.  Until it does, use this layer I created
+      Layers:
+        - "arn:aws:lambda:us-west-2:010410881828:layer:aws-sdk:1"
+      Environment:
+        Variables:
+          GALLERY_ITEM_DDB_TABLE: !Ref GalleryItemDDBTable
 
   # Lambda function that regenerates an image's thumbnail to the specified region of the image
   RecutThumbnailFunction:
