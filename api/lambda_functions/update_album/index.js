@@ -1,7 +1,8 @@
 const AWS = require("aws-sdk");
 const updateAlbum = require("./update_album.js");
 const itemExists = require("./item_exists.js");
-const { NotFoundException, BadRequestException } = require("http-response-utils");
+const { handleHttpExceptions } = require("http-response-utils");
+const { respondHttp } = require("http-response-utils");
 
 const tableName = process.env.GALLERY_ITEM_DDB_TABLE;
 
@@ -20,11 +21,7 @@ exports.handler = async event => {
 	// event.body is passed in from the API Gateway and contains the body of
 	// the HTTP request
 	if (!event.body) {
-		return {
-			isBase64Encoded: false,
-			statusCode: 400,
-			body: JSON.stringify({ errorMessage: "HTTP body cannot be empty" })
-		};
+		return respondHttp({ errorMessage: "HTTP body cannot be empty" }, 400);
 	}
 	const attributesToUpdate = JSON.parse(event.body);
 
@@ -45,30 +42,8 @@ exports.handler = async event => {
 		await updateAlbum(ctx, path, attributesToUpdate);
 
 		// Return success
-		return {
-			statusCode: 200,
-			body: JSON.stringify({ message: "Updated" }),
-			isBase64Encoded: false
-		};
+		return respondHttp({ message: "Updated" });
 	} catch (e) {
-		if (e instanceof NotFoundException) {
-			return {
-				statusCode: 404,
-				body: JSON.stringify({ errorMessage: e.message }),
-				isBase64Encoded: false
-			};
-		} else if (e instanceof BadRequestException) {
-			return {
-				statusCode: 400,
-				body: JSON.stringify({ errorMessage: e.message }),
-				isBase64Encoded: false
-			};
-		} else {
-			return {
-				statusCode: 500,
-				body: JSON.stringify({ errorMessage: e }), // TODO: handle case where e is not a string
-				isBase64Encoded: false
-			};
-		}
+		return handleHttpExceptions(e);
 	}
 };
