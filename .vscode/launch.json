@@ -6,7 +6,17 @@
 	"configurations": [
 		{
 			"type": "node",
-			"name": "jest-unit-tests",
+			"name": "Test Current File",
+			"request": "launch",
+			"program": "${workspaceFolder}/node_modules/jest/bin/jest",
+			"args": ["${relativeFile}", "--config", "jest.config.js"],
+			"console": "integratedTerminal",
+			"internalConsoleOptions": "neverOpen",
+			"disableOptimisticBPs": true
+		},
+		{
+			"type": "node",
+			"name": "All Unit Tests",
 			"request": "launch",
 			"program": "${workspaceFolder}/node_modules/jest/bin/jest",
 			"args": ["--runInBand"],
@@ -16,7 +26,7 @@
 		},
 		{
 			"type": "node",
-			"name": "jest-readonly-tests",
+			"name": "Read-only Integration Tests",
 			"request": "launch",
 			"args": ["--runInBand", "--config=jest.config.readonlytests.js"],
 			"cwd": "${workspaceFolder}",
@@ -26,7 +36,7 @@
 		},
 		{
 			"type": "node",
-			"name": "jest-update-tests",
+			"name": "Integration Update Tests",
 			"request": "launch",
 			"args": ["--runInBand", "--config=jest.config.updatetests.js"],
 			"cwd": "${workspaceFolder}",
@@ -36,7 +46,7 @@
 		},
 		{
 			"type": "node",
-			"name": "jest-readwrite-tests",
+			"name": "Read/write Integration Tests",
 			"request": "launch",
 			"args": ["--runInBand", "--config=jest.config.readwritetests.js"],
 			"cwd": "${workspaceFolder}",
