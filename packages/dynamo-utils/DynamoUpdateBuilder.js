@@ -27,11 +27,13 @@ class DynamoUpdateBuilder {
 		// instead you have to remove it completely.
 		this.itemsToRemove = new Set();
 		this.setsToUpdate = {};
+		this.attrValues = {};
+		this.setStrings = [];
 	}
 
 	/**
 	 * Set this field in DynamoDB.
-	 * This will result in an expression like "SET foo = :foo"
+	 * This will result in an UpdateExpression like "SET foo = :foo"
 	 * If the value is blank/undefined, it instead results in DELETE foo
 	 *
 	 * @param {String} name name of field
@@ -46,8 +48,25 @@ class DynamoUpdateBuilder {
 	}
 
 	/**
+	 * Set this field in DynamoDB.
+	 * This will result in an UpdateExpression like "SET name = :alias"
+	 * If the value is blank/undefined, it instead results in DELETE foo
+	 * @param {String} name name of field
+	 * @param {String} alias alias of field
+	 * @param {Object} value value of field
+	 */
+	addAlias(name, alias, value) {
+		if (isEmpty(value)) {
+			this.delete(name);
+		} else {
+			this.setStrings.push(name + " = :" + alias);
+			this.addValue(alias, value);
+		}
+	}
+
+	/**
 	 * Remove this field from DynamoDB.
-	 * This will result in an expression like "REMOVE myAttr""
+	 * This will result in an UpdateExpression like "REMOVE myAttr""
 	 *
 	 * @param {String} name name of field
 	 */
@@ -57,7 +76,7 @@ class DynamoUpdateBuilder {
 
 	/**
 	 * Set this field if it doesn't already exist in DynamoDB.
-	 * This will result in an expression like "SET foo = if_not_exists(foo, :foo)"
+	 * This will result in an UpdateExpression like "SET foo = if_not_exists(foo, :foo)"
 	 * If the value is blank/undefined, it isn't added to the command.
 	 *
 	 * @param {String} name name of field
@@ -71,7 +90,7 @@ class DynamoUpdateBuilder {
 
 	/**
 	 * Add the item to the set.
-	 * This will result in an expression like "ADD nameOfSet :itemInSet"
+	 * This will result in an UpdateExpression like "ADD nameOfSet :itemInSet"
 	 *
 	 * @param {String} nameOfSetField name of set field
 	 * @param {Object} itemInSet item in set
@@ -81,6 +100,19 @@ class DynamoUpdateBuilder {
 			this.setsToUpdate[nameOfSetField] = new Set();
 		}
 		this.setsToUpdate[nameOfSetField].add(itemInSet);
+	}
+
+	/**
+	 * Add a field to ExpressionAttributeValues.
+	 *
+	 * Most other methods on this class will also add a field to ExpressionAttributeValue
+	 * and thus you don't need to call this.  The only time you need to call this method
+	 * is to add a field to ExpressionAttributeValue that aren't used in the
+	 * UpdateExpression, such as if you have a ConditionExpression like this:
+	 * "attribute_exists (itemName) and thumbnail.path = :imagePath",
+	 */
+	addValue(name, value) {
+		this.attrValues[name] = value;
 	}
 
 	/**
@@ -96,6 +128,9 @@ class DynamoUpdateBuilder {
 		}
 		for (const [name, value] of Object.entries(this.itemsToSet)) {
 			setExpr = addToSetExpr(setExpr, name, value);
+		}
+		for (let i = 0; i < this.setStrings.length; i++) {
+			setExpr = addExprToSetExpr(setExpr, this.setStrings[i]);
 		}
 
 		// Build the REMOVE
@@ -140,6 +175,9 @@ class DynamoUpdateBuilder {
 		for (const [name, value] of Object.entries(this.setsToUpdate)) {
 			exprVals[":" + name] = docClient.createSet(Array.from(value));
 		}
+		for (const [name, value] of Object.entries(this.attrValues)) {
+			exprVals[":" + name] = value;
+		}
 		return exprVals;
 	}
 }
@@ -158,6 +196,22 @@ function addToSetExpr(expr, name) {
 		expr += ",";
 	}
 	expr += " z = :z".replace(/z/g, name);
+	return expr;
+}
+
+/**
+ * Add to DynamoDB SET expression
+ *
+ * @param {String} expr
+ * @param {String} s
+ */
+function addExprToSetExpr(expr, s) {
+	if (expr.length === 0) {
+		expr = "SET";
+	} else {
+		expr += ",";
+	}
+	expr += " " + s;
 	return expr;
 }
 
