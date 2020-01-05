@@ -177,9 +177,37 @@ describe("Update Album", () => {
 		expect(Object.keys(result).length).toBe(0);
 	});
 
-	test("published", async () => {
+	test("publishedn->true", async () => {
 		expect.assertions(13);
-		const newPublished = "true";
+		const newPublished = true;
+		// mock out doUpdate()
+		const mockDoUpdate = jest.fn(q => {
+			// do some expects *inside* the mocked function
+			expect(q).toBeDefined();
+			expect(q.TableName).toBe(ctx.tableName);
+			expect(q.Key.parentPath).toBe("/2001/");
+			expect(q.Key.itemName).toBe("12-31");
+			expect(q.UpdateExpression).toBe(
+				"SET updatedOn = :updatedOn, published = :published"
+			);
+			expect(Object.keys(q.ExpressionAttributeValues).length).toBe(2);
+			expect(q.ExpressionAttributeValues[":published"]).toBe(newPublished);
+			JestUtils.expectValidDate(q.ExpressionAttributeValues[":updatedOn"]);
+			expect(q.ConditionExpression).toBe("attribute_exists (itemName)");
+			return {};
+		});
+		ctx.doUpdate = mockDoUpdate;
+		let result = await updateAlbum(ctx, albumPath, {
+			published: newPublished
+		});
+		expect(ctx.doUpdate).toBeCalledTimes(1);
+		expect(result).toBeDefined();
+		expect(Object.keys(result).length).toBe(0);
+	});
+
+	test("publishedn->false", async () => {
+		expect.assertions(13);
+		const newPublished = false;
 		// mock out doUpdate()
 		const mockDoUpdate = jest.fn(q => {
 			// do some expects *inside* the mocked function
@@ -269,11 +297,24 @@ describe("Update Album", () => {
 		}
 	});
 
-	test("Invalid published value", async () => {
+	test("Invalid published value: true", async () => {
 		expect.assertions(2);
 		try {
 			let result = await updateAlbum(ctx, albumPath, {
-				published: "invalid value"
+				published: "true"
+			});
+			throw ("Was not expecting success.  Got: ", result);
+		} catch (e) {
+			expect(e).toBeInstanceOf(BadRequestException); // Expect this error
+			expect(e.message).toContain("published");
+		}
+	});
+
+	test("Invalid published value: 1", async () => {
+		expect.assertions(2);
+		try {
+			let result = await updateAlbum(ctx, albumPath, {
+				published: 1
 			});
 			throw ("Was not expecting success.  Got: ", result);
 		} catch (e) {
