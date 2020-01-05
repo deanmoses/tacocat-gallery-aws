@@ -4,7 +4,7 @@
  *
  * @param {*} docClient AWS DynamoDB DocumentClient
  * @param {*} tableName Name of the table in DynamoDB containing gallery items
- * @param {*} path Path of the album to retrieve, like /2001/12-31/
+ * @param {*} path Path of the album whose children are to be retrieved, like /2001/12-31/
  */
 async function getChildren(docClient, tableName, path) {
 	const ddbparams = {
