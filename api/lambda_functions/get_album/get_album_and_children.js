@@ -1,7 +1,6 @@
 const getAlbum = require("./get_album.js");
 const getChildren = require("./get_children.js");
-const getNextItem = require("./get_next_item.js");
-const getPrevItem = require("./get_prev_item.js");
+const getPrevAndNextItem = require("./get_prev_and_next_item.js");
 
 /**
  * Retrieve an album and its children (images and subalbums) from DynamoDB.
@@ -25,8 +24,9 @@ async function getAlbumAndChildren(docClient, tableName, path) {
 	} else {
 		response.album = await getAlbum(docClient, tableName, path);
 		if (!response.album) return null; // TODO: throw exception
-		response.nextAlbum = await getNextItem(docClient, tableName, path);
-		response.prevAlbum = await getPrevItem(docClient, tableName, path);
+		const prevAndNext = await getPrevAndNextItem(docClient, tableName, path);
+		response.nextAlbum = prevAndNext.next;
+		response.prevAlbum = prevAndNext.prev;
 	}
 	response.children = await getChildren(docClient, tableName, path);
 

@@ -35,11 +35,16 @@ async function updateAlbum(ctx, path, attributesToUpdate) {
 	}
 
 	// Ensure only these attributes are in the input
-	const validKeys = new Set(["title", "description"]);
+	const validKeys = new Set(["title", "description", "published"]);
 	keysToUpdate.forEach(keyToUpdate => {
 		// Ensure we aren't trying to update an unknown attribute
 		if (!validKeys.has(keyToUpdate)) {
 			throw new BadRequestException("Unknown attribute: " + keyToUpdate);
+		}
+
+		// If published is being modified, ensure new value is valid
+		if (keyToUpdate === "published") {
+			assertValidPublished(attributesToUpdate[keyToUpdate]);
 		}
 	});
 
@@ -89,5 +94,18 @@ module.exports = updateAlbum;
 function assertWellFormedAlbumPath(albumPath) {
 	if (!albumPath.match(/^\/(\d\d\d\d\/(\d\d-\d\d\/)?)?$/)) {
 		throw new BadRequestException("Malformed album path: '" + albumPath + "'");
+	}
+}
+
+/**
+ * Throw exception if the value of published isn't valid
+ */
+function assertValidPublished(published) {
+	if (typeof published !== "boolean") {
+		throw new BadRequestException(
+			"Invalid value: 'published' must be a boolean.  I got: '" +
+				published +
+				"'"
+		);
 	}
 }
