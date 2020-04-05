@@ -15,6 +15,7 @@ Uses [AWS Step Functions](https://aws.amazon.com/step-functions/) to orchestrate
 1. Get this project via `git clone [url to this project]`
 1. `cd` into project
 1. Install the project's npm dependencies: `npm install` _(must be in project root dir)_
+1. Install the project's javascript packages `lerna bootstrap` _(must be in project root dir)_
 1. Create directory into which the build assets are created: `mkdir cloudformation/dist` _(must be in project root dir)_
 
 ### Deploy project to AWS
