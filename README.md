@@ -4,10 +4,10 @@ Uses [AWS Step Functions](https://aws.amazon.com/step-functions/) to orchestrate
 
 ### Install prerequisites
 
-1. [Git](http://git-scm.com/) - source control tool. _Needed to retrieve this project from github.com._
-1. [Node.js](http://nodejs.org/) - Javascript server. _Needed to manage development tools._
-1. [Lerna](https://lerna.js.org/) - Javascript package manager. _Needed to manage multiple Javascript packages within a single Git repo._
-1. [AWS CLI](https://aws.amazon.com/cli/) - Amazon Web Service's Command Line Interface.  _Needed to deploy project to AWS._
+- [Git](http://git-scm.com/) - source control tool. _Needed to retrieve this project from github.com._
+- [Node.js](http://nodejs.org/) - Javascript server. _Needed to manage development tools._
+- [Lerna](https://lerna.js.org/) - Javascript package manager. _Needed to manage multiple Javascript packages within a single Git repo._
+- [AWS CLI](https://aws.amazon.com/cli/) - Amazon Web Service's Command Line Interface.  _Needed to deploy project to AWS._
 
 ### Install project
 
@@ -21,9 +21,10 @@ Uses [AWS Step Functions](https://aws.amazon.com/step-functions/) to orchestrate
 ### Test project
 Run local tests: `npm test` _(must be in project root dir)_
 
+### Configure deployment of project
+In order to deploy project to AWS, you must:
+ - Deploy to a region that supports **Amazon Rekognition** and **AWS Step Functions**, e.g. US East (N. Virginia) or EU (Ireland).  One way to do this is run `aws configure` to set your default region for AWS CLI commands.
+ - Have a **S3 bucket** in the target region into which the assets will be deployed.  The bucket name is configured in `cloudformation/deploy_stack.sh`
+ 
 ### Deploy project
 Deploy project to AWS: `npm run deploy` _(must be in project root dir)_
-
-Before running this you must:
- - Deploy to a region that supports **Amazon Rekognition** and **AWS Step Functions**, e.g. US East (N. Virginia) or EU (Ireland).  One way to do this is run `aws configure` to set your default region.
- - Have a **S3 bucket** in the target region into which the assets will be deployed.  The bucket name is configured in `cloudformation/deploy_stack.sh`
