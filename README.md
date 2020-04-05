@@ -16,7 +16,7 @@ Uses [AWS Step Functions](https://aws.amazon.com/step-functions/) to orchestrate
 1. Install the project's npm dependencies: `npm install` _(must be in project root dir)_
 1. Create directory into which the build assets are created: `mkdir cloudformation/dist` _(must be in project root dir)_
 
-## Deploy project to AWS
+### Deploy project to AWS
 
 1. `npm run deploy` - Deploys project to AWS _(must be in project root dir)_
 
