@@ -2,39 +2,27 @@
 
 Uses [AWS Step Functions](https://aws.amazon.com/step-functions/) to orchestrate a serverless processing workflow using [AWS Lambda](http://aws.amazon.com/lambda/), [Amazon S3](http://aws.amazon.com/s3/), [Amazon DynamoDB](http://aws.amazon.com/dynamodb/) and [Amazon Rekognition](https://aws.amazon.com/rekognition/). This workflow processes photos uploaded to Amazon S3 and extracts metadata from the image such as geolocation, size/format, time, etc. It then uses image recognition to tag objects in the photo. In parallel, it also produces a thumbnail of the photo.
 
+### Install prerequisites
 
-## Deploying
+1. [Git](http://git-scm.com/) - _source control tool. Needed to retrieve this project from github.com_
+1. [Node.js](http://nodejs.org/) - _Node.js server. Needed to manage development tools & run dev webserver_
+1. [AWS CLI](https://aws.amazon.com/cli/) - _Amazon Web Service Command Line Interface.  Needed to deploy project to AWS_
 
-You must deploy to a region that supports **Amazon Rekognition** and **AWS Step Functions**, e.g. US East (N.Virginia) or EU (Ireland), you need a S3 bucket in the target region, and then package the Lambda functions into that S3 bucket by using the `aws cloudformation package` utility.
+### Install project
 
-First, In the terminal,  go to the `lambda-functions` folder. Then prepare npm dependencies for the following Lambda functions:
+1. `cd` to directory under which you want to create project
+1. Get this project via `git clone [url to this project]`
+1. `cd` into project
+1. Install the project's npm dependencies: `npm install` _(must be in project root dir)_
+1. Create directory into which the build assets are created: `mkdir cloudformation/dist` _(must be in project root dir)_
 
-```bash
-cd lambda-functions
-cd create-s3-event-trigger-helper && npm install && cd ../thumbnail  && npm install && cd ../extract-image-metadata && npm install && cd ..
-```
+## Deploy project to AWS
 
-Set environment variables for later commands to use:
+1. `npm run deploy` - Deploys project to AWS _(must be in project root dir)_
 
-```bash
-REGION=[YOUR_TARGET_REGION]
-S3BUCKET=[REPLACE_WITH_YOUR_BUCKET]
-```
-
-Then go to the `cloudformation` folder and use the `aws cloudformation package` utility
-
-```bash
-cd ../cloudformation
-
-python inject_state_machine_cfn.py -s state-machine.json -c image-processing.serverless.yaml -o image-processing.complete.yaml
-
-aws cloudformation package --region $REGION --s3-bucket $S3BUCKET --template image-processing.complete.yaml --output-template-file image-processing.output.yaml
-```
-Last, deploy the stack with the resulting yaml (`image-processing.output.yaml `) through the CloudFormation Console or command line:
-
-```bash
-aws cloudformation deploy --region $REGION --template-file image-processing.output.yaml --stack-name photo-sharing-backend --capabilities CAPABILITY_IAM
-```
+Before running this you must:
+ - Deploy to a region that supports **Amazon Rekognition** and **AWS Step Functions**, e.g. US East (N. Virginia) or EU (Ireland).  One way to do this is run `aws configure` to set your default region.
+ - Have a S3 bucket in the target region into which the assets will be deployed
 
 ## Cleaning Up the Application Resources
 
