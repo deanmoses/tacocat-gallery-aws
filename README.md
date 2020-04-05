@@ -18,10 +18,12 @@ Uses [AWS Step Functions](https://aws.amazon.com/step-functions/) to orchestrate
 1. Install the project's javascript packages `lerna bootstrap` _(must be in project root dir)_
 1. Create directory into which the build assets are created: `mkdir cloudformation/dist` _(must be in project root dir)_
 
-### Deploy project to AWS
+### Test project
+Run local tests via `npm test` _(must be in project root dir)_
 
-1. `npm run deploy` - Deploys project to AWS _(must be in project root dir)_
+### Deploy project to AWS
+Deploys project to AWS via `npm run deploy` _(must be in project root dir)_
 
 Before running this you must:
  - Deploy to a region that supports **Amazon Rekognition** and **AWS Step Functions**, e.g. US East (N. Virginia) or EU (Ireland).  One way to do this is run `aws configure` to set your default region.
- - Have a S3 bucket in the target region into which the assets will be deployed
+ - Have a S3 bucket in the target region into which the assets will be deployed.  The bucket name is configured in `cloudformation/deploy_stack.sh`
