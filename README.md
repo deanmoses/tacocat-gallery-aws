@@ -5,7 +5,7 @@ Uses [AWS Step Functions](https://aws.amazon.com/step-functions/) to orchestrate
 ### Install prerequisites
 
 1. [Git](http://git-scm.com/) - _source control tool. Needed to retrieve this project from github.com_
-1. [Node.js](http://nodejs.org/) - _Node.js server. Needed to manage development tools & run dev webserver_
+1. [Node.js](http://nodejs.org/) - _Node.js server. Needed to manage development tools_
 1. [AWS CLI](https://aws.amazon.com/cli/) - _Amazon Web Service Command Line Interface.  Needed to deploy project to AWS_
 
 ### Install project
