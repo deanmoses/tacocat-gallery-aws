@@ -6,6 +6,7 @@ Uses [AWS Step Functions](https://aws.amazon.com/step-functions/) to orchestrate
 
 1. [Git](http://git-scm.com/) - source control tool. _Needed to retrieve this project from github.com._
 1. [Node.js](http://nodejs.org/) - Javascript server. _Needed to manage development tools._
+1. [Lerna](https://lerna.js.org/) - Javascript package manager. _Needed to manage multiple Javascript packages within a single Git repo._
 1. [AWS CLI](https://aws.amazon.com/cli/) - Amazon Web Service's Command Line Interface.  _Needed to deploy project to AWS._
 
 ### Install project
