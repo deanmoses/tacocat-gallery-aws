@@ -2,6 +2,6 @@
 	"name": "generate-large-image",
 	"version": "0.0.1",
 	"dependencies": {
-		"gm": "1.23.0"
+		"gm": "1.25.0"
 	}
 }
